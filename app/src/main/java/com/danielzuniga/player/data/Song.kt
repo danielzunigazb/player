@@ -15,7 +15,11 @@ data class Song(
     val track: Int = 0,
     val year: Int = 0,
     val dateAddedSec: Long = 0L,
+    /** Absolute file path from MediaStore; may be blank or unreadable under scoped storage. */
+    val path: String = "",
 ) {
+    val folder: String get() = path.substringBeforeLast('/', missingDelimiterValue = "")
+
     val uri: Uri get() = songUri(id)
     val artworkUri: Uri get() = albumArtUri(albumId)
 }

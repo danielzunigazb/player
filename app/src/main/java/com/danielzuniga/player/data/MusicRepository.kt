@@ -109,6 +109,7 @@ class MusicRepository(
             MediaStore.Audio.Media.TRACK,
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.DATA,
         )
         val selection =
             "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= ?"
@@ -131,6 +132,7 @@ class MusicRepository(
             val trackCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
             val yearCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
             val dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+            val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
 
             buildList(cursor.count) {
                 while (cursor.moveToNext()) {
@@ -145,6 +147,7 @@ class MusicRepository(
                             track = cursor.getInt(trackCol),
                             year = cursor.getInt(yearCol),
                             dateAddedSec = cursor.getLong(dateAddedCol),
+                            path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else "",
                         )
                     )
                 }

@@ -16,6 +16,12 @@ data class Artist(
     val songs: List<Song>,
 )
 
+data class Folder(
+    val path: String,
+    val name: String,
+    val songs: List<Song>,
+)
+
 enum class SongSort { TITLE, ARTIST, ALBUM, RECENT, DURATION }
 
 /** All derived views of the device library, computed once per scan. */
@@ -49,7 +55,21 @@ class LibraryIndex(val songs: List<Song>) {
         }
         .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
 
+    val folders: List<Folder> = songs
+        .filter { it.folder.isNotEmpty() }
+        .groupBy { it.folder }
+        .map { (path, folderSongs) ->
+            Folder(
+                path = path,
+                name = path.substringAfterLast('/'),
+                songs = folderSongs.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.path }),
+            )
+        }
+        .sortedWith(compareBy<Folder, String>(String.CASE_INSENSITIVE_ORDER) { it.name }.thenBy { it.path })
+
     fun song(id: Long): Song? = byId[id]
+
+    fun folder(path: String): Folder? = folders.firstOrNull { it.path == path }
 
     fun songs(ids: List<Long>): List<Song> = ids.mapNotNull { byId[it] }
 

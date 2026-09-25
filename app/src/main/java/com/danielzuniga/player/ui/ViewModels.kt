@@ -17,9 +17,12 @@ import com.danielzuniga.player.data.LibraryIndex
 import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.data.SongSort
 import com.danielzuniga.player.data.ThemeMode
+import com.danielzuniga.player.data.Folder
 import com.danielzuniga.player.data.db.PlaylistSummary
+import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.data.filterAlbums
 import com.danielzuniga.player.data.filterArtists
+import com.danielzuniga.player.data.filterFolders
 import com.danielzuniga.player.data.filterSongs
 import com.danielzuniga.player.data.sortedBy
 import com.danielzuniga.player.playback.EqualizerState
@@ -27,15 +30,18 @@ import com.danielzuniga.player.playback.PlayerConnection
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.playback.QueueState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -44,6 +50,9 @@ private fun <T> Flow<T>.stateIn(vm: ViewModel, initial: T): StateFlow<T> =
 
 // ---------------------------------------------------------------- Player
 
+data class LyricsUiState(val loading: Boolean = false, val lyrics: Lyrics? = null)
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModel(private val container: AppContainer) : ViewModel() {
 
     private val connection = PlayerConnection(container.appContext)
@@ -51,6 +60,20 @@ class PlayerViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<PlayerUiState> = connection.state
     val queue: StateFlow<QueueState> = connection.queue
     val favoriteIds: StateFlow<Set<Long>> = container.userData.favoriteIdSet.stateIn(this, emptySet())
+
+    val lyrics: StateFlow<LyricsUiState> = connection.state
+        .map { it.nowPlaying?.songId }
+        .combine(container.musicRepository.library) { id, library -> id?.let(library::song) }
+        .distinctUntilChanged()
+        .transformLatest { song ->
+            if (song == null) {
+                emit(LyricsUiState())
+            } else {
+                emit(LyricsUiState(loading = true))
+                emit(LyricsUiState(lyrics = container.lyrics.load(song)))
+            }
+        }
+        .stateIn(this, LyricsUiState())
 
     init {
         viewModelScope.launch {
@@ -98,6 +121,7 @@ data class LibraryUiState(
     val songs: List<Song> = emptyList(),
     val albums: List<Album> = emptyList(),
     val artists: List<Artist> = emptyList(),
+    val folders: List<Folder> = emptyList(),
     val totalSongs: Int = 0,
     val query: String = "",
     val sort: SongSort = SongSort.TITLE,
@@ -123,6 +147,7 @@ class LibraryViewModel(private val container: AppContainer) : ViewModel() {
             songs = filterSongs(library.songs, q).sortedBy(sort),
             albums = filterAlbums(library.albums, q),
             artists = filterArtists(library.artists, q),
+            folders = filterFolders(library.folders, q),
             totalSongs = library.songs.size,
             query = q,
             sort = sort,

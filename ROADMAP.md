@@ -39,9 +39,10 @@ Cada fase se entrega compilando, con pruebas y lint en verde, en su propio commi
 - [x] Pruebas de la base de datos (favoritos, playlists, estadísticas) con Room en memoria
 - [x] Arreglos encontrados: carátula que empujaba los controles fuera de pantalla en pantallas bajas; foco del teclado pedido antes de tiempo en diálogos
 
-## Fase 6 — Más formas de explorar
-- [ ] Explorador por carpetas
-- [ ] Letras sincronizadas desde archivos `.lrc` junto a la canción
+## Fase 6 — Más formas de explorar ✅
+- [x] Explorador por carpetas (pestaña Carpetas)
+- [x] Letras: archivo `.lrc` junto a la canción (cuando Android permite leerlo) o letra incrustada en MP3 (ID3 `USLT`) y FLAC (`LYRICS`)
+- [x] Letra sincronizada: resalta la línea actual y tocar una línea salta a ese momento
 
 ## Ideas futuras
 - Widget de pantalla de inicio, Android Auto, scrobbling a Last.fm

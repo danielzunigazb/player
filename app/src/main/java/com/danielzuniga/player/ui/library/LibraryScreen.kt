@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shuffle
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Album
 import com.danielzuniga.player.data.Artist
+import com.danielzuniga.player.data.Folder
 import com.danielzuniga.player.data.SongSort
 import com.danielzuniga.player.ui.LibraryUiState
 import com.danielzuniga.player.ui.PlaylistsUiState
@@ -79,6 +81,7 @@ private enum class HomeTab(val label: Int) {
     SONGS(R.string.tab_songs),
     ALBUMS(R.string.tab_albums),
     ARTISTS(R.string.tab_artists),
+    FOLDERS(R.string.tab_folders),
     PLAYLISTS(R.string.tab_playlists),
 }
 
@@ -92,6 +95,7 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onOpenAlbum: (Long) -> Unit,
     onOpenArtist: (String) -> Unit,
+    onOpenFolder: (String) -> Unit,
     onOpenPlaylist: (Long) -> Unit,
     onOpenSmartPlaylist: (SmartPlaylist) -> Unit,
     onCreatePlaylist: () -> Unit,
@@ -151,6 +155,9 @@ fun HomeScreen(
                     }
                     HomeTab.ARTISTS -> LibraryContent(library, library.artists.isEmpty()) {
                         ArtistList(library.artists, onOpenArtist, contentPadding)
+                    }
+                    HomeTab.FOLDERS -> LibraryContent(library, library.folders.isEmpty()) {
+                        FolderList(library.folders, onOpenFolder, contentPadding)
                     }
                     HomeTab.PLAYLISTS -> PlaylistsTab(
                         state = playlists,
@@ -304,6 +311,44 @@ private fun ArtistList(artists: List<Artist>, onOpenArtist: (String) -> Unit, co
                             " · " + pluralStringResource(R.plurals.song_count, artist.songs.size, artist.songs.size),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderList(folders: List<Folder>, onOpenFolder: (String) -> Unit, contentPadding: PaddingValues) {
+    LazyColumn(contentPadding = contentPadding, modifier = Modifier.fillMaxSize()) {
+        items(folders, key = { it.path }) { folder ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenFolder(folder.path) }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            ) {
+                Icon(
+                    Icons.Rounded.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp),
+                )
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    Text(
+                        text = folder.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = pluralStringResource(R.plurals.song_count, folder.songs.size, folder.songs.size) +
+                            " · " + folder.path.substringBeforeLast('/'),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

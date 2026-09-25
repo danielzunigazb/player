@@ -65,6 +65,7 @@ import com.danielzuniga.player.ui.components.LocalSongActions
 import com.danielzuniga.player.ui.components.SongActions
 import com.danielzuniga.player.ui.detail.AlbumScreen
 import com.danielzuniga.player.ui.detail.ArtistScreen
+import com.danielzuniga.player.ui.detail.FolderScreen
 import com.danielzuniga.player.ui.equalizer.EqualizerScreen
 import com.danielzuniga.player.ui.library.HomeScreen
 import com.danielzuniga.player.ui.player.MiniPlayer
@@ -122,6 +123,7 @@ private fun MainContent() {
     val player by playerVm.state.collectAsStateWithLifecycle()
     val queue by playerVm.queue.collectAsStateWithLifecycle()
     val favoriteIds by playerVm.favoriteIds.collectAsStateWithLifecycle()
+    val lyrics by playerVm.lyrics.collectAsStateWithLifecycle()
     val libraryState by libraryVm.state.collectAsStateWithLifecycle()
     val libraryIndex by libraryVm.library.collectAsStateWithLifecycle()
     val playlistsState by playlistsVm.state.collectAsStateWithLifecycle()
@@ -204,6 +206,7 @@ private fun MainContent() {
                         state = player,
                         nowPlaying = nowPlaying,
                         isFavorite = nowPlaying.songId in favoriteIds,
+                        lyrics = lyrics,
                         actions = NowPlayingActions(
                             onClose = { showNowPlaying = false },
                             onTogglePlay = playerVm::togglePlayPause,
@@ -301,6 +304,7 @@ private fun AppNavHost(
                 onRefresh = { libraryVm.load(force = true) },
                 onOpenAlbum = { navigate(Routes.album(it)) },
                 onOpenArtist = { navigate(Routes.artist(it)) },
+                onOpenFolder = { navigate(Routes.folder(it)) },
                 onOpenPlaylist = { navigate(Routes.playlist(it)) },
                 onOpenSmartPlaylist = { navigate(Routes.smartPlaylist(it)) },
                 onCreatePlaylist = onCreatePlaylist,
@@ -321,6 +325,13 @@ private fun AppNavHost(
         ) { entry ->
             val name = entry.arguments?.getString(Routes.ARG_NAME).orEmpty()
             ArtistScreen(libraryIndex.artist(name), navController::popBackStack, bottomPadding)
+        }
+        composable(
+            Routes.FOLDER,
+            arguments = listOf(navArgument(Routes.ARG_PATH) { type = NavType.StringType }),
+        ) { entry ->
+            val path = entry.arguments?.getString(Routes.ARG_PATH).orEmpty()
+            FolderScreen(libraryIndex.folder(path), navController::popBackStack, bottomPadding)
         }
         composable(
             Routes.PLAYLIST,

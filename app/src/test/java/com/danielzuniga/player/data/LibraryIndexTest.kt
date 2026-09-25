@@ -49,6 +49,21 @@ class LibraryIndexTest {
         assertEquals(index.albums, filterAlbums(index.albums, " "))
     }
 
+    @Test
+    fun groupsFoldersByParentDirectory() {
+        val index = LibraryIndex(
+            listOf(
+                Song(1, "b", "x", "y", 1, 1, path = "/sdcard/Music/Rock/b.mp3"),
+                Song(2, "a", "x", "y", 1, 1, path = "/sdcard/Music/Rock/a.mp3"),
+                Song(3, "c", "x", "y", 1, 1, path = "/sdcard/Download/c.mp3"),
+                Song(4, "d", "x", "y", 1, 1, path = ""),
+            )
+        )
+        assertEquals(listOf("Download", "Rock"), index.folders.map { it.name })
+        assertEquals(listOf(2L, 1L), index.folder("/sdcard/Music/Rock")!!.songs.map { it.id })
+        assertEquals(listOf("Rock"), filterFolders(index.folders, "roc").map { it.name })
+    }
+
     private fun song(
         id: Long,
         title: String,

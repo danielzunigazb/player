@@ -100,6 +100,14 @@ class LibraryFlowTest {
     }
 
     @Test
+    fun browseFolders() {
+        compose.onNodeWithText("Carpetas").performClick()
+        compose.onNodeWithText("Cuatro Caminos").performClick()
+        compose.waitUntil(5_000) { exists("/storage/emulated/0/Music/Cuatro Caminos") }
+        compose.onNodeWithText("Eres").assertIsDisplayed()
+    }
+
+    @Test
     fun searchIgnoresAccents() {
         compose.onNodeWithContentDescription("Buscar").performClick()
         compose.onNodeWithText("Buscar en tu música").performTextInput("musica")

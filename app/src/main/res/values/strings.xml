@@ -6,6 +6,7 @@
     <string name="tab_albums">Álbumes</string>
     <string name="tab_artists">Artistas</string>
     <string name="tab_playlists">Playlists</string>
+    <string name="tab_folders">Carpetas</string>
     <string name="search">Buscar</string>
     <string name="search_hint">Buscar en tu música</string>
     <string name="close_search">Cerrar búsqueda</string>
@@ -92,6 +93,10 @@
     <string name="sleep_off">Desactivar temporizador</string>
     <string name="sleep_remaining">La música se pausará en %1$s</string>
     <string name="sleep_remaining_end_of_track">La música se pausará al terminar esta canción</string>
+
+    <string name="lyrics">Letra</string>
+    <string name="lyrics_none">No se encontró letra para esta canción.</string>
+    <string name="lyrics_hint">Pon un archivo .lrc con el mismo nombre junto a la canción, o incrusta la letra en sus etiquetas.</string>
 
     <!-- Equalizer -->
     <string name="equalizer">Ecualizador</string>

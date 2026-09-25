@@ -23,6 +23,12 @@ fun filterArtists(artists: List<Artist>, query: String): List<Artist> {
     return artists.filter { it.name.matches(needle) }
 }
 
+fun filterFolders(folders: List<Folder>, query: String): List<Folder> {
+    val needle = query.normalizedForSearch()
+    if (needle.isEmpty()) return folders
+    return folders.filter { it.name.matches(needle) }
+}
+
 private fun String.matches(needle: String): Boolean = normalizedForSearch().contains(needle)
 
 private val DIACRITICS = "\\p{Mn}+".toRegex()

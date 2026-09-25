@@ -6,6 +6,7 @@ import com.danielzuniga.player.data.MusicRepository
 import com.danielzuniga.player.data.SettingsStore
 import com.danielzuniga.player.data.UserDataRepository
 import com.danielzuniga.player.data.db.AppDatabase
+import com.danielzuniga.player.data.lyrics.LyricsRepository
 import com.danielzuniga.player.playback.AudioEffects
 import com.danielzuniga.player.playback.PlaybackStateStore
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,7 @@ class AppContainer(context: Context) {
     val userData = UserDataRepository(AppDatabase.create(context))
     val playbackState = PlaybackStateStore(context)
     val audioEffects = AudioEffects(context)
+    val lyrics = LyricsRepository(context)
 }
 
 class PlayerApplication : Application() {

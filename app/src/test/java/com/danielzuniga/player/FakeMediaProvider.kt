@@ -15,6 +15,7 @@ data class FakeSong(
     val album: String = "Album",
     val albumId: Long = 1,
     val track: Int = 1,
+    val path: String = "/storage/emulated/0/Music/$album/$title.mp3",
 )
 
 /** Stands in for the system MediaStore so tests can scan a known library. */
@@ -39,10 +40,11 @@ class FakeMediaProvider : ContentProvider() {
                 MediaStore.Audio.Media.TRACK,
                 MediaStore.Audio.Media.YEAR,
                 MediaStore.Audio.Media.DATE_ADDED,
+                MediaStore.Audio.Media.DATA,
             )
         )
         songs.forEach {
-            cursor.addRow(arrayOf<Any>(it.id, it.title, it.artist, it.album, it.albumId, 200_000L, it.track, 2020, it.id))
+            cursor.addRow(arrayOf<Any>(it.id, it.title, it.artist, it.album, it.albumId, 200_000L, it.track, 2020, it.id, it.path))
         }
         return cursor
     }

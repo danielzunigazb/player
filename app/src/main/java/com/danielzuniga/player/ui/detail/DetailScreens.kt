@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Album
 import com.danielzuniga.player.data.Artist
+import com.danielzuniga.player.data.Folder
 import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.ui.components.Artwork
 import com.danielzuniga.player.ui.components.BackTopBar
@@ -162,6 +163,47 @@ fun ArtistScreen(artist: Artist?, onBack: () -> Unit, bottomPadding: PaddingValu
             item { SectionTitle(stringResource(R.string.tab_songs)) }
             itemsIndexed(artist.songs, key = { _, song -> song.id }) { index, song ->
                 SongRow(song = song, onClick = { actions.play(artist.songs, index) })
+            }
+        }
+    }
+}
+
+@Composable
+fun FolderScreen(folder: Folder?, onBack: () -> Unit, bottomPadding: PaddingValues) {
+    val actions = LocalSongActions.current
+    Scaffold(
+        topBar = {
+            BackTopBar(title = folder?.name.orEmpty(), onBack = onBack) {
+                if (folder != null) CollectionActions(folder.songs)
+            }
+        },
+        contentWindowInsets = WindowInsets(0),
+    ) { padding ->
+        if (folder == null) {
+            EmptyState(stringResource(R.string.empty_list), Modifier.padding(padding))
+            return@Scaffold
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = bottomPadding.calculateBottomPadding()),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            item {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = folder.path,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = pluralStringResource(R.plurals.song_count, folder.songs.size, folder.songs.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    PlayShuffleButtons(folder.songs, Modifier.padding(top = 12.dp))
+                }
+            }
+            itemsIndexed(folder.songs, key = { _, song -> song.id }) { index, song ->
+                SongRow(song = song, onClick = { actions.play(folder.songs, index) })
             }
         }
     }

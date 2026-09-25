@@ -5,7 +5,7 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 ## Funciones
 
 **Biblioteca**
-- Pestañas de Canciones, Álbumes, Artistas y Playlists, con detalle de álbum y de artista
+- Pestañas de Canciones, Álbumes, Artistas, Carpetas y Playlists, con detalle de cada uno
 - Búsqueda en toda la biblioteca, sin distinguir mayúsculas ni acentos
 - Ordenar por título, artista, álbum, añadidas recientemente o duración
 - Se actualiza sola cuando agregas o borras música del teléfono
@@ -22,6 +22,7 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Temporizador de apagado (por minutos o al terminar la canción), velocidad de reproducción
 - Ecualizador con presets y refuerzo de graves
 - Pantalla "Reproduciendo" con el color de la carátula; desliza la carátula o el mini reproductor para cambiar de canción
+- Letras sincronizadas (resaltan la línea actual; toca una línea para saltar): desde un `.lrc` junto a la canción o incrustadas en MP3/FLAC
 
 **Ajustes**
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
@@ -34,7 +35,8 @@ Kotlin, Jetpack Compose (Material 3), MVVM, Media3/ExoPlayer, Room, Navigation C
 ```
 app/src/main/java/com/danielzuniga/player/
 ├── PlayerApplication.kt   AppContainer: repositorios compartidos por la UI y el servicio
-├── data/                  MediaStore (MusicRepository), Room (db/, UserDataRepository), ajustes
+├── data/                  MediaStore (MusicRepository), Room (db/, UserDataRepository), ajustes,
+│                          letras (lyrics/: LRC, ID3 USLT, FLAC Vorbis)
 ├── playback/              PlaybackService (ExoPlayer + MediaSession), PlayerConnection,
 │                          ecualizador, guardado de la cola
 └── ui/                    ViewModels, navegación, pantallas (library, detail, playlists,
@@ -50,7 +52,7 @@ Desde la terminal, con el móvil conectado por USB (depuración USB activada):
 ```bash
 ./gradlew installDebug          # instala la versión debug
 ./gradlew assembleRelease       # APK optimizado en app/build/outputs/apk/release/
-./gradlew testDebugUnitTest     # pruebas
+./gradlew testDebugUnitTest     # pruebas (JVM + Robolectric: UI, servicio y base de datos)
 ./gradlew lintDebug             # análisis estático
 ```
 

@@ -18,6 +18,8 @@ import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.ui.components.LocalSongActions
 import com.danielzuniga.player.ui.components.SongActions
 import com.danielzuniga.player.ui.library.HomeScreen
+import com.danielzuniga.player.data.lyrics.LrcParser
+import com.danielzuniga.player.ui.player.LyricsView
 import com.danielzuniga.player.ui.player.NowPlayingActions
 import com.danielzuniga.player.ui.player.NowPlayingScreen
 import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
@@ -87,6 +89,7 @@ class ScreensTest {
                     state = PlayerUiState(isPlaying = true, positionMs = 30_000, durationMs = 210_000),
                     nowPlaying = NowPlaying(1, "De Música Ligera", "Soda Stereo", null),
                     isFavorite = false,
+                    lyrics = LyricsUiState(),
                     actions = NowPlayingActions(
                         onClose = {}, onTogglePlay = { playToggled = true }, onNext = {}, onPrevious = {},
                         onSeek = {}, onToggleShuffle = {}, onCycleRepeat = {},
@@ -104,6 +107,29 @@ class ScreensTest {
         compose.onNodeWithContentDescription("Pausar").performClick()
         assertTrue(favoriteToggled)
         assertTrue(playToggled)
+    }
+
+    @Test
+    fun syncedLyricsHighlightAndSeek() {
+        var seekedTo = -1L
+        compose.setContent {
+            PlayerTheme {
+                LyricsView(
+                    state = LyricsUiState(lyrics = LrcParser.parse("[00:01]Primera\n[00:05]Segunda\n[00:09]Tercera")),
+                    positionMs = 6_000,
+                    onSeek = { seekedTo = it },
+                )
+            }
+        }
+        compose.onNodeWithText("Segunda").assertIsDisplayed()
+        compose.onNodeWithText("Tercera").performClick()
+        assertEquals(9_000L, seekedTo)
+    }
+
+    @Test
+    fun missingLyricsExplainsHowToAddThem() {
+        compose.setContent { PlayerTheme { LyricsView(LyricsUiState(), 0, {}) } }
+        compose.onNodeWithText("No se encontró letra para esta canción.").assertIsDisplayed()
     }
 
     @Test
@@ -138,6 +164,7 @@ class ScreensTest {
                         onRefresh = {},
                         onOpenAlbum = {},
                         onOpenArtist = {},
+                        onOpenFolder = {},
                         onOpenPlaylist = {},
                         onOpenSmartPlaylist = {},
                         onCreatePlaylist = {},

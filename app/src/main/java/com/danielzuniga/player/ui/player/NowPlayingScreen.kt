@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
@@ -49,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +70,7 @@ import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.ui.components.Artwork
 import com.danielzuniga.player.ui.components.MenuItem
 import com.danielzuniga.player.ui.components.rememberArtworkColor
+import com.danielzuniga.player.ui.LyricsUiState
 import com.danielzuniga.player.ui.formatDuration
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -95,8 +98,10 @@ fun NowPlayingScreen(
     state: PlayerUiState,
     nowPlaying: NowPlaying,
     isFavorite: Boolean,
+    lyrics: LyricsUiState,
     actions: NowPlayingActions,
 ) {
+    var showLyrics by rememberSaveable { mutableStateOf(false) }
     val surface = MaterialTheme.colorScheme.surface
     val artColor = rememberArtworkColor(nowPlaying.artworkUri)
     val topColor by animateColorAsState(
@@ -123,7 +128,11 @@ fun NowPlayingScreen(
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
             ) {
-                SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
+                if (showLyrics) {
+                    LyricsView(lyrics, state.positionMs, actions.onSeek)
+                } else {
+                    SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -156,7 +165,7 @@ fun NowPlayingScreen(
             Spacer(Modifier.height(8.dp))
             TransportControls(state, actions)
             Spacer(Modifier.height(16.dp))
-            ExtrasRow(state, actions)
+            ExtrasRow(state, actions, showLyrics = showLyrics, onToggleLyrics = { showLyrics = !showLyrics })
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -252,7 +261,12 @@ private fun TransportControls(state: PlayerUiState, actions: NowPlayingActions) 
 }
 
 @Composable
-private fun ExtrasRow(state: PlayerUiState, actions: NowPlayingActions) {
+private fun ExtrasRow(
+    state: PlayerUiState,
+    actions: NowPlayingActions,
+    showLyrics: Boolean,
+    onToggleLyrics: () -> Unit,
+) {
     val sleepActive = state.sleepAtMs > 0 || state.sleepAtEndOfTrack
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -268,6 +282,9 @@ private fun ExtrasRow(state: PlayerUiState, actions: NowPlayingActions) {
         }
         IconButton(onClick = actions.onOpenSleepTimer) {
             Icon(Icons.Rounded.Bedtime, contentDescription = stringResource(R.string.sleep_timer), tint = activeTint(sleepActive))
+        }
+        IconButton(onClick = onToggleLyrics) {
+            Icon(Icons.Rounded.Lyrics, contentDescription = stringResource(R.string.lyrics), tint = activeTint(showLyrics))
         }
         IconButton(onClick = actions.onOpenEqualizer) {
             Icon(Icons.Rounded.Equalizer, contentDescription = stringResource(R.string.equalizer), tint = activeTint(false))
