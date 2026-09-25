@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">Player</string>
+
+    <string name="library_title">Mi música</string>
+    <plurals name="library_song_count">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+    <string name="search_hint">Buscar canción, artista o álbum</string>
+    <string name="clear_search">Borrar búsqueda</string>
+    <string name="refresh">Actualizar biblioteca</string>
+    <string name="shuffle_all">Aleatorio</string>
+    <string name="empty_library">No se encontró música en el dispositivo.</string>
+    <string name="empty_search">Sin resultados para \"%1$s\"</string>
+
+    <string name="permission_title">Acceso a tu música</string>
+    <string name="permission_body">Para mostrar y reproducir tus canciones, Player necesita permiso para leer los archivos de audio del dispositivo.</string>
+    <string name="permission_grant">Conceder permiso</string>
+    <string name="permission_settings">Abrir ajustes</string>
+
+    <string name="play">Reproducir</string>
+    <string name="pause">Pausar</string>
+    <string name="next">Siguiente</string>
+    <string name="previous">Anterior</string>
+    <string name="shuffle">Aleatorio</string>
+    <string name="repeat">Repetir</string>
+    <string name="close_now_playing">Cerrar reproductor</string>
+    <string name="now_playing">Reproduciendo</string>
+
+    <string name="unknown_artist">Artista desconocido</string>
+    <string name="unknown_album">Álbum desconocido</string>
+</resources>
