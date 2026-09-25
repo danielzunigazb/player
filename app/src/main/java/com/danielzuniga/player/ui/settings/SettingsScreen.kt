@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,9 +26,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.BuildConfig
 import com.danielzuniga.player.R
+import com.danielzuniga.player.ui.components.Eyebrow
+import com.danielzuniga.player.ui.components.Hairline
 import com.danielzuniga.player.data.ThemeMode
 import com.danielzuniga.player.ui.SettingsUiState
 import com.danielzuniga.player.ui.components.BackTopBar
+import com.danielzuniga.player.ui.theme.DzIcons
 
 private val MIN_DURATION_OPTIONS = listOf(0, 10, 30, 60)
 
@@ -41,7 +42,6 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
-    onArtworkColors: (Boolean) -> Unit,
     onMinDuration: (Int) -> Unit,
     onRescan: () -> Unit,
     bottomPadding: PaddingValues,
@@ -70,14 +70,6 @@ fun SettingsScreen(
                         Text(stringResource(mode.label()), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-            }
-            item {
-                SwitchRow(
-                    title = stringResource(R.string.artwork_colors),
-                    summary = stringResource(R.string.artwork_colors_summary),
-                    checked = state.artworkColors,
-                    onChange = onArtworkColors,
-                )
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 item {
@@ -121,7 +113,7 @@ fun SettingsScreen(
                         .clickable(onClick = onRescan)
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                 ) {
-                    Icon(Icons.Rounded.Refresh, contentDescription = null)
+                    Icon(DzIcons.Refresh, contentDescription = null)
                     Text(
                         stringResource(R.string.rescan),
                         style = MaterialTheme.typography.bodyLarge,
@@ -152,12 +144,10 @@ private fun ThemeMode.label(): Int = when (this) {
 
 @Composable
 private fun Section(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
-    )
+    Column {
+        Hairline(Modifier.padding(top = 16.dp))
+        Eyebrow(text = text, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
+    }
 }
 
 @Composable

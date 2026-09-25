@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
+import com.danielzuniga.player.ui.components.Eyebrow
+import com.danielzuniga.player.ui.components.Hairline
 import com.danielzuniga.player.playback.CUSTOM_PRESET
 import com.danielzuniga.player.playback.EqBand
 import com.danielzuniga.player.playback.EqualizerState
@@ -172,11 +174,7 @@ private fun BandSlider(band: EqBand, state: EqualizerState, onBandLevel: (Int, I
 @Composable
 private fun Section(text: String) {
     Column {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
-        )
+        Hairline(Modifier.padding(top = 16.dp))
+        Eyebrow(text = text, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
     }
 }

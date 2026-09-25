@@ -76,7 +76,7 @@ class LibraryFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Eres").fetchSemanticsNodes().size >= 2 }
 
         compose.onAllNodesWithText("Eres")[1].performClick()
-        compose.onNodeWithText("Reproduciendo").assertIsDisplayed()
+        compose.onNodeWithText("Reproduciendo", ignoreCase = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("Añadir a favoritas").performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodes(hasContentDescription("Quitar de favoritas"))
@@ -84,13 +84,13 @@ class LibraryFlowTest {
         }
         compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
 
-        compose.onNodeWithText("Playlists").performClick()
+        compose.onNodeWithText("Playlists", ignoreCase = true).performClick()
         compose.waitUntil(5_000) { exists("1 canción") }
     }
 
     @Test
     fun browseAlbumThenArtist() {
-        compose.onNodeWithText("Álbumes").performClick()
+        compose.onNodeWithText("Álbumes", ignoreCase = true).performClick()
         compose.onNodeWithText("Canción Animal").performClick()
 
         compose.onNodeWithText("Un Millón de Años Luz").assertIsDisplayed()
@@ -101,9 +101,9 @@ class LibraryFlowTest {
 
     @Test
     fun browseFolders() {
-        compose.onNodeWithText("Carpetas").performClick()
+        compose.onNodeWithText("Carpetas", ignoreCase = true).performClick()
         compose.onNodeWithText("Cuatro Caminos").performClick()
-        compose.waitUntil(5_000) { exists("/storage/emulated/0/Music/Cuatro Caminos") }
+        compose.waitUntil(5_000) { exists("$ /storage/emulated/0/Music/Cuatro Caminos") }
         compose.onNodeWithText("Eres").assertIsDisplayed()
     }
 
@@ -116,5 +116,5 @@ class LibraryFlowTest {
     }
 
     private fun exists(text: String) =
-        compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodes(hasText(text, ignoreCase = true)).fetchSemanticsNodes().isNotEmpty()
 }

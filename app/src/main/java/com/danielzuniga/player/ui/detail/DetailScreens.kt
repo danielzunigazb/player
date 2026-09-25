@@ -1,11 +1,13 @@
 package com.danielzuniga.player.ui.detail
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.shadow
-import com.danielzuniga.player.ui.components.BlurredArtwork
-import com.danielzuniga.player.ui.components.scrim
+import androidx.compose.foundation.border
+import androidx.compose.ui.text.style.TextDecoration
+import com.danielzuniga.player.ui.components.DzTitle
+import com.danielzuniga.player.ui.components.Eyebrow
+import com.danielzuniga.player.ui.components.Hairline
+import com.danielzuniga.player.ui.theme.Dz
+import com.danielzuniga.player.ui.theme.DzType
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,9 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Album
@@ -48,6 +46,7 @@ import com.danielzuniga.player.ui.components.SongLeading
 import com.danielzuniga.player.ui.components.SongRow
 import com.danielzuniga.player.ui.formatDuration
 import com.danielzuniga.player.ui.library.AlbumCard
+import com.danielzuniga.player.ui.theme.DzIcons
 
 @Composable
 fun AlbumScreen(album: Album?, onBack: () -> Unit, bottomPadding: PaddingValues) {
@@ -69,54 +68,39 @@ fun AlbumScreen(album: Album?, onBack: () -> Unit, bottomPadding: PaddingValues)
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
-                val surface = MaterialTheme.colorScheme.surface
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    BlurredArtwork(uri = album.songs.first().artworkUri, modifier = Modifier.matchParentSize()) {
-                        Box(
-                            Modifier
-                                .matchParentSize()
-                                .scrim(top = surface.copy(alpha = 0.2f), bottom = surface),
-                        )
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                ) {
+                    Artwork(
+                        uri = album.songs.first().artworkUri,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    ) {
-                        Artwork(
-                            uri = album.songs.first().artworkUri,
-                            cornerRadius = 28.dp,
-                            modifier = Modifier
-                                .shadow(24.dp, RoundedCornerShape(28.dp))
-                                .size(232.dp),
-                        )
-                        Text(
-                            text = album.title,
-                            style = MaterialTheme.typography.headlineMedium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 16.dp),
-                        )
-                        Text(
-                            text = album.artist,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clickable { actions.openArtist(album.artist) }
-                                .padding(4.dp),
-                        )
-                        Text(
-                            text = listOfNotNull(
-                                album.year.takeIf { it > 0 }?.toString(),
-                                pluralStringResource(R.plurals.song_count, album.songs.size, album.songs.size),
-                                formatDuration(album.durationMs),
-                            ).joinToString(" · "),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        PlayShuffleButtons(album.songs, Modifier.padding(top = 16.dp))
-                    }
+                            .size(200.dp)
+                            .border(1.dp, Dz.colors.line),
+                    )
+                    Eyebrow(
+                        text = listOfNotNull(
+                            stringResource(R.string.album),
+                            album.year.takeIf { it > 0 }?.toString(),
+                            pluralStringResource(R.plurals.song_count, album.songs.size, album.songs.size),
+                            formatDuration(album.durationMs),
+                        ).joinToString(" · "),
+                        modifier = Modifier.padding(top = 20.dp, bottom = 6.dp),
+                    )
+                    DzTitle(text = album.title, style = DzType.h1)
+                    // DZ.Link: ink text, 1px gold underline.
+                    Text(
+                        text = album.artist,
+                        style = DzType.body.copy(textDecoration = TextDecoration.Underline),
+                        color = Dz.colors.ink,
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .clickable { actions.openArtist(album.artist) },
+                    )
+                    PlayShuffleButtons(album.songs, Modifier.padding(top = 20.dp))
                 }
+                Hairline()
             }
             itemsIndexed(album.songs, key = { _, song -> song.id }) { index, song ->
                 SongRow(
@@ -151,18 +135,18 @@ fun ArtistScreen(artist: Artist?, onBack: () -> Unit, bottomPadding: PaddingValu
         ) {
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
+                    Eyebrow(
                         text = pluralStringResource(R.plurals.album_count, artist.albums.size, artist.albums.size) +
                             " · " + pluralStringResource(R.plurals.song_count, artist.songs.size, artist.songs.size),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
                     )
-                    PlayShuffleButtons(artist.songs, Modifier.padding(top = 12.dp))
+                    DzTitle(text = artist.name, style = DzType.h1)
+                    PlayShuffleButtons(artist.songs, Modifier.padding(top = 20.dp))
                 }
             }
             if (artist.albums.isNotEmpty()) {
                 item {
-                    SectionTitle(stringResource(R.string.tab_albums))
+                    SectionTitle("01 — " + stringResource(R.string.tab_albums))
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -177,7 +161,7 @@ fun ArtistScreen(artist: Artist?, onBack: () -> Unit, bottomPadding: PaddingValu
                     }
                 }
             }
-            item { SectionTitle(stringResource(R.string.tab_songs)) }
+            item { SectionTitle((if (artist.albums.isNotEmpty()) "02 — " else "01 — ") + stringResource(R.string.tab_songs)) }
             itemsIndexed(artist.songs, key = { _, song -> song.id }) { index, song ->
                 SongRow(song = song, onClick = { actions.play(artist.songs, index) })
             }
@@ -206,17 +190,16 @@ fun FolderScreen(folder: Folder?, onBack: () -> Unit, bottomPadding: PaddingValu
         ) {
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = folder.path,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
+                    Eyebrow(
                         text = pluralStringResource(R.plurals.song_count, folder.songs.size, folder.songs.size),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
                     )
-                    PlayShuffleButtons(folder.songs, Modifier.padding(top = 12.dp))
+                    Text(
+                        text = "$ " + folder.path,
+                        style = DzType.small,
+                        color = Dz.colors.inkMuted,
+                    )
+                    PlayShuffleButtons(folder.songs, Modifier.padding(top = 20.dp))
                 }
             }
             itemsIndexed(folder.songs, key = { _, song -> song.id }) { index, song ->
@@ -230,18 +213,17 @@ fun FolderScreen(folder: Folder?, onBack: () -> Unit, bottomPadding: PaddingValu
 private fun CollectionActions(songs: List<Song>) {
     val actions = LocalSongActions.current
     IconButton(onClick = { actions.addToQueue(songs) }) {
-        Icon(Icons.AutoMirrored.Rounded.QueueMusic, contentDescription = stringResource(R.string.add_to_queue))
+        Icon(DzIcons.AddToQueue, contentDescription = stringResource(R.string.add_to_queue))
     }
     IconButton(onClick = { actions.addToPlaylist(songs) }) {
-        Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, contentDescription = stringResource(R.string.add_to_playlist))
+        Icon(DzIcons.PlaylistAdd, contentDescription = stringResource(R.string.add_to_playlist))
     }
 }
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-    )
+    Column {
+        Hairline(Modifier.padding(top = 16.dp))
+        Eyebrow(text = text, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
+    }
 }

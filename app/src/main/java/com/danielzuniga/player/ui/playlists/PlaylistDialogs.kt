@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +30,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.db.PlaylistSummary
+import com.danielzuniga.player.ui.theme.DzIcons
 
 @Composable
 fun PlaylistNameDialog(
@@ -87,14 +85,14 @@ fun AddToPlaylistDialog(
             LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
                 item {
                     DialogRow(
-                        icon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        icon = { Icon(DzIcons.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                         text = stringResource(R.string.new_playlist),
                         onClick = onCreateNew,
                     )
                 }
                 items(playlists, key = { it.id }) { playlist ->
                     DialogRow(
-                        icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, contentDescription = null) },
+                        icon = { Icon(DzIcons.Queue, contentDescription = null) },
                         text = playlist.name,
                         onClick = { onSelect(playlist) },
                     )

@@ -13,8 +13,8 @@ android {
         applicationId = "com.danielzuniga.player"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "1.2.0"
     }
 
     buildTypes {
@@ -67,7 +67,6 @@ dependencies {
     implementation(libs.androidx.media3.session)
 
     implementation(libs.coil.compose)
-    implementation(libs.androidx.palette)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.reorderable)
 

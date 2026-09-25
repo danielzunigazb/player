@@ -60,8 +60,8 @@ class AppSmokeTest {
 
     @Test
     fun showsTabsAndEmptyLibrary() {
-        compose.onNodeWithText("Canciones").assertIsDisplayed()
-        compose.onNodeWithText("Álbumes").assertIsDisplayed()
+        compose.onNodeWithText("Canciones", ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithText("Álbumes", ignoreCase = true).assertIsDisplayed()
         compose.waitUntil(5_000) { exists("No se encontró música en el dispositivo.") }
     }
 
@@ -69,7 +69,7 @@ class AppSmokeTest {
     // Robolectric never idles once a dialog text field takes focus.
     @Test
     fun showsSmartPlaylists() {
-        compose.onNodeWithText("Playlists").performClick()
+        compose.onNodeWithText("Playlists", ignoreCase = true).performClick()
         compose.onNodeWithText("Favoritas").assertIsDisplayed()
         compose.onNodeWithText("Más escuchadas").assertIsDisplayed()
         compose.onNodeWithText("Nueva playlist").assertIsDisplayed()
@@ -81,9 +81,9 @@ class AppSmokeTest {
         compose.onNodeWithText("Negro puro (AMOLED)").performClick()
         compose.onNodeWithText("Volver a escanear la música").assertIsDisplayed()
         compose.onNodeWithContentDescription("Volver").performClick()
-        compose.onNodeWithText("Canciones").assertIsDisplayed()
+        compose.onNodeWithText("Canciones", ignoreCase = true).assertIsDisplayed()
     }
 
     private fun exists(text: String) =
-        compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodes(hasText(text, ignoreCase = true)).fetchSemanticsNodes().isNotEmpty()
 }

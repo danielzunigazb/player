@@ -15,16 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -42,6 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
+import com.danielzuniga.player.ui.components.DzButton
+import com.danielzuniga.player.ui.components.DzButtonVariant
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.playback.QueueItem
 import com.danielzuniga.player.playback.QueueState
@@ -52,6 +50,7 @@ import kotlinx.coroutines.delay
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.math.BigDecimal
+import com.danielzuniga.player.ui.theme.DzIcons
 
 fun formatSpeed(speed: Float): String =
     BigDecimal(speed.toString()).stripTrailingZeros().toPlainString() + "x"
@@ -121,7 +120,7 @@ fun QueueSheet(
                                                 },
                                             ),
                                         ) {
-                                            Icon(Icons.Rounded.DragHandle, contentDescription = stringResource(R.string.reorder))
+                                            Icon(DzIcons.DragHandle, contentDescription = stringResource(R.string.reorder))
                                         }
                                     }
                                 },
@@ -151,7 +150,7 @@ private fun QueueRow(
             .clickable(onClick = onClick)
             .padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
     ) {
-        Artwork(uri = item.artworkUri, cornerRadius = 6.dp, modifier = Modifier.size(44.dp))
+        Artwork(uri = item.artworkUri, modifier = Modifier.size(44.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.title,
@@ -170,7 +169,7 @@ private fun QueueRow(
         }
         if (!isCurrent) {
             IconButton(onClick = onRemove) {
-                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.remove))
+                Icon(DzIcons.Close, contentDescription = stringResource(R.string.remove))
             }
         }
         dragHandle()
@@ -223,10 +222,12 @@ fun SleepTimerSheet(state: PlayerUiState, onSet: (Int) -> Unit, onDismiss: () ->
                 )
             }
             if (status != null) {
-                OutlinedButton(
+                DzButton(
+                    text = stringResource(R.string.sleep_off),
+                    variant = DzButtonVariant.DANGER,
                     onClick = { onSet(SessionCommands.SLEEP_OFF); onDismiss() },
                     modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
-                ) { Text(stringResource(R.string.sleep_off)) }
+                )
             }
         }
     }

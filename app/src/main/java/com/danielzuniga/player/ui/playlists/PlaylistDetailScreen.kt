@@ -9,13 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.DragHandle
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +38,7 @@ import com.danielzuniga.player.ui.components.SongRow
 import com.danielzuniga.player.ui.formatDuration
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.danielzuniga.player.ui.theme.DzIcons
 
 @Composable
 fun PlaylistDetailScreen(
@@ -81,17 +75,17 @@ fun PlaylistDetailScreen(
             BackTopBar(title = title, onBack = onBack) {
                 IconButton(onClick = { actions.addToPlaylist(songs) }, enabled = songs.isNotEmpty()) {
                     Icon(
-                        Icons.AutoMirrored.Rounded.PlaylistAdd,
+                        DzIcons.PlaylistAdd,
                         contentDescription = stringResource(if (isUserPlaylist) R.string.add_to_playlist else R.string.save_as_playlist),
                     )
                 }
                 if (isUserPlaylist) {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.more_options))
+                        Icon(DzIcons.More, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        MenuItem(R.string.rename, Icons.Rounded.Edit) { menuOpen = false; renaming = true }
-                        MenuItem(R.string.delete, Icons.Rounded.Delete) { menuOpen = false; deleting = true }
+                        MenuItem(R.string.rename, DzIcons.Edit) { menuOpen = false; renaming = true }
+                        MenuItem(R.string.delete, DzIcons.Delete) { menuOpen = false; deleting = true }
                     }
                 }
             }
@@ -130,7 +124,7 @@ fun PlaylistDetailScreen(
                             onClick = { actions.play(songs, index) },
                             extraMenuItems = { dismiss ->
                                 if (isUserPlaylist) {
-                                    MenuItem(R.string.remove_from_playlist, Icons.Rounded.RemoveCircleOutline) {
+                                    MenuItem(R.string.remove_from_playlist, DzIcons.Remove) {
                                         onRemoveSong(song)
                                         dismiss()
                                     }
@@ -142,7 +136,7 @@ fun PlaylistDetailScreen(
                                         onClick = {},
                                         modifier = Modifier.draggableHandle(onDragStopped = { onReorder(songs) }),
                                     ) {
-                                        Icon(Icons.Rounded.DragHandle, contentDescription = stringResource(R.string.reorder))
+                                        Icon(DzIcons.DragHandle, contentDescription = stringResource(R.string.reorder))
                                     }
                                 }
                             },

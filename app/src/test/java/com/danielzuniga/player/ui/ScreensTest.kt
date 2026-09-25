@@ -83,7 +83,7 @@ class ScreensTest {
     @Config(qualifiers = PHONE)
     fun albumsTabShowsAlbums() {
         showHome()
-        compose.onNodeWithText("Álbumes").performClick()
+        compose.onNodeWithText("Álbumes", ignoreCase = true).performClick()
         compose.onNodeWithText("Canción Animal").assertIsDisplayed()
     }
 
@@ -108,7 +108,8 @@ class ScreensTest {
                 )
             }
         }
-        compose.onNodeWithText("De Música Ligera").assertIsDisplayed()
+        // The artist rides along as the serif whisper in the same title text.
+        compose.onNodeWithText("De Música Ligera\nSoda Stereo").assertIsDisplayed()
         compose.onNodeWithText("0:30").assertIsDisplayed()
         compose.onNodeWithText("3:30").assertIsDisplayed()
         compose.onNodeWithContentDescription("Añadir a favoritas").performClick()

@@ -12,29 +12,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.NewReleases
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
+import com.danielzuniga.player.ui.theme.Dz
+import androidx.compose.foundation.border
+import com.danielzuniga.player.ui.components.Eyebrow
+import com.danielzuniga.player.ui.components.Hairline
 import com.danielzuniga.player.ui.PlaylistsUiState
 import com.danielzuniga.player.ui.SmartPlaylist
+import com.danielzuniga.player.ui.theme.DzIcons
 
 fun SmartPlaylist.label(): Int = when (this) {
     SmartPlaylist.FAVORITES -> R.string.favorites
@@ -44,10 +40,10 @@ fun SmartPlaylist.label(): Int = when (this) {
 }
 
 fun SmartPlaylist.icon(): ImageVector = when (this) {
-    SmartPlaylist.FAVORITES -> Icons.Rounded.Favorite
-    SmartPlaylist.MOST_PLAYED -> Icons.AutoMirrored.Rounded.TrendingUp
-    SmartPlaylist.RECENTLY_PLAYED -> Icons.Rounded.History
-    SmartPlaylist.RECENTLY_ADDED -> Icons.Rounded.NewReleases
+    SmartPlaylist.FAVORITES -> DzIcons.HeartFilled
+    SmartPlaylist.MOST_PLAYED -> DzIcons.Trending
+    SmartPlaylist.RECENTLY_PLAYED -> DzIcons.History
+    SmartPlaylist.RECENTLY_ADDED -> DzIcons.New
 }
 
 @Composable
@@ -71,7 +67,7 @@ fun PlaylistsTab(
         item { SectionHeader(stringResource(R.string.my_playlists)) }
         item {
             PlaylistRow(
-                icon = Icons.Rounded.Add,
+                icon = DzIcons.Add,
                 title = stringResource(R.string.new_playlist),
                 songCount = null,
                 onClick = onCreatePlaylist,
@@ -80,7 +76,7 @@ fun PlaylistsTab(
         }
         items(state.playlists, key = { it.id }) { playlist ->
             PlaylistRow(
-                icon = Icons.AutoMirrored.Rounded.QueueMusic,
+                icon = DzIcons.Queue,
                 title = playlist.name,
                 songCount = playlist.songCount,
                 onClick = { onOpenPlaylist(playlist.id) },
@@ -91,12 +87,10 @@ fun PlaylistsTab(
 
 @Composable
 private fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
-    )
+    Column {
+        Hairline(Modifier.padding(top = 16.dp))
+        Eyebrow(text = text, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
+    }
 }
 
 @Composable
@@ -118,17 +112,13 @@ private fun PlaylistRow(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(
-                    if (highlighted) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surfaceVariant
-                ),
+                .background(Dz.colors.surface)
+                .border(1.dp, Dz.colors.line),
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (highlighted) Dz.colors.gold else Dz.colors.inkMuted,
             )
         }
         Column(modifier = Modifier.padding(start = 16.dp)) {

@@ -1,7 +1,7 @@
 <resources>
-    <color name="window_background">#FF0E0C13</color>
-    <color name="ic_launcher_background">#FF2A1C3A</color>
-    <color name="widget_background">#F21A1721</color>
-    <color name="widget_text">#FFF4EFFF</color>
-    <color name="widget_text_secondary">#FFC9C2DC</color>
+    <color name="window_background">#FF0E0C0A</color>
+    <color name="ic_launcher_background">#FF0E0C0A</color>
+    <color name="widget_background">#F2181512</color>
+    <color name="widget_text">#FFEFE6D6</color>
+    <color name="widget_text_secondary">#FFA2978A</color>
 </resources>

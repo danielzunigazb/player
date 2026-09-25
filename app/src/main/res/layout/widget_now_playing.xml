@@ -32,7 +32,8 @@
             android:text="@string/widget_idle"
             android:textColor="@color/widget_text"
             android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:fontFamily="monospace" />
 
         <TextView
             android:id="@+id/widget_artist"
@@ -41,7 +42,8 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:fontFamily="monospace" />
     </LinearLayout>
 
     <ImageButton

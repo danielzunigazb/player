@@ -12,82 +12,118 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.data.ThemeMode
 
-// "Ember" identity: warm coral accent over violet-tinted ink, used when no dynamic source applies.
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFFFF8A68),
-    onPrimary = Color(0xFF3A0B00),
-    primaryContainer = Color(0xFF5C1F0E),
-    onPrimaryContainer = Color(0xFFFFDBD0),
-    secondary = Color(0xFFB4A8FF),
-    onSecondary = Color(0xFF221768),
-    secondaryContainer = Color(0xFF362B7A),
-    onSecondaryContainer = Color(0xFFE4DFFF),
-    tertiary = Color(0xFF6FE3BE),
-    onTertiary = Color(0xFF00382A),
-    background = Color(0xFF0E0C13),
-    onBackground = Color(0xFFEDE7F1),
-    surface = Color(0xFF0E0C13),
-    onSurface = Color(0xFFEDE7F1),
-    surfaceVariant = Color(0xFF2A2533),
-    onSurfaceVariant = Color(0xFFB9B1C4),
-    surfaceContainerLowest = Color(0xFF09080D),
-    surfaceContainerLow = Color(0xFF15121B),
-    surfaceContainer = Color(0xFF1A1721),
-    surfaceContainerHigh = Color(0xFF221E2A),
-    surfaceContainerHighest = Color(0xFF2B2634),
-    outline = Color(0xFF6E6679),
-    outlineVariant = Color(0xFF3A3443),
+/**
+ * Tokens of the "Daniel Zúñiga" design system (claude.ai/design): Obsidiana (dark) and
+ * Pergamino (light). Warm neutrals only, gold as *the* accent, verdigris for success/live,
+ * ember for errors and small sparks. Hierarchy comes from bg → surface → line, never shadows.
+ */
+@Immutable
+data class DzColors(
+    val bg: Color,
+    val surface: Color,
+    val line: Color,
+    val ink: Color,
+    val inkMuted: Color,
+    val gold: Color,
+    val onGold: Color,
+    val verdigris: Color,
+    val ember: Color,
 )
 
-private val LightColors = lightColorScheme(
-    primary = Color(0xFFD9481F),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFDBD0),
-    onPrimaryContainer = Color(0xFF3A0B00),
-    secondary = Color(0xFF5B4BD6),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE4DFFF),
-    onSecondaryContainer = Color(0xFF1A0F5C),
-    tertiary = Color(0xFF00805F),
-    background = Color(0xFFFBF7F3),
-    onBackground = Color(0xFF1D1A20),
-    surface = Color(0xFFFBF7F3),
-    onSurface = Color(0xFF1D1A20),
-    surfaceVariant = Color(0xFFEDE5EA),
-    onSurfaceVariant = Color(0xFF5D5563),
-    surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFF6F0EE),
-    surfaceContainer = Color(0xFFF1EAE8),
-    surfaceContainerHigh = Color(0xFFEBE3E2),
-    surfaceContainerHighest = Color(0xFFE5DDDC),
-    outline = Color(0xFF8E8593),
-    outlineVariant = Color(0xFFD9D0D6),
+val Obsidiana = DzColors(
+    bg = Color(0xFF0E0C0A),
+    surface = Color(0xFF181512),
+    line = Color(0xFF2F2923),
+    ink = Color(0xFFEFE6D6),
+    inkMuted = Color(0xFFA2978A),
+    gold = Color(0xFFD6A23E),
+    onGold = Color(0xFF0E0C0A),
+    verdigris = Color(0xFF5CB09C),
+    ember = Color(0xFFE0573C),
 )
 
-private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(36.dp),
+val Pergamino = DzColors(
+    bg = Color(0xFFF3EDE2),
+    surface = Color(0xFFE9E1D2),
+    line = Color(0xFFD3C8B4),
+    ink = Color(0xFF1B1713),
+    inkMuted = Color(0xFF5C5347),
+    gold = Color(0xFF8A5A10),
+    onGold = Color(0xFFF3EDE2),
+    verdigris = Color(0xFF2B6A5C),
+    ember = Color(0xFFB0381F),
 )
 
-/** Theme flavour the adaptive artwork palette needs to rebuild a matching scheme. */
-data class ThemeFlavor(val dark: Boolean, val pureBlack: Boolean, val artworkColors: Boolean)
+/** Pure-black variant for AMOLED screens; everything but the page stays on-brand. */
+private fun DzColors.amoled() = copy(bg = Color.Black, onGold = Color.Black)
 
-val LocalThemeFlavor = staticCompositionLocalOf { ThemeFlavor(dark = true, pureBlack = false, artworkColors = false) }
+val LocalDzColors = staticCompositionLocalOf { Obsidiana }
+
+/** Shortcut to the brand tokens: `Dz.colors.gold`. */
+object Dz {
+    val colors: DzColors
+        @Composable @ReadOnlyComposable get() = LocalDzColors.current
+}
+
+private fun DzColors.toScheme(dark: Boolean): ColorScheme {
+    val scheme = if (dark) darkColorScheme() else lightColorScheme()
+    return scheme.copy(
+        primary = gold,
+        onPrimary = onGold,
+        primaryContainer = surface,
+        onPrimaryContainer = ink,
+        secondary = verdigris,
+        onSecondary = bg,
+        secondaryContainer = surface,
+        onSecondaryContainer = ink,
+        tertiary = ember,
+        onTertiary = bg,
+        error = ember,
+        onError = bg,
+        background = bg,
+        onBackground = ink,
+        surface = bg,
+        onSurface = ink,
+        surfaceVariant = surface,
+        onSurfaceVariant = inkMuted,
+        surfaceTint = Color.Transparent,
+        surfaceBright = surface,
+        surfaceDim = bg,
+        surfaceContainerLowest = bg,
+        surfaceContainerLow = surface,
+        surfaceContainer = surface,
+        surfaceContainerHigh = surface,
+        surfaceContainerHighest = line,
+        inverseSurface = ink,
+        inverseOnSurface = bg,
+        inversePrimary = gold,
+        outline = inkMuted,
+        outlineVariant = line,
+        scrim = Color.Black,
+    )
+}
+
+/** Hard corners: 2dp on controls, none on blocks; nothing is a pill. */
+private val DzShapes = Shapes(
+    extraSmall = RoundedCornerShape(2.dp),
+    small = RoundedCornerShape(2.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp),
+    extraLarge = RoundedCornerShape(0.dp),
+)
 
 @Composable
 fun PlayerTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
-    dynamicColor: Boolean = true,
-    artworkColors: Boolean = false,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val dark = when (themeMode) {
@@ -95,26 +131,21 @@ fun PlayerTheme(
         ThemeMode.LIGHT -> false
         ThemeMode.DARK, ThemeMode.BLACK -> true
     }
-    val context = LocalContext.current
-    val base = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        dark -> DarkColors
-        else -> LightColors
+    val tokens = when {
+        themeMode == ThemeMode.BLACK -> Obsidiana.amoled()
+        dark -> Obsidiana
+        else -> Pergamino
     }
-    val pureBlack = themeMode == ThemeMode.BLACK
-    val colors = if (pureBlack) base.pureBlack() else base
-    CompositionLocalProvider(LocalThemeFlavor provides ThemeFlavor(dark, pureBlack, artworkColors)) {
-        MaterialTheme(colorScheme = colors, typography = AppTypography, shapes = AppShapes, content = content)
+    val context = LocalContext.current
+    val scheme = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // Opt-in Material You: keeps the brand's neutrals and shapes, only the accent follows the wallpaper.
+        val dynamic = if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        tokens.toScheme(dark).copy(primary = dynamic.primary, onPrimary = dynamic.onPrimary)
+    } else {
+        tokens.toScheme(dark)
+    }
+    val brand = if (scheme.primary != tokens.gold) tokens.copy(gold = scheme.primary, onGold = scheme.onPrimary) else tokens
+    CompositionLocalProvider(LocalDzColors provides brand) {
+        MaterialTheme(colorScheme = scheme, typography = DzTypography, shapes = DzShapes, content = content)
     }
 }
-
-internal fun ColorScheme.pureBlack(): ColorScheme = copy(
-    background = Color.Black,
-    surface = Color.Black,
-    surfaceContainerLowest = Color.Black,
-    surfaceContainerLow = Color(0xFF0A0A0A),
-    surfaceContainer = Color(0xFF111111),
-    surfaceContainerHigh = Color(0xFF181818),
-    surfaceContainerHighest = Color(0xFF202020),
-)

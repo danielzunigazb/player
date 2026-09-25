@@ -1,14 +1,16 @@
 package com.danielzuniga.player.ui.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material3.Surface
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
@@ -29,15 +31,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Sort
-import androidx.compose.material.icons.rounded.Clear
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -61,7 +54,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -82,6 +74,15 @@ import com.danielzuniga.player.ui.components.EmptyState
 import com.danielzuniga.player.ui.components.LocalSongActions
 import com.danielzuniga.player.ui.components.SongRow
 import com.danielzuniga.player.ui.playlists.PlaylistsTab
+import com.danielzuniga.player.ui.components.DzButton
+import com.danielzuniga.player.ui.components.DzIconButton
+import com.danielzuniga.player.ui.components.DzMark
+import com.danielzuniga.player.ui.components.DzTitle
+import com.danielzuniga.player.ui.components.Eyebrow
+import com.danielzuniga.player.ui.components.Hairline
+import com.danielzuniga.player.ui.theme.Dz
+import com.danielzuniga.player.ui.theme.DzIcons
+import com.danielzuniga.player.ui.theme.DzType
 import kotlinx.coroutines.launch
 
 private enum class HomeTab(val label: Int) {
@@ -227,24 +228,20 @@ private fun AlbumGrid(albums: List<Album>, onOpenAlbum: (Long) -> Unit, contentP
 
 @Composable
 fun AlbumCard(album: Album, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick),
-    ) {
+    Column(modifier = modifier.clickable(onClick = onClick)) {
         Artwork(
             uri = album.songs.first().artworkUri,
-            cornerRadius = 20.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f),
+                .aspectRatio(1f)
+                .border(1.dp, Dz.colors.line),
         )
         Text(
             text = album.title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp),
+            modifier = Modifier.padding(top = 8.dp),
         )
         Text(
             text = album.artist,
@@ -252,7 +249,6 @@ fun AlbumCard(album: Album, onClick: () -> Unit, modifier: Modifier = Modifier) 
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 4.dp),
         )
     }
 }
@@ -270,10 +266,9 @@ private fun ArtistList(artists: List<Artist>, onOpenArtist: (String) -> Unit, co
             ) {
                 Artwork(
                     uri = artist.albums.firstOrNull()?.songs?.first()?.artworkUri,
-                    cornerRadius = 28.dp,
                     modifier = Modifier
                         .size(56.dp)
-                        .clip(CircleShape),
+                        .border(1.dp, Dz.colors.line),
                 )
                 Column(modifier = Modifier.padding(start = 16.dp)) {
                     Text(
@@ -306,10 +301,10 @@ private fun FolderList(folders: List<Folder>, onOpenFolder: (String) -> Unit, co
                     .padding(horizontal = 16.dp, vertical = 10.dp),
             ) {
                 Icon(
-                    Icons.Rounded.Folder,
+                    DzIcons.Folder,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(40.dp),
+                    tint = Dz.colors.inkMuted,
+                    modifier = Modifier.size(32.dp),
                 )
                 Column(modifier = Modifier.padding(start = 16.dp)) {
                     Text(
@@ -336,9 +331,7 @@ private fun FolderList(folders: List<Folder>, onOpenFolder: (String) -> Unit, co
 private fun SortMenu(current: SongSort, onSortChange: (SongSort) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) {
-            Icon(Icons.AutoMirrored.Rounded.Sort, contentDescription = stringResource(R.string.sort))
-        }
+        DzIconButton(DzIcons.Sort, stringResource(R.string.sort), { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             SongSort.entries.forEach { sort ->
                 DropdownMenuItem(
@@ -369,7 +362,7 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: (
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.close_search))
+                Icon(DzIcons.Back, contentDescription = stringResource(R.string.close_search))
             }
         },
         title = {
@@ -381,7 +374,7 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: (
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Icon(Icons.Rounded.Clear, contentDescription = stringResource(R.string.clear_search))
+                            Icon(DzIcons.Close, contentDescription = stringResource(R.string.clear_search))
                         }
                     }
                 },
@@ -415,141 +408,105 @@ private fun HomeHeader(
             else -> R.string.greeting_night
         }
     }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            DzMark(size = 28.dp)
+            Spacer(Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DzIconButton(DzIcons.Search, stringResource(R.string.search), onSearch)
+                if (showSort) SortMenu(current = library.sort, onSortChange = onSortChange)
+                DzIconButton(DzIcons.Settings, stringResource(R.string.settings), onOpenSettings)
+            }
+        }
+        Eyebrow(
+            text = stringResource(greeting),
+            modifier = Modifier.padding(top = 24.dp, bottom = 4.dp),
+        )
+        // The signature: mono title, last word as the gold whisper, plus the hero cursor.
+        DzTitle(
+            text = stringResource(R.string.home_title),
+            whisper = stringResource(R.string.home_title_whisper),
+            cursor = true,
+            style = DzType.h1.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.035).em),
+        )
+    }
+}
+
+/** `DZ.Nav`-style section links: label type, ink-muted at rest, gold with a 1px underline when active. */
+@Composable
+private fun TabPills(selected: Int, onSelect: (Int) -> Unit) {
+    Column {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            modifier = Modifier.padding(top = 20.dp),
+        ) {
+            items(HomeTab.entries, key = { it.name }) { tab ->
+                val isSelected = selected == tab.ordinal
+                val color = if (isSelected) Dz.colors.gold else Dz.colors.inkMuted
+                Column(
+                    modifier = Modifier
+                        .semantics { this.selected = isSelected }
+                        .clickable { onSelect(tab.ordinal) }
+                        .padding(vertical = 10.dp),
+                ) {
+                    Text(stringResource(tab.label).uppercase(), style = DzType.label, color = color)
+                    Box(
+                        Modifier
+                            .padding(top = 6.dp)
+                            .height(1.dp)
+                            .width(24.dp)
+                            .background(if (isSelected) Dz.colors.gold else Color.Transparent),
+                    )
+                }
+            }
+        }
+        Hairline()
+    }
+}
+
+/** The screen's one primary action, with the count as quiet metadata beside it. */
+@Composable
+private fun ShuffleHero(count: Int, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(greeting),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(R.string.home_title),
-                style = MaterialTheme.typography.displaySmall,
-                maxLines = 1,
-            )
-        }
-        HeaderButton(onClick = onSearch) {
-            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.search))
-        }
-        if (showSort) SortMenu(current = library.sort, onSortChange = onSortChange)
-        HeaderButton(onClick = onOpenSettings) {
-            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings))
-        }
-    }
-}
-
-@Composable
-private fun HeaderButton(onClick: () -> Unit, content: @Composable () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .size(44.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) { content() }
-    }
-}
-
-/** Pill-shaped section switcher; the selected pill fills with the accent colour. */
-@Composable
-private fun TabPills(selected: Int, onSelect: (Int) -> Unit) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        items(HomeTab.entries, key = { it.name }) { tab ->
-            val isSelected = selected == tab.ordinal
-            val container by animateColorAsState(
-                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-                label = "pill",
-            )
-            val content by animateColorAsState(
-                if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                label = "pillText",
-            )
-            Surface(
-                onClick = { onSelect(tab.ordinal) },
-                shape = CircleShape,
-                color = container,
-                contentColor = content,
-                modifier = Modifier.semantics { this.selected = isSelected },
-            ) {
-                Text(
-                    text = stringResource(tab.label),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                )
-            }
-        }
-    }
-}
-
-/** Big gradient card that starts a shuffled session of the whole list. */
-@Composable
-private fun ShuffleHero(count: Int, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        color = Color.Transparent,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .background(Brush.linearGradient(listOf(colors.primary, colors.tertiary)))
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.shuffle_all),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = colors.onPrimary,
-                )
-                Text(
-                    text = pluralStringResource(R.plurals.song_count, count, count),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onPrimary.copy(alpha = 0.8f),
-                )
-            }
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(colors.onPrimary),
-            ) {
-                Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = colors.primary)
-            }
-        }
+        DzButton(text = stringResource(R.string.shuffle_all), icon = DzIcons.Shuffle, onClick = onClick)
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = pluralStringResource(R.plurals.song_count, count, count),
+            style = DzType.small,
+            color = Dz.colors.inkMuted,
+        )
     }
 }
 
 @Composable
 private fun RecentlyAdded(albums: List<Album>, onOpenAlbum: (Long) -> Unit) {
-    Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
-        Text(
-            text = stringResource(R.string.recently_added),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+    Column(modifier = Modifier.padding(bottom = 16.dp)) {
+        Eyebrow(
+            text = "01 — " + stringResource(R.string.recently_added),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             items(albums, key = { it.id }) { album ->
-                AlbumCard(album = album, onClick = { onOpenAlbum(album.id) }, modifier = Modifier.width(132.dp))
+                AlbumCard(album = album, onClick = { onOpenAlbum(album.id) }, modifier = Modifier.width(128.dp))
             }
         }
+        Eyebrow(
+            text = "02 — " + stringResource(R.string.tab_songs),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp),
+        )
     }
 }

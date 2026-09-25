@@ -4,46 +4,65 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.danielzuniga.player.R
 
-/** Geometric grotesk for titles; gives headings and song names a distinct voice. */
-val DisplayFamily = FontFamily(
-    Font(R.font.space_grotesk_medium, FontWeight.Medium),
-    Font(R.font.space_grotesk_bold, FontWeight.Bold),
+/** JetBrains Mono is the voice: titles, text, UI — everything. */
+val MonoFamily = FontFamily(
+    Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
+    Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
+    Font(R.font.jetbrains_mono_semibold, FontWeight.SemiBold),
+    Font(R.font.jetbrains_mono_extrabold, FontWeight.ExtraBold),
 )
 
-/** Rounded, very legible sans for everything else. */
-val BodyFamily = FontFamily(
-    Font(R.font.manrope_regular, FontWeight.Normal),
-    Font(R.font.manrope_semibold, FontWeight.SemiBold),
-    Font(R.font.manrope_extrabold, FontWeight.ExtraBold),
+/** Instrument Serif italic is the whisper: 1–3 words in a title, at most once per screen. */
+val SerifFamily = FontFamily(Font(R.font.instrument_serif_italic, FontWeight.Normal, FontStyle.Italic))
+
+private fun mono(size: Int, line: Int, weight: FontWeight, tracking: Double = 0.0) = TextStyle(
+    fontFamily = MonoFamily,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = tracking.em,
+    fontFeatureSettings = "calt",
 )
 
-private val base = Typography()
+/** The type scale from tokens.json, mapped onto Material roles. */
+object DzType {
+    val display = mono(56, 60, FontWeight.ExtraBold, -0.035)
+    val h1 = mono(32, 40, FontWeight.SemiBold, -0.02)
+    val h2 = mono(20, 28, FontWeight.SemiBold, -0.01)
+    val body = mono(15, 26, FontWeight.Normal)
+    val small = mono(13, 20, FontWeight.Normal)
 
-private fun TextStyle.display(weight: FontWeight = FontWeight.Bold, tracking: Double = -0.02) =
-    copy(fontFamily = DisplayFamily, fontWeight = weight, letterSpacing = tracking.em)
+    /** Eyebrows, tags and nav. Callers uppercase the text — the tokens never type capitals. */
+    val label = mono(11, 16, FontWeight.Medium, 0.14)
+    val whisper = TextStyle(
+        fontFamily = SerifFamily,
+        fontStyle = FontStyle.Italic,
+        fontWeight = FontWeight.Normal,
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+    )
+}
 
-private fun TextStyle.body(weight: FontWeight = FontWeight.Normal) =
-    copy(fontFamily = BodyFamily, fontWeight = weight)
-
-val AppTypography = Typography(
-    displayLarge = base.displayLarge.display(),
-    displayMedium = base.displayMedium.display(),
-    displaySmall = base.displaySmall.display(),
-    headlineLarge = base.headlineLarge.display(),
-    headlineMedium = base.headlineMedium.display(),
-    headlineSmall = base.headlineSmall.display(),
-    titleLarge = base.titleLarge.display(),
-    titleMedium = base.titleMedium.display(FontWeight.Medium, tracking = 0.0),
-    titleSmall = base.titleSmall.body(FontWeight.SemiBold),
-    bodyLarge = base.bodyLarge.body(FontWeight.SemiBold).copy(fontSize = 15.sp),
-    bodyMedium = base.bodyMedium.body(),
-    bodySmall = base.bodySmall.body(),
-    labelLarge = base.labelLarge.body(FontWeight.ExtraBold),
-    labelMedium = base.labelMedium.body(FontWeight.SemiBold),
-    labelSmall = base.labelSmall.body(FontWeight.ExtraBold).copy(letterSpacing = 0.12.em),
+val DzTypography = Typography(
+    displayLarge = DzType.display,
+    displayMedium = DzType.display.copy(fontSize = 44.sp, lineHeight = 48.sp),
+    displaySmall = DzType.h1.copy(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em),
+    headlineLarge = DzType.h1,
+    headlineMedium = DzType.h1.copy(fontSize = 28.sp, lineHeight = 34.sp),
+    headlineSmall = DzType.h1.copy(fontSize = 24.sp, lineHeight = 30.sp),
+    titleLarge = DzType.h2,
+    titleMedium = mono(16, 24, FontWeight.SemiBold, -0.01),
+    titleSmall = mono(14, 20, FontWeight.SemiBold),
+    bodyLarge = DzType.body,
+    bodyMedium = DzType.small.copy(fontSize = 14.sp),
+    bodySmall = DzType.small.copy(fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge = mono(13, 20, FontWeight.SemiBold, 0.01),
+    labelMedium = DzType.small.copy(fontSize = 12.sp, lineHeight = 16.sp),
+    labelSmall = DzType.label,
 )

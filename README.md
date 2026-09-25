@@ -35,14 +35,15 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
 - Ignorar audios cortos (notas de voz, tonos)
 
-## Diseño (v1.1 "Ember")
+## Diseño
 
-- **Colores de la portada**: toda la app se tiñe con el color de la canción que suena, con transición animada (se puede desactivar en Ajustes). Sin música, usa la paleta propia: coral sobre tinta violeta.
-- **Tipografía propia**: Space Grotesk para títulos y Manrope para el texto (ambas con licencia SIL OFL, incluidas en `res/font`).
-- **Reproductor**: fondo con la portada difuminada y resplandor de color, portada que "respira" al reproducir o pausar, barra de progreso ondulada que se aplana en pausa, botón de play que cambia de forma y corazón con rebote.
-- **Inicio**: saludo según la hora, pestañas en forma de píldora, tarjeta de "Aleatorio" con degradado y carrusel de álbumes añadidos recientemente.
-- **Listas**: barras animadas sobre la canción que suena y mini reproductor flotante con anillo de progreso.
-- **Ícono** nuevo, basado en la barra ondulada.
+La interfaz usa el sistema de diseño **Daniel Zúñiga** (claude.ai/design) portado a Compose:
+
+- **Tokens** en `ui/theme/Theme.kt` (`DzColors`): temas Obsidiana (oscuro) y Pergamino (claro), `gold` como único acento, `verdigris` y `ember` para estados. La jerarquía se construye con `bg` → `surface` → `line`, sin sombras.
+- **Tipografía** en `ui/theme/Type.kt`: JetBrains Mono como voz e Instrument Serif itálica como susurro (el artista en el reproductor, "música" en el inicio). Ambas tienen licencia SIL OFL y están en `res/font`.
+- **Íconos** en `ui/theme/DzIcons.kt`: los 17 trazos del sistema más los del reproductor, dibujados con las mismas reglas (grilla de 24, trazo de 1.5, puntas cuadradas, sin relleno).
+- **Componentes** en `ui/components/Dz.kt`: `DzButton`, `DzIconButton`, `DzTag`, `DzTitle` (con susurro y cursor), `DzMark`, `Eyebrow` y `Hairline`.
+- El **ícono de la app** es el monograma: la ñ recortada de un bloque dorado.
 
 ## Arquitectura
 

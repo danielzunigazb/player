@@ -2,9 +2,6 @@ package com.danielzuniga.player.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,15 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Album
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -39,13 +27,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.ui.formatDuration
+import com.danielzuniga.player.ui.theme.Dz
+import com.danielzuniga.player.ui.theme.DzIcons
+import com.danielzuniga.player.ui.theme.DzType
 
 enum class SongLeading { ARTWORK, TRACK_NUMBER }
 
@@ -62,7 +52,7 @@ fun SongRow(
     val isCurrent = LocalCurrentSongId.current == song.id
     val isFavorite = song.id in LocalFavoriteIds.current
     var menuOpen by remember { mutableStateOf(false) }
-    val titleColor = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    val titleColor = if (isCurrent) Dz.colors.gold else Dz.colors.ink
 
     val isPlaying = LocalIsPlaying.current
     Row(
@@ -70,37 +60,32 @@ fun SongRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 1.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .then(
-                if (isCurrent) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)) else Modifier,
-            )
+            .then(if (isCurrent) Modifier.background(Dz.colors.surface) else Modifier)
             .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
-            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
     ) {
         when (leading) {
             SongLeading.ARTWORK -> Box(contentAlignment = Alignment.Center) {
-                Artwork(uri = song.artworkUri, cornerRadius = 12.dp, modifier = Modifier.size(50.dp))
+                Artwork(uri = song.artworkUri, modifier = Modifier.size(48.dp))
                 if (isCurrent) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(50.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.Black.copy(alpha = 0.45f)),
+                            .size(48.dp)
+                            .background(Dz.colors.bg.copy(alpha = 0.7f)),
                     ) {
-                        PlayingBars(playing = isPlaying, color = Color.White, size = 18.dp)
+                        PlayingBars(playing = isPlaying, color = Dz.colors.gold, size = 16.dp)
                     }
                 }
             }
             SongLeading.TRACK_NUMBER -> Box(contentAlignment = Alignment.Center, modifier = Modifier.width(28.dp)) {
                 if (isCurrent) {
-                    PlayingBars(playing = isPlaying, color = MaterialTheme.colorScheme.primary, size = 16.dp)
+                    PlayingBars(playing = isPlaying, color = Dz.colors.gold, size = 14.dp)
                 } else {
                     Text(
                         text = if (song.track > 0) (song.track % 1000).toString() else "–",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = DzType.small,
+                        color = Dz.colors.inkMuted,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -110,7 +95,6 @@ fun SongRow(
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isCurrent) FontWeight.ExtraBold else null,
                 color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -125,21 +109,21 @@ fun SongRow(
         }
         if (isFavorite) {
             Icon(
-                Icons.Rounded.Favorite,
+                DzIcons.HeartFilled,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp),
+                tint = Dz.colors.inkMuted,
+                modifier = Modifier.size(14.dp),
             )
         }
         Text(
             text = formatDuration(song.durationMs),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = DzType.small,
+            color = Dz.colors.inkMuted,
         )
         trailing()
         Box {
             IconButton(onClick = { menuOpen = true }) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.more_options))
+                Icon(DzIcons.More, contentDescription = stringResource(R.string.more_options))
             }
             SongMenu(
                 song = song,
@@ -161,15 +145,15 @@ fun SongMenu(
     val actions = LocalSongActions.current
     val isFavorite = song.id in LocalFavoriteIds.current
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        MenuItem(R.string.play_next, Icons.AutoMirrored.Rounded.PlaylistPlay) { actions.playNext(listOf(song)); onDismiss() }
-        MenuItem(R.string.add_to_queue, Icons.AutoMirrored.Rounded.QueueMusic) { actions.addToQueue(listOf(song)); onDismiss() }
-        MenuItem(R.string.add_to_playlist, Icons.AutoMirrored.Rounded.PlaylistAdd) { actions.addToPlaylist(listOf(song)); onDismiss() }
+        MenuItem(R.string.play_next, DzIcons.PlayNext) { actions.playNext(listOf(song)); onDismiss() }
+        MenuItem(R.string.add_to_queue, DzIcons.AddToQueue) { actions.addToQueue(listOf(song)); onDismiss() }
+        MenuItem(R.string.add_to_playlist, DzIcons.PlaylistAdd) { actions.addToPlaylist(listOf(song)); onDismiss() }
         MenuItem(
             if (isFavorite) R.string.remove_favorite else R.string.add_favorite,
-            if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+            if (isFavorite) DzIcons.HeartFilled else DzIcons.Heart,
         ) { actions.toggleFavorite(song); onDismiss() }
-        MenuItem(R.string.go_to_album, Icons.Rounded.Album) { actions.openAlbum(song.albumId); onDismiss() }
-        MenuItem(R.string.go_to_artist, Icons.Rounded.Person) { actions.openArtist(song.artist); onDismiss() }
+        MenuItem(R.string.go_to_album, DzIcons.Album) { actions.openAlbum(song.albumId); onDismiss() }
+        MenuItem(R.string.go_to_artist, DzIcons.Artist) { actions.openArtist(song.artist); onDismiss() }
         extraItems(onDismiss)
     }
 }

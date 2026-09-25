@@ -12,7 +12,6 @@ navigation = "2.8.9"
 room = "2.7.1"
 ksp = "2.1.20-1.0.32"
 reorderable = "2.4.3"
-palette = "1.0.0"
 robolectric = "4.14.1"
 androidxTestCore = "1.6.1"
 androidxTestExt = "1.2.1"
@@ -37,7 +36,6 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-androidx-palette = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

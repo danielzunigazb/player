@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,12 +56,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.danielzuniga.player.R
+import com.danielzuniga.player.ui.components.DzButton
+import com.danielzuniga.player.ui.components.DzButtonVariant
+import com.danielzuniga.player.ui.components.DzMark
+import com.danielzuniga.player.ui.components.DzTitle
+import com.danielzuniga.player.ui.theme.Dz
+import com.danielzuniga.player.ui.theme.DzType
 import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.ui.components.LocalCurrentSongId
 import com.danielzuniga.player.ui.components.LocalFavoriteIds
 import com.danielzuniga.player.ui.components.LocalIsPlaying
-import com.danielzuniga.player.ui.components.rememberArtworkColor
-import com.danielzuniga.player.ui.theme.ArtworkTheme
 import com.danielzuniga.player.ui.components.LocalSongActions
 import com.danielzuniga.player.ui.components.SongActions
 import com.danielzuniga.player.ui.detail.AlbumScreen
@@ -81,6 +83,7 @@ import com.danielzuniga.player.ui.playlists.AddToPlaylistDialog
 import com.danielzuniga.player.ui.playlists.PlaylistDetailScreen
 import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
 import com.danielzuniga.player.ui.settings.SettingsScreen
+import com.danielzuniga.player.ui.theme.DzIcons
 
 private val AUDIO_PERMISSION =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -170,128 +173,124 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
     val nowPlaying = player.nowPlaying
     val currentSong = nowPlaying?.songId?.let(libraryIndex::song)
 
-    val artworkSeed = rememberArtworkColor(nowPlaying?.artworkUri)
-
-    ArtworkTheme(seed = artworkSeed) {
-        CompositionLocalProvider(
-            LocalSongActions provides songActions,
-            LocalFavoriteIds provides favoriteIds,
-            LocalCurrentSongId provides nowPlaying?.songId,
-            LocalIsPlaying provides player.isPlaying,
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Scaffold(
-                    contentWindowInsets = WindowInsets(0),
-                    bottomBar = {
-                        if (nowPlaying != null) {
-                            MiniPlayer(
-                                state = player,
-                                nowPlaying = nowPlaying,
-                                onClick = { showNowPlaying = true },
-                                onTogglePlay = playerVm::togglePlayPause,
-                                onNext = playerVm::next,
-                                onPrevious = playerVm::previous,
-                            )
-                        } else {
-                            Spacer(Modifier.navigationBarsPadding())
-                        }
-                    },
-                ) { innerPadding ->
-                    val bottomPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding())
-                    AppNavHost(
-                        navController = navController,
-                        bottomPadding = bottomPadding,
-                        libraryState = libraryState,
-                        playlistsState = playlistsState,
-                        libraryVm = libraryVm,
-                        onCreatePlaylist = { newPlaylistSongs = emptyList() },
-                        navigate = ::navigate,
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = showNowPlaying && nowPlaying != null,
-                    enter = slideInVertically { it },
-                    exit = slideOutVertically { it },
-                ) {
+    CompositionLocalProvider(
+        LocalSongActions provides songActions,
+        LocalFavoriteIds provides favoriteIds,
+        LocalCurrentSongId provides nowPlaying?.songId,
+        LocalIsPlaying provides player.isPlaying,
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                contentWindowInsets = WindowInsets(0),
+                bottomBar = {
                     if (nowPlaying != null) {
-                        NowPlayingScreen(
+                        MiniPlayer(
                             state = player,
                             nowPlaying = nowPlaying,
-                            isFavorite = nowPlaying.songId in favoriteIds,
-                            lyrics = lyrics,
-                            actions = NowPlayingActions(
-                                onClose = { showNowPlaying = false },
-                                onTogglePlay = playerVm::togglePlayPause,
-                                onNext = playerVm::next,
-                                onPrevious = playerVm::previous,
-                                onSeek = playerVm::seekTo,
-                                onToggleShuffle = playerVm::toggleShuffle,
-                                onCycleRepeat = playerVm::cycleRepeatMode,
-                                onToggleFavorite = { nowPlaying.songId?.let(playerVm::toggleFavorite) },
-                                onOpenQueue = { sheet = PlayerSheet.QUEUE },
-                                onOpenSleepTimer = { sheet = PlayerSheet.SLEEP },
-                                onOpenSpeed = { sheet = PlayerSheet.SPEED },
-                                onOpenEqualizer = { navigate(Routes.EQUALIZER) },
-                                onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
-                                onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
-                                onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artist)) } },
-                            ),
+                            onClick = { showNowPlaying = true },
+                            onTogglePlay = playerVm::togglePlayPause,
+                            onNext = playerVm::next,
+                            onPrevious = playerVm::previous,
                         )
+                    } else {
+                        Spacer(Modifier.navigationBarsPadding())
                     }
+                },
+            ) { innerPadding ->
+                val bottomPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding())
+                AppNavHost(
+                    navController = navController,
+                    bottomPadding = bottomPadding,
+                    libraryState = libraryState,
+                    playlistsState = playlistsState,
+                    libraryVm = libraryVm,
+                    onCreatePlaylist = { newPlaylistSongs = emptyList() },
+                    navigate = ::navigate,
+                )
+            }
+
+            AnimatedVisibility(
+                visible = showNowPlaying && nowPlaying != null,
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it },
+            ) {
+                if (nowPlaying != null) {
+                    NowPlayingScreen(
+                        state = player,
+                        nowPlaying = nowPlaying,
+                        isFavorite = nowPlaying.songId in favoriteIds,
+                        lyrics = lyrics,
+                        actions = NowPlayingActions(
+                            onClose = { showNowPlaying = false },
+                            onTogglePlay = playerVm::togglePlayPause,
+                            onNext = playerVm::next,
+                            onPrevious = playerVm::previous,
+                            onSeek = playerVm::seekTo,
+                            onToggleShuffle = playerVm::toggleShuffle,
+                            onCycleRepeat = playerVm::cycleRepeatMode,
+                            onToggleFavorite = { nowPlaying.songId?.let(playerVm::toggleFavorite) },
+                            onOpenQueue = { sheet = PlayerSheet.QUEUE },
+                            onOpenSleepTimer = { sheet = PlayerSheet.SLEEP },
+                            onOpenSpeed = { sheet = PlayerSheet.SPEED },
+                            onOpenEqualizer = { navigate(Routes.EQUALIZER) },
+                            onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
+                            onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
+                            onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artist)) } },
+                        ),
+                    )
                 }
             }
+        }
 
-            BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
+        BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
 
-            when (sheet) {
-                PlayerSheet.QUEUE -> QueueSheet(
-                    queue = queue,
-                    onDismiss = { sheet = null },
-                    onSkipTo = playerVm::skipToQueueItem,
-                    onRemove = playerVm::removeQueueItem,
-                    onMove = playerVm::moveQueueItem,
-                )
-                PlayerSheet.SLEEP -> SleepTimerSheet(
-                    state = player,
-                    onSet = playerVm::setSleepTimer,
-                    onDismiss = { sheet = null },
-                )
-                PlayerSheet.SPEED -> SpeedSheet(
-                    current = player.playbackSpeed,
-                    onSet = playerVm::setSpeed,
-                    onDismiss = { sheet = null },
-                )
-                null -> Unit
-            }
+        when (sheet) {
+            PlayerSheet.QUEUE -> QueueSheet(
+                queue = queue,
+                onDismiss = { sheet = null },
+                onSkipTo = playerVm::skipToQueueItem,
+                onRemove = playerVm::removeQueueItem,
+                onMove = playerVm::moveQueueItem,
+            )
+            PlayerSheet.SLEEP -> SleepTimerSheet(
+                state = player,
+                onSet = playerVm::setSleepTimer,
+                onDismiss = { sheet = null },
+            )
+            PlayerSheet.SPEED -> SpeedSheet(
+                current = player.playbackSpeed,
+                onSet = playerVm::setSpeed,
+                onDismiss = { sheet = null },
+            )
+            null -> Unit
+        }
 
-            addToPlaylistSongs?.let { songs ->
-                AddToPlaylistDialog(
-                    playlists = playlistsState.playlists,
-                    onSelect = { playlist ->
-                        playlistsVm.addTo(playlist.id, songs)
-                        context.toast(context.getString(R.string.added_to_playlist, playlist.name))
-                        addToPlaylistSongs = null
-                    },
-                    onCreateNew = {
-                        newPlaylistSongs = songs
-                        addToPlaylistSongs = null
-                    },
-                    onDismiss = { addToPlaylistSongs = null },
-                )
-            }
+        addToPlaylistSongs?.let { songs ->
+            AddToPlaylistDialog(
+                playlists = playlistsState.playlists,
+                onSelect = { playlist ->
+                    playlistsVm.addTo(playlist.id, songs)
+                    context.toast(context.getString(R.string.added_to_playlist, playlist.name))
+                    addToPlaylistSongs = null
+                },
+                onCreateNew = {
+                    newPlaylistSongs = songs
+                    addToPlaylistSongs = null
+                },
+                onDismiss = { addToPlaylistSongs = null },
+            )
+        }
 
-            newPlaylistSongs?.let { songs ->
-                PlaylistNameDialog(
-                    title = stringResource(R.string.new_playlist),
-                    confirmLabel = stringResource(R.string.create),
-                    onConfirm = { name ->
-                        playlistsVm.create(name, songs) { id -> navigate(Routes.playlist(id)) }
-                        newPlaylistSongs = null
-                    },
-                    onDismiss = { newPlaylistSongs = null },
-                )
-            }
+        newPlaylistSongs?.let { songs ->
+            PlaylistNameDialog(
+                title = stringResource(R.string.new_playlist),
+                confirmLabel = stringResource(R.string.create),
+                onConfirm = { name ->
+                    playlistsVm.create(name, songs) { id -> navigate(Routes.playlist(id)) }
+                    newPlaylistSongs = null
+                },
+                onDismiss = { newPlaylistSongs = null },
+            )
         }
     }
 }
@@ -390,7 +389,6 @@ private fun AppNavHost(
                 onBack = navController::popBackStack,
                 onThemeMode = vm::setThemeMode,
                 onDynamicColor = vm::setDynamicColor,
-                onArtworkColors = vm::setArtworkColors,
                 onMinDuration = vm::setMinDuration,
                 onRescan = vm::rescan,
                 bottomPadding = bottomPadding,
@@ -401,32 +399,27 @@ private fun AppNavHost(
 
 @Composable
 private fun PermissionScreen(onRequest: () -> Unit, onOpenSettings: () -> Unit) {
-    Scaffold { innerPadding ->
+    Scaffold(containerColor = Dz.colors.bg) { innerPadding ->
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(32.dp),
+                .padding(24.dp),
         ) {
-            Icon(
-                Icons.Rounded.LibraryMusic,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(72.dp),
-            )
-            Text(
-                text = stringResource(R.string.permission_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
+            DzMark(size = 48.dp)
+            DzTitle(text = stringResource(R.string.permission_title), style = DzType.h1)
             Text(
                 text = stringResource(R.string.permission_body),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
+                style = DzType.body,
+                color = Dz.colors.inkMuted,
             )
-            Button(onClick = onRequest) { Text(stringResource(R.string.permission_grant)) }
-            TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.permission_settings)) }
+            DzButton(text = stringResource(R.string.permission_grant), arrow = true, onClick = onRequest)
+            DzButton(
+                text = stringResource(R.string.permission_settings),
+                variant = DzButtonVariant.GHOST,
+                onClick = onOpenSettings,
+            )
         }
     }
 }
