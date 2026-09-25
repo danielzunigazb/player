@@ -110,8 +110,9 @@ class LibraryBrowseTest {
                 .setRequestMetadata(MediaItem.RequestMetadata.Builder().setSearchQuery("eres").build())
                 .build()
         )
-        awaitUntil { browser.mediaItemCount == 1 }
-        assertEquals("3", browser.currentMediaItem?.mediaId)
+        // The browser shows the placeholder item at once; wait for the session's resolved queue.
+        awaitUntil { browser.currentMediaItem?.mediaId == "3" }
+        assertEquals(1, browser.mediaItemCount)
     }
 
     @Test

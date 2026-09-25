@@ -49,5 +49,8 @@ Cada fase se entrega compilando, con pruebas y lint en verde, en su propio commi
 - [x] Búsqueda por voz/texto ("pon X en Player") desde Android Auto y el asistente
 - [x] GitHub Actions: compila, prueba y deja el APK descargable en cada push
 
+## Fase 8 — Widget ✅
+- [x] Widget de pantalla de inicio: carátula, título, artista y botones anterior / reproducir-pausar / siguiente (reproducir retoma la última cola aunque la app esté cerrada)
+
 ## Ideas futuras
-- Widget de pantalla de inicio, scrobbling a Last.fm (requiere tu API key)
+- Scrobbling a Last.fm (requiere tu API key)

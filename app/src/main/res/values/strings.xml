@@ -126,6 +126,9 @@
     <string name="about">Acerca de</string>
     <string name="version">Versión %1$s</string>
 
+    <string name="widget_idle">Nada en reproducción</string>
+    <string name="widget_description">Lo que suena ahora, con controles</string>
+
     <string name="unknown_artist">Artista desconocido</string>
     <string name="unknown_album">Álbum desconocido</string>
 </resources>

@@ -2,6 +2,8 @@ package com.danielzuniga.player.playback
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -24,13 +26,17 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.danielzuniga.player.MainActivity
 import com.danielzuniga.player.appContainer
+import com.danielzuniga.player.widget.NowPlayingWidget
+import com.danielzuniga.player.widget.WidgetState
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Owns the ExoPlayer so playback survives the UI. Media3 posts the media notification and
@@ -166,6 +172,30 @@ class PlaybackService : MediaLibraryService() {
         )
     }
 
+    private var widgetArtUri: Uri? = null
+    private var widgetArt: Bitmap? = null
+
+    private fun updateWidget() {
+        if (!NowPlayingWidget.hasWidgets(this)) return
+        val item = player.currentMediaItem
+        val metadata = item?.mediaMetadata
+        val state = WidgetState(
+            title = metadata?.title?.toString(),
+            artist = metadata?.artist?.toString(),
+            isPlaying = player.isPlaying,
+            artworkUri = metadata?.artworkUri,
+        )
+        NowPlayingWidget.saveState(this, state)
+        scope.launch {
+            // Only decode the cover again when the album changes.
+            if (state.artworkUri != widgetArtUri) {
+                widgetArt = withContext(Dispatchers.IO) { NowPlayingWidget.loadArtwork(this@PlaybackService, state.artworkUri) }
+                widgetArtUri = state.artworkUri
+            }
+            NowPlayingWidget.push(this@PlaybackService, state, widgetArt)
+        }
+    }
+
     private fun setSleepTimer(minutes: Int) {
         handler.removeCallbacks(sleepRunnable)
         player.pauseAtEndOfMediaItems = false
@@ -207,6 +237,14 @@ class PlaybackService : MediaLibraryService() {
                 )
             ) {
                 saveQueue()
+            }
+            if (events.containsAny(
+                    Player.EVENT_MEDIA_ITEM_TRANSITION,
+                    Player.EVENT_IS_PLAYING_CHANGED,
+                    Player.EVENT_MEDIA_METADATA_CHANGED,
+                )
+            ) {
+                updateWidget()
             }
         }
 
