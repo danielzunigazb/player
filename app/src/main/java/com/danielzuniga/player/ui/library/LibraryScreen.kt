@@ -2,6 +2,15 @@ package com.danielzuniga.player.ui.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,9 +45,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -117,30 +124,18 @@ fun HomeScreen(
                 },
             )
         } else {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    IconButton(onClick = { searching = true }) {
-                        Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.search))
-                    }
-                    if (pagerState.currentPage == HomeTab.SONGS.ordinal) {
-                        SortMenu(current = library.sort, onSortChange = onSortChange)
-                    }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings))
-                    }
-                },
+            HomeHeader(
+                library = library,
+                showSort = pagerState.currentPage == HomeTab.SONGS.ordinal,
+                onSearch = { searching = true },
+                onSortChange = onSortChange,
+                onOpenSettings = onOpenSettings,
             )
         }
-        PrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage, edgePadding = 8.dp) {
-            HomeTab.entries.forEach { tab ->
-                Tab(
-                    selected = pagerState.currentPage == tab.ordinal,
-                    onClick = { scope.launch { pagerState.animateScrollToPage(tab.ordinal) } },
-                    text = { Text(stringResource(tab.label)) },
-                )
-            }
-        }
+        TabPills(
+            selected = pagerState.currentPage,
+            onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
+        )
 
         PullToRefreshBox(
             isRefreshing = library.isScanning && library.hasScanned,
@@ -149,7 +144,7 @@ fun HomeScreen(
         ) {
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 when (HomeTab.entries[page]) {
-                    HomeTab.SONGS -> SongsTab(library, contentPadding)
+                    HomeTab.SONGS -> SongsTab(library, onOpenAlbum, contentPadding)
                     HomeTab.ALBUMS -> LibraryContent(library, library.albums.isEmpty()) {
                         AlbumGrid(library.albums, onOpenAlbum, contentPadding)
                     }
@@ -190,37 +185,18 @@ private fun LibraryContent(
 }
 
 @Composable
-private fun SongsTab(library: LibraryUiState, contentPadding: PaddingValues) {
+private fun SongsTab(library: LibraryUiState, onOpenAlbum: (Long) -> Unit, contentPadding: PaddingValues) {
     val actions = LocalSongActions.current
+    val recent = remember(library.albums) {
+        library.albums.sortedByDescending { album -> album.songs.maxOf { it.dateAddedSec } }.take(12)
+    }
     LibraryContent(library, library.songs.isEmpty()) {
         LazyColumn(contentPadding = contentPadding, modifier = Modifier.fillMaxSize()) {
-            item(key = "header") {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { actions.shuffle(library.songs) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                ) {
-                    Icon(
-                        Icons.Rounded.Shuffle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = stringResource(R.string.shuffle_all),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                            .weight(1f),
-                    )
-                    Text(
-                        text = pluralStringResource(R.plurals.song_count, library.songs.size, library.songs.size),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            item(key = "hero") {
+                ShuffleHero(count = library.songs.size, onClick = { actions.shuffle(library.songs) })
+            }
+            if (library.query.isBlank() && recent.size >= 2) {
+                item(key = "recent") { RecentlyAdded(recent, onOpenAlbum) }
             }
             itemsIndexed(library.songs, key = { _, song -> song.id }) { index, song ->
                 SongRow(song = song, onClick = { actions.play(library.songs, index) })
@@ -258,14 +234,14 @@ fun AlbumCard(album: Album, onClick: () -> Unit, modifier: Modifier = Modifier) 
     ) {
         Artwork(
             uri = album.songs.first().artworkUri,
-            cornerRadius = 12.dp,
+            cornerRadius = 20.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
         )
         Text(
             text = album.title,
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp),
@@ -422,4 +398,158 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: (
             LaunchedEffect(Unit) { focusRequester.requestFocus() }
         },
     )
+}
+
+@Composable
+private fun HomeHeader(
+    library: LibraryUiState,
+    showSort: Boolean,
+    onSearch: () -> Unit,
+    onSortChange: (SongSort) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val greeting = remember {
+        when (java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)) {
+            in 5..11 -> R.string.greeting_morning
+            in 12..18 -> R.string.greeting_afternoon
+            else -> R.string.greeting_night
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(greeting),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stringResource(R.string.home_title),
+                style = MaterialTheme.typography.displaySmall,
+                maxLines = 1,
+            )
+        }
+        HeaderButton(onClick = onSearch) {
+            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.search))
+        }
+        if (showSort) SortMenu(current = library.sort, onSortChange = onSortChange)
+        HeaderButton(onClick = onOpenSettings) {
+            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings))
+        }
+    }
+}
+
+@Composable
+private fun HeaderButton(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .size(44.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) { content() }
+    }
+}
+
+/** Pill-shaped section switcher; the selected pill fills with the accent colour. */
+@Composable
+private fun TabPills(selected: Int, onSelect: (Int) -> Unit) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        items(HomeTab.entries, key = { it.name }) { tab ->
+            val isSelected = selected == tab.ordinal
+            val container by animateColorAsState(
+                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+                label = "pill",
+            )
+            val content by animateColorAsState(
+                if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                label = "pillText",
+            )
+            Surface(
+                onClick = { onSelect(tab.ordinal) },
+                shape = CircleShape,
+                color = container,
+                contentColor = content,
+                modifier = Modifier.semantics { this.selected = isSelected },
+            ) {
+                Text(
+                    text = stringResource(tab.label),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Big gradient card that starts a shuffled session of the whole list. */
+@Composable
+private fun ShuffleHero(count: Int, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(Brush.linearGradient(listOf(colors.primary, colors.tertiary)))
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.shuffle_all),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = colors.onPrimary,
+                )
+                Text(
+                    text = pluralStringResource(R.plurals.song_count, count, count),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onPrimary.copy(alpha = 0.8f),
+                )
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(colors.onPrimary),
+            ) {
+                Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = colors.primary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentlyAdded(albums: List<Album>, onOpenAlbum: (Long) -> Unit) {
+    Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
+        Text(
+            text = stringResource(R.string.recently_added),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            items(albums, key = { it.id }) { album ->
+                AlbumCard(album = album, onClick = { onOpenAlbum(album.id) }, modifier = Modifier.width(132.dp))
+            }
+        }
+    }
 }

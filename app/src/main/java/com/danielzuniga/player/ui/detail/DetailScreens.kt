@@ -1,6 +1,11 @@
 package com.danielzuniga.player.ui.detail
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
+import com.danielzuniga.player.ui.components.BlurredArtwork
+import com.danielzuniga.player.ui.components.scrim
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,41 +69,53 @@ fun AlbumScreen(album: Album?, onBack: () -> Unit, bottomPadding: PaddingValues)
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                ) {
-                    Artwork(
-                        uri = album.songs.first().artworkUri,
-                        cornerRadius = 16.dp,
-                        modifier = Modifier.size(220.dp),
-                    )
-                    Text(
-                        text = album.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 16.dp),
-                    )
-                    Text(
-                        text = album.artist,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                val surface = MaterialTheme.colorScheme.surface
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    BlurredArtwork(uri = album.songs.first().artworkUri, modifier = Modifier.matchParentSize()) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .scrim(top = surface.copy(alpha = 0.2f), bottom = surface),
+                        )
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .clickable { actions.openArtist(album.artist) }
-                            .padding(4.dp),
-                    )
-                    Text(
-                        text = listOfNotNull(
-                            album.year.takeIf { it > 0 }?.toString(),
-                            pluralStringResource(R.plurals.song_count, album.songs.size, album.songs.size),
-                            formatDuration(album.durationMs),
-                        ).joinToString(" · "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    PlayShuffleButtons(album.songs, Modifier.padding(top = 16.dp))
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    ) {
+                        Artwork(
+                            uri = album.songs.first().artworkUri,
+                            cornerRadius = 28.dp,
+                            modifier = Modifier
+                                .shadow(24.dp, RoundedCornerShape(28.dp))
+                                .size(232.dp),
+                        )
+                        Text(
+                            text = album.title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                        Text(
+                            text = album.artist,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickable { actions.openArtist(album.artist) }
+                                .padding(4.dp),
+                        )
+                        Text(
+                            text = listOfNotNull(
+                                album.year.takeIf { it > 0 }?.toString(),
+                                pluralStringResource(R.plurals.song_count, album.songs.size, album.songs.size),
+                                formatDuration(album.durationMs),
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        PlayShuffleButtons(album.songs, Modifier.padding(top = 16.dp))
+                    }
                 }
             }
             itemsIndexed(album.songs, key = { _, song -> song.id }) { index, song ->

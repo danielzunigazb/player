@@ -1,9 +1,11 @@
 package com.danielzuniga.player.ui.player
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -16,7 +18,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -52,69 +55,91 @@ fun MiniPlayer(
 ) {
     val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    val colors = MaterialTheme.colorScheme
 
-    Surface(
-        tonalElevation = 3.dp,
+    // Floating card: lists scroll underneath it, so it reads as a layer above the library.
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .navigationBarsPadding()
+            .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Column(modifier = Modifier.navigationBarsPadding()) {
-            LinearProgressIndicator(
-                progress = { state.progress() },
-                modifier = Modifier.fillMaxWidth(),
-                drawStopIndicator = {},
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+        Surface(
+            onClick = onClick,
+            shape = MaterialTheme.shapes.large,
+            color = colors.surfaceContainerHigh,
+            shadowElevation = 12.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Box(
+                modifier = Modifier.background(
+                    Brush.horizontalGradient(
+                        listOf(colors.primaryContainer.copy(alpha = 0.85f), colors.surfaceContainerHigh),
+                    ),
+                ),
             ) {
-                // Swipe the song info sideways to change track.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .offset { IntOffset((dragOffset / 2).roundToInt(), 0) }
-                        .pointerInput(Unit) {
-                            detectHorizontalDragGestures(
-                                onDragEnd = {
-                                    if (abs(dragOffset) > swipeThreshold) {
-                                        if (dragOffset < 0) onNext() else onPrevious()
-                                    }
-                                    dragOffset = 0f
-                                },
-                                onDragCancel = { dragOffset = 0f },
-                                onHorizontalDrag = { _, delta -> dragOffset += delta },
-                            )
-                        },
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
                 ) {
-                    Artwork(uri = nowPlaying.artworkUri, cornerRadius = 6.dp, modifier = Modifier.size(44.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = nowPlaying.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = nowPlaying.artist,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    // Swipe the song info sideways to change track.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .offset { IntOffset((dragOffset / 2).roundToInt(), 0) }
+                            .pointerInput(Unit) {
+                                detectHorizontalDragGestures(
+                                    onDragEnd = {
+                                        if (abs(dragOffset) > swipeThreshold) {
+                                            if (dragOffset < 0) onNext() else onPrevious()
+                                        }
+                                        dragOffset = 0f
+                                    },
+                                    onDragCancel = { dragOffset = 0f },
+                                    onHorizontalDrag = { _, delta -> dragOffset += delta },
+                                )
+                            },
+                    ) {
+                        Artwork(uri = nowPlaying.artworkUri, cornerRadius = 14.dp, modifier = Modifier.size(48.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = nowPlaying.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = nowPlaying.artist,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
-                }
-                IconButton(onClick = onTogglePlay) {
-                    Icon(
-                        imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = stringResource(if (state.isPlaying) R.string.pause else R.string.play),
-                    )
-                }
-                IconButton(onClick = onNext) {
-                    Icon(Icons.Rounded.SkipNext, contentDescription = stringResource(R.string.next))
+                    // Play/pause wrapped in a progress ring.
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp)) {
+                        CircularProgressIndicator(
+                            progress = { state.progress() },
+                            color = colors.primary,
+                            trackColor = colors.onSurface.copy(alpha = 0.12f),
+                            strokeWidth = 3.dp,
+                            gapSize = 0.dp,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        IconButton(onClick = onTogglePlay) {
+                            Icon(
+                                imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = stringResource(if (state.isPlaying) R.string.pause else R.string.play),
+                            )
+                        }
+                    }
+                    IconButton(onClick = onNext) {
+                        Icon(Icons.Rounded.SkipNext, contentDescription = stringResource(R.string.next))
+                    }
                 }
             }
         }

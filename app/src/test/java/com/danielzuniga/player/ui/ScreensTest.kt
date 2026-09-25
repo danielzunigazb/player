@@ -35,6 +35,11 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34])
 class ScreensTest {
 
+    private companion object {
+        /** A typical phone; the home header needs more room than Robolectric's default screen. */
+        const val PHONE = "w400dp-h860dp"
+    }
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -58,6 +63,7 @@ class ScreensTest {
     )
 
     @Test
+    @Config(qualifiers = PHONE)
     fun homeListsSongsAndPlaysTappedOne() {
         showHome()
         compose.onNodeWithText("Persiana Americana").performClick()
@@ -65,6 +71,7 @@ class ScreensTest {
     }
 
     @Test
+    @Config(qualifiers = PHONE)
     fun songMenuAddsToQueue() {
         showHome()
         compose.onAllNodesWithContentDescription("Más opciones")[0].performClick()
@@ -73,6 +80,7 @@ class ScreensTest {
     }
 
     @Test
+    @Config(qualifiers = PHONE)
     fun albumsTabShowsAlbums() {
         showHome()
         compose.onNodeWithText("Álbumes").performClick()

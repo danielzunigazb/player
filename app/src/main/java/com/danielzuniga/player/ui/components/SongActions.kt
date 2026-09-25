@@ -24,3 +24,6 @@ val LocalFavoriteIds = compositionLocalOf<Set<Long>> { emptySet() }
 
 /** Id of the song currently loaded in the player, to highlight it in lists. */
 val LocalCurrentSongId = compositionLocalOf<Long?> { null }
+
+/** Whether the player is actually producing sound, to animate the "now playing" indicators. */
+val LocalIsPlaying = compositionLocalOf { false }

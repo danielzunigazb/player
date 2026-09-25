@@ -301,7 +301,8 @@ class EqualizerViewModel(private val container: AppContainer) : ViewModel() {
 
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val dynamicColor: Boolean = true,
+    val dynamicColor: Boolean = false,
+    val artworkColors: Boolean = true,
     val minDurationSec: Int = 10,
 )
 
@@ -311,12 +312,22 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<SettingsUiState> = combine(
         settings.themeMode,
         settings.dynamicColor,
+        settings.artworkColors,
         settings.minDurationSec,
-    ) { theme, dynamic, minDuration -> SettingsUiState(theme, dynamic, minDuration) }
-        .stateIn(this, SettingsUiState(settings.themeMode.value, settings.dynamicColor.value, settings.minDurationSec.value))
+    ) { theme, dynamic, artwork, minDuration -> SettingsUiState(theme, dynamic, artwork, minDuration) }
+        .stateIn(
+            this,
+            SettingsUiState(
+                settings.themeMode.value,
+                settings.dynamicColor.value,
+                settings.artworkColors.value,
+                settings.minDurationSec.value,
+            ),
+        )
 
     fun setThemeMode(mode: ThemeMode) = settings.setThemeMode(mode)
     fun setDynamicColor(enabled: Boolean) = settings.setDynamicColor(enabled)
+    fun setArtworkColors(enabled: Boolean) = settings.setArtworkColors(enabled)
     fun setMinDuration(seconds: Int) = settings.setMinDurationSec(seconds)
     fun rescan() = container.musicRepository.load(force = true)
 }

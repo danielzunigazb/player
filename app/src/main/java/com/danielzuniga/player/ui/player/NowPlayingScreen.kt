@@ -1,7 +1,28 @@
 package com.danielzuniga.player.ui.player
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import com.danielzuniga.player.ui.components.BlurredArtwork
+import com.danielzuniga.player.ui.components.scrim
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -37,11 +58,9 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +73,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -69,7 +87,6 @@ import com.danielzuniga.player.playback.NowPlaying
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.ui.components.Artwork
 import com.danielzuniga.player.ui.components.MenuItem
-import com.danielzuniga.player.ui.components.rememberArtworkColor
 import com.danielzuniga.player.ui.LyricsUiState
 import com.danielzuniga.player.ui.formatDuration
 import kotlin.math.abs
@@ -102,71 +119,87 @@ fun NowPlayingScreen(
     actions: NowPlayingActions,
 ) {
     var showLyrics by rememberSaveable { mutableStateOf(false) }
-    val surface = MaterialTheme.colorScheme.surface
-    val artColor = rememberArtworkColor(nowPlaying.artworkUri)
-    val topColor by animateColorAsState(
-        targetValue = artColor?.copy(alpha = 0.55f) ?: surface,
-        animationSpec = tween(600),
-        label = "artColor",
-    )
+    val colors = MaterialTheme.colorScheme
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .background(Brush.verticalGradient(listOf(topColor, surface)))
-                .safeDrawingPadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-        ) {
-            TopRow(actions)
-
-            // Takes whatever height is left so the controls always fit (small screens, landscape).
+    Surface(color = colors.surface, modifier = Modifier.fillMaxSize()) {
+        BlurredArtwork(uri = nowPlaying.artworkUri, modifier = Modifier.fillMaxSize()) {
             Box(
-                contentAlignment = Alignment.Center,
+                Modifier
+                    .fillMaxSize()
+                    .scrim(top = colors.surface.copy(alpha = 0.25f), bottom = colors.surface),
+            )
+            // Coloured glow behind the cover; carries the mood even where blur isn't available.
+            val glow = colors.primary.copy(alpha = 0.35f)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        drawRect(
+                            Brush.radialGradient(
+                                colors = listOf(glow, Color.Transparent),
+                                center = Offset(size.width / 2f, size.height * 0.35f),
+                                radius = size.width * 0.95f,
+                            ),
+                        )
+                    },
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
             ) {
-                if (showLyrics) {
-                    LyricsView(lyrics, state.positionMs, actions.onSeek)
-                } else {
-                    SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
-                }
-            }
+                TopRow(actions)
 
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = nowPlaying.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = nowPlaying.artist,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                // Takes whatever height is left so the controls always fit (small screens, landscape).
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp),
+                ) {
+                    if (showLyrics) {
+                        LyricsView(lyrics, state.positionMs, actions.onSeek)
+                    } else {
+                        SwipeableArtwork(
+                            nowPlaying = nowPlaying,
+                            playing = state.isPlaying,
+                            onNext = actions.onNext,
+                            onPrevious = actions.onPrevious,
+                        )
+                    }
                 }
-                IconButton(onClick = actions.onToggleFavorite) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        contentDescription = stringResource(if (isFavorite) R.string.remove_favorite else R.string.add_favorite),
-                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
 
-            Spacer(Modifier.height(16.dp))
-            SeekBar(state = state, onSeek = actions.onSeek)
-            Spacer(Modifier.height(8.dp))
-            TransportControls(state, actions)
-            Spacer(Modifier.height(16.dp))
-            ExtrasRow(state, actions, showLyrics = showLyrics, onToggleLyrics = { showLyrics = !showLyrics })
-            Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = nowPlaying.title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = nowPlaying.artist,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    FavoriteButton(isFavorite, actions.onToggleFavorite)
+                }
+
+                Spacer(Modifier.height(12.dp))
+                SeekBar(state = state, onSeek = actions.onSeek)
+                Spacer(Modifier.height(12.dp))
+                TransportControls(state, actions)
+                Spacer(Modifier.height(20.dp))
+                ExtrasRow(state, actions, showLyrics = showLyrics, onToggleLyrics = { showLyrics = !showLyrics })
+                Spacer(Modifier.height(8.dp))
+            }
         }
     }
 }
@@ -175,17 +208,18 @@ fun NowPlayingScreen(
 private fun TopRow(actions: NowPlayingActions) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        IconButton(onClick = actions.onClose) {
+        GlassIconButton(onClick = actions.onClose) {
             Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = stringResource(R.string.close_now_playing))
         }
         Text(
             text = stringResource(R.string.now_playing),
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
         )
         Box {
-            IconButton(onClick = { menuOpen = true }) {
+            GlassIconButton(onClick = { menuOpen = true }) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.more_options))
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
@@ -198,29 +232,97 @@ private fun TopRow(actions: NowPlayingActions) {
     }
 }
 
+/** Round, translucent button that sits on top of the blurred backdrop. */
 @Composable
-private fun SwipeableArtwork(nowPlaying: NowPlaying, onNext: () -> Unit, onPrevious: () -> Unit) {
+private fun GlassIconButton(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.size(44.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) { content() }
+    }
+}
+
+@Composable
+private fun FavoriteButton(isFavorite: Boolean, onToggle: () -> Unit) {
+    // A little "pop" whenever the heart fills.
+    val scale = remember { Animatable(1f) }
+    LaunchedEffect(isFavorite) {
+        if (isFavorite) {
+            scale.snapTo(0.6f)
+            scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMediumLow))
+        }
+    }
+    IconButton(onClick = onToggle) {
+        Icon(
+            imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+            contentDescription = stringResource(if (isFavorite) R.string.remove_favorite else R.string.add_favorite),
+            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(28.dp)
+                .graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value
+                },
+        )
+    }
+}
+
+@Composable
+private fun SwipeableArtwork(nowPlaying: NowPlaying, playing: Boolean, onNext: () -> Unit, onPrevious: () -> Unit) {
     val threshold = with(LocalDensity.current) { 96.dp.toPx() }
     var dragOffset by remember { mutableFloatStateOf(0f) }
-    Artwork(
-        uri = nowPlaying.artworkUri,
-        cornerRadius = 16.dp,
-        modifier = Modifier
-            .aspectRatio(1f)
-            .offset { IntOffset((dragOffset / 3).roundToInt(), 0) }
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragEnd = {
-                        if (abs(dragOffset) > threshold) {
-                            if (dragOffset < 0) onNext() else onPrevious()
-                        }
-                        dragOffset = 0f
-                    },
-                    onDragCancel = { dragOffset = 0f },
-                    onHorizontalDrag = { _, delta -> dragOffset += delta },
-                )
-            },
+    // The cover "breathes out" while playing and steps back when paused.
+    val scale by animateFloatAsState(
+        targetValue = if (playing) 1f else 0.86f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "artScale",
     )
+    val glow = MaterialTheme.colorScheme.primary
+    AnimatedContent(
+        targetState = nowPlaying.songId to nowPlaying.artworkUri,
+        transitionSpec = {
+            (fadeIn(tween(350)) + scaleIn(tween(350), initialScale = 0.92f))
+                .togetherWith(fadeOut(tween(250)))
+        },
+        contentAlignment = Alignment.Center,
+        label = "artwork",
+    ) { (_, uri) ->
+        Artwork(
+            uri = uri,
+            cornerRadius = 28.dp,
+            modifier = Modifier
+                .aspectRatio(1f)
+                .offset { IntOffset((dragOffset / 3).roundToInt(), 0) }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = dragOffset / 60f
+                    shadowElevation = 32.dp.toPx() * scale
+                    shape = RoundedCornerShape(28.dp)
+                    clip = false
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        ambientShadowColor = glow
+                        spotShadowColor = glow
+                    }
+                }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (abs(dragOffset) > threshold) {
+                                if (dragOffset < 0) onNext() else onPrevious()
+                            }
+                            dragOffset = 0f
+                        },
+                        onDragCancel = { dragOffset = 0f },
+                        onHorizontalDrag = { _, delta -> dragOffset += delta },
+                    )
+                },
+        )
+    }
 }
 
 @Composable
@@ -237,24 +339,49 @@ private fun TransportControls(state: PlayerUiState, actions: NowPlayingActions) 
                 tint = activeTint(state.shuffleEnabled),
             )
         }
-        IconButton(onClick = actions.onPrevious, modifier = Modifier.size(56.dp)) {
-            Icon(Icons.Rounded.SkipPrevious, contentDescription = stringResource(R.string.previous), modifier = Modifier.size(36.dp))
+        IconButton(onClick = actions.onPrevious, modifier = Modifier.size(60.dp)) {
+            Icon(Icons.Rounded.SkipPrevious, contentDescription = stringResource(R.string.previous), modifier = Modifier.size(40.dp))
         }
-        FilledIconButton(onClick = actions.onTogglePlay, modifier = Modifier.size(72.dp)) {
-            Icon(
-                imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                contentDescription = stringResource(if (state.isPlaying) R.string.pause else R.string.play),
-                modifier = Modifier.size(40.dp),
-            )
-        }
-        IconButton(onClick = actions.onNext, modifier = Modifier.size(56.dp)) {
-            Icon(Icons.Rounded.SkipNext, contentDescription = stringResource(R.string.next), modifier = Modifier.size(36.dp))
+        MorphingPlayButton(playing = state.isPlaying, onClick = actions.onTogglePlay)
+        IconButton(onClick = actions.onNext, modifier = Modifier.size(60.dp)) {
+            Icon(Icons.Rounded.SkipNext, contentDescription = stringResource(R.string.next), modifier = Modifier.size(40.dp))
         }
         IconButton(onClick = actions.onCycleRepeat) {
             Icon(
                 imageVector = if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                 contentDescription = stringResource(R.string.repeat),
                 tint = activeTint(state.repeatMode != Player.REPEAT_MODE_OFF),
+            )
+        }
+    }
+}
+
+/** Circle while paused, squircle while playing: the shape itself tells the state. */
+@Composable
+private fun MorphingPlayButton(playing: Boolean, onClick: () -> Unit) {
+    val corner by animateIntAsState(
+        targetValue = if (playing) 30 else 50,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "corner",
+    )
+    val width by animateDpAsState(
+        targetValue = if (playing) 96.dp else 80.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "width",
+    )
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(percent = corner),
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shadowElevation = 8.dp,
+        modifier = Modifier.size(width = width, height = 80.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
+                modifier = Modifier.size(40.dp),
             )
         }
     }
@@ -271,13 +398,17 @@ private fun ExtrasRow(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+            .padding(horizontal = 4.dp, vertical = 2.dp),
     ) {
         TextButton(onClick = actions.onOpenSpeed) {
             Text(
                 text = formatSpeed(state.playbackSpeed),
                 color = activeTint(state.playbackSpeed != 1f),
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.labelLarge,
             )
         }
         IconButton(onClick = actions.onOpenSleepTimer) {
@@ -302,10 +433,13 @@ private fun SeekBar(state: PlayerUiState, onSeek: (Long) -> Unit) {
     val fraction = dragFraction ?: state.progress()
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Slider(
-            value = fraction,
-            onValueChange = { dragFraction = it },
-            onValueChangeFinished = {
+        WavySeekBar(
+            fraction = fraction,
+            playing = state.isPlaying && dragFraction == null,
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+            onScrub = { dragFraction = it },
+            onScrubEnd = {
                 dragFraction?.let { onSeek((it * state.durationMs).toLong()) }
                 dragFraction = null
             },

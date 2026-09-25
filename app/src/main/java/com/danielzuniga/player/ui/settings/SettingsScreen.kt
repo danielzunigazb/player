@@ -41,6 +41,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
+    onArtworkColors: (Boolean) -> Unit,
     onMinDuration: (Int) -> Unit,
     onRescan: () -> Unit,
     bottomPadding: PaddingValues,
@@ -70,25 +71,22 @@ fun SettingsScreen(
                     }
                 }
             }
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.artwork_colors),
+                    summary = stringResource(R.string.artwork_colors_summary),
+                    checked = state.artworkColors,
+                    onChange = onArtworkColors,
+                )
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 item {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onDynamicColor(!state.dynamicColor) }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.dynamic_color), style = MaterialTheme.typography.bodyLarge)
-                            Text(
-                                stringResource(R.string.dynamic_color_summary),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Switch(checked = state.dynamicColor, onCheckedChange = onDynamicColor)
-                    }
+                    SwitchRow(
+                        title = stringResource(R.string.dynamic_color),
+                        summary = stringResource(R.string.dynamic_color_summary),
+                        checked = state.dynamicColor,
+                        onChange = onDynamicColor,
+                    )
                 }
             }
 
@@ -160,4 +158,25 @@ private fun Section(text: String) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
     )
+}
+
+@Composable
+private fun SwitchRow(title: String, summary: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onChange(!checked) }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
 }

@@ -26,8 +26,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by settings.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
+            val artworkColors by settings.artworkColors.collectAsStateWithLifecycle()
             val search by searchRequest.collectAsStateWithLifecycle()
-            PlayerTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
+            PlayerTheme(themeMode = themeMode, dynamicColor = dynamicColor, artworkColors = artworkColors) {
                 PlayerApp(searchRequest = search, onSearchHandled = { searchRequest.value = null })
             }
         }

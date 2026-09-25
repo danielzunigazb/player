@@ -1,8 +1,7 @@
 <resources>
-    <color name="window_background">#FF121212</color>
-    <color name="ic_launcher_background">#FF1E1B2E</color>
-    <color name="ic_launcher_foreground">#FFB69DF8</color>
-    <color name="widget_background">#F21E1B2E</color>
+    <color name="window_background">#FF0E0C13</color>
+    <color name="ic_launcher_background">#FF2A1C3A</color>
+    <color name="widget_background">#F21A1721</color>
     <color name="widget_text">#FFF4EFFF</color>
     <color name="widget_text_secondary">#FFC9C2DC</color>
 </resources>

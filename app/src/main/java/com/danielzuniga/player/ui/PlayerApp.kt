@@ -61,6 +61,9 @@ import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.ui.components.LocalCurrentSongId
 import com.danielzuniga.player.ui.components.LocalFavoriteIds
+import com.danielzuniga.player.ui.components.LocalIsPlaying
+import com.danielzuniga.player.ui.components.rememberArtworkColor
+import com.danielzuniga.player.ui.theme.ArtworkTheme
 import com.danielzuniga.player.ui.components.LocalSongActions
 import com.danielzuniga.player.ui.components.SongActions
 import com.danielzuniga.player.ui.detail.AlbumScreen
@@ -167,123 +170,128 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
     val nowPlaying = player.nowPlaying
     val currentSong = nowPlaying?.songId?.let(libraryIndex::song)
 
-    CompositionLocalProvider(
-        LocalSongActions provides songActions,
-        LocalFavoriteIds provides favoriteIds,
-        LocalCurrentSongId provides nowPlaying?.songId,
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                contentWindowInsets = WindowInsets(0),
-                bottomBar = {
+    val artworkSeed = rememberArtworkColor(nowPlaying?.artworkUri)
+
+    ArtworkTheme(seed = artworkSeed) {
+        CompositionLocalProvider(
+            LocalSongActions provides songActions,
+            LocalFavoriteIds provides favoriteIds,
+            LocalCurrentSongId provides nowPlaying?.songId,
+            LocalIsPlaying provides player.isPlaying,
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
+                    contentWindowInsets = WindowInsets(0),
+                    bottomBar = {
+                        if (nowPlaying != null) {
+                            MiniPlayer(
+                                state = player,
+                                nowPlaying = nowPlaying,
+                                onClick = { showNowPlaying = true },
+                                onTogglePlay = playerVm::togglePlayPause,
+                                onNext = playerVm::next,
+                                onPrevious = playerVm::previous,
+                            )
+                        } else {
+                            Spacer(Modifier.navigationBarsPadding())
+                        }
+                    },
+                ) { innerPadding ->
+                    val bottomPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding())
+                    AppNavHost(
+                        navController = navController,
+                        bottomPadding = bottomPadding,
+                        libraryState = libraryState,
+                        playlistsState = playlistsState,
+                        libraryVm = libraryVm,
+                        onCreatePlaylist = { newPlaylistSongs = emptyList() },
+                        navigate = ::navigate,
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = showNowPlaying && nowPlaying != null,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it },
+                ) {
                     if (nowPlaying != null) {
-                        MiniPlayer(
+                        NowPlayingScreen(
                             state = player,
                             nowPlaying = nowPlaying,
-                            onClick = { showNowPlaying = true },
-                            onTogglePlay = playerVm::togglePlayPause,
-                            onNext = playerVm::next,
-                            onPrevious = playerVm::previous,
+                            isFavorite = nowPlaying.songId in favoriteIds,
+                            lyrics = lyrics,
+                            actions = NowPlayingActions(
+                                onClose = { showNowPlaying = false },
+                                onTogglePlay = playerVm::togglePlayPause,
+                                onNext = playerVm::next,
+                                onPrevious = playerVm::previous,
+                                onSeek = playerVm::seekTo,
+                                onToggleShuffle = playerVm::toggleShuffle,
+                                onCycleRepeat = playerVm::cycleRepeatMode,
+                                onToggleFavorite = { nowPlaying.songId?.let(playerVm::toggleFavorite) },
+                                onOpenQueue = { sheet = PlayerSheet.QUEUE },
+                                onOpenSleepTimer = { sheet = PlayerSheet.SLEEP },
+                                onOpenSpeed = { sheet = PlayerSheet.SPEED },
+                                onOpenEqualizer = { navigate(Routes.EQUALIZER) },
+                                onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
+                                onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
+                                onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artist)) } },
+                            ),
                         )
-                    } else {
-                        Spacer(Modifier.navigationBarsPadding())
                     }
-                },
-            ) { innerPadding ->
-                val bottomPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding())
-                AppNavHost(
-                    navController = navController,
-                    bottomPadding = bottomPadding,
-                    libraryState = libraryState,
-                    playlistsState = playlistsState,
-                    libraryVm = libraryVm,
-                    onCreatePlaylist = { newPlaylistSongs = emptyList() },
-                    navigate = ::navigate,
+                }
+            }
+
+            BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
+
+            when (sheet) {
+                PlayerSheet.QUEUE -> QueueSheet(
+                    queue = queue,
+                    onDismiss = { sheet = null },
+                    onSkipTo = playerVm::skipToQueueItem,
+                    onRemove = playerVm::removeQueueItem,
+                    onMove = playerVm::moveQueueItem,
+                )
+                PlayerSheet.SLEEP -> SleepTimerSheet(
+                    state = player,
+                    onSet = playerVm::setSleepTimer,
+                    onDismiss = { sheet = null },
+                )
+                PlayerSheet.SPEED -> SpeedSheet(
+                    current = player.playbackSpeed,
+                    onSet = playerVm::setSpeed,
+                    onDismiss = { sheet = null },
+                )
+                null -> Unit
+            }
+
+            addToPlaylistSongs?.let { songs ->
+                AddToPlaylistDialog(
+                    playlists = playlistsState.playlists,
+                    onSelect = { playlist ->
+                        playlistsVm.addTo(playlist.id, songs)
+                        context.toast(context.getString(R.string.added_to_playlist, playlist.name))
+                        addToPlaylistSongs = null
+                    },
+                    onCreateNew = {
+                        newPlaylistSongs = songs
+                        addToPlaylistSongs = null
+                    },
+                    onDismiss = { addToPlaylistSongs = null },
                 )
             }
 
-            AnimatedVisibility(
-                visible = showNowPlaying && nowPlaying != null,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
-            ) {
-                if (nowPlaying != null) {
-                    NowPlayingScreen(
-                        state = player,
-                        nowPlaying = nowPlaying,
-                        isFavorite = nowPlaying.songId in favoriteIds,
-                        lyrics = lyrics,
-                        actions = NowPlayingActions(
-                            onClose = { showNowPlaying = false },
-                            onTogglePlay = playerVm::togglePlayPause,
-                            onNext = playerVm::next,
-                            onPrevious = playerVm::previous,
-                            onSeek = playerVm::seekTo,
-                            onToggleShuffle = playerVm::toggleShuffle,
-                            onCycleRepeat = playerVm::cycleRepeatMode,
-                            onToggleFavorite = { nowPlaying.songId?.let(playerVm::toggleFavorite) },
-                            onOpenQueue = { sheet = PlayerSheet.QUEUE },
-                            onOpenSleepTimer = { sheet = PlayerSheet.SLEEP },
-                            onOpenSpeed = { sheet = PlayerSheet.SPEED },
-                            onOpenEqualizer = { navigate(Routes.EQUALIZER) },
-                            onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
-                            onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
-                            onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artist)) } },
-                        ),
-                    )
-                }
+            newPlaylistSongs?.let { songs ->
+                PlaylistNameDialog(
+                    title = stringResource(R.string.new_playlist),
+                    confirmLabel = stringResource(R.string.create),
+                    onConfirm = { name ->
+                        playlistsVm.create(name, songs) { id -> navigate(Routes.playlist(id)) }
+                        newPlaylistSongs = null
+                    },
+                    onDismiss = { newPlaylistSongs = null },
+                )
             }
-        }
-
-        BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
-
-        when (sheet) {
-            PlayerSheet.QUEUE -> QueueSheet(
-                queue = queue,
-                onDismiss = { sheet = null },
-                onSkipTo = playerVm::skipToQueueItem,
-                onRemove = playerVm::removeQueueItem,
-                onMove = playerVm::moveQueueItem,
-            )
-            PlayerSheet.SLEEP -> SleepTimerSheet(
-                state = player,
-                onSet = playerVm::setSleepTimer,
-                onDismiss = { sheet = null },
-            )
-            PlayerSheet.SPEED -> SpeedSheet(
-                current = player.playbackSpeed,
-                onSet = playerVm::setSpeed,
-                onDismiss = { sheet = null },
-            )
-            null -> Unit
-        }
-
-        addToPlaylistSongs?.let { songs ->
-            AddToPlaylistDialog(
-                playlists = playlistsState.playlists,
-                onSelect = { playlist ->
-                    playlistsVm.addTo(playlist.id, songs)
-                    context.toast(context.getString(R.string.added_to_playlist, playlist.name))
-                    addToPlaylistSongs = null
-                },
-                onCreateNew = {
-                    newPlaylistSongs = songs
-                    addToPlaylistSongs = null
-                },
-                onDismiss = { addToPlaylistSongs = null },
-            )
-        }
-
-        newPlaylistSongs?.let { songs ->
-            PlaylistNameDialog(
-                title = stringResource(R.string.new_playlist),
-                confirmLabel = stringResource(R.string.create),
-                onConfirm = { name ->
-                    playlistsVm.create(name, songs) { id -> navigate(Routes.playlist(id)) }
-                    newPlaylistSongs = null
-                },
-                onDismiss = { newPlaylistSongs = null },
-            )
         }
     }
 }
@@ -382,6 +390,7 @@ private fun AppNavHost(
                 onBack = navController::popBackStack,
                 onThemeMode = vm::setThemeMode,
                 onDynamicColor = vm::setDynamicColor,
+                onArtworkColors = vm::setArtworkColors,
                 onMinDuration = vm::setMinDuration,
                 onRescan = vm::rescan,
                 bottomPadding = bottomPadding,

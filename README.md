@@ -35,6 +35,15 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
 - Ignorar audios cortos (notas de voz, tonos)
 
+## Diseño (v1.1 "Ember")
+
+- **Colores de la portada**: toda la app se tiñe con el color de la canción que suena, con transición animada (se puede desactivar en Ajustes). Sin música, usa la paleta propia: coral sobre tinta violeta.
+- **Tipografía propia**: Space Grotesk para títulos y Manrope para el texto (ambas con licencia SIL OFL, incluidas en `res/font`).
+- **Reproductor**: fondo con la portada difuminada y resplandor de color, portada que "respira" al reproducir o pausar, barra de progreso ondulada que se aplana en pausa, botón de play que cambia de forma y corazón con rebote.
+- **Inicio**: saludo según la hora, pestañas en forma de píldora, tarjeta de "Aleatorio" con degradado y carrusel de álbumes añadidos recientemente.
+- **Listas**: barras animadas sobre la canción que suena y mini reproductor flotante con anillo de progreso.
+- **Ícono** nuevo, basado en la barra ondulada.
+
 ## Arquitectura
 
 Kotlin, Jetpack Compose (Material 3), MVVM, Media3/ExoPlayer, Room, Navigation Compose.

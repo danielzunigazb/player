@@ -1,6 +1,10 @@
 package com.danielzuniga.player.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,30 +64,53 @@ fun SongRow(
     var menuOpen by remember { mutableStateOf(false) }
     val titleColor = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
 
+    val isPlaying = LocalIsPlaying.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 1.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .then(
+                if (isCurrent) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)) else Modifier,
+            )
             .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
-            .padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
     ) {
         when (leading) {
-            SongLeading.ARTWORK ->
-                Artwork(uri = song.artworkUri, cornerRadius = 8.dp, modifier = Modifier.size(48.dp))
-            SongLeading.TRACK_NUMBER -> Text(
-                text = if (song.track > 0) (song.track % 1000).toString() else "–",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(28.dp),
-            )
+            SongLeading.ARTWORK -> Box(contentAlignment = Alignment.Center) {
+                Artwork(uri = song.artworkUri, cornerRadius = 12.dp, modifier = Modifier.size(50.dp))
+                if (isCurrent) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.45f)),
+                    ) {
+                        PlayingBars(playing = isPlaying, color = Color.White, size = 18.dp)
+                    }
+                }
+            }
+            SongLeading.TRACK_NUMBER -> Box(contentAlignment = Alignment.Center, modifier = Modifier.width(28.dp)) {
+                if (isCurrent) {
+                    PlayingBars(playing = isPlaying, color = MaterialTheme.colorScheme.primary, size = 16.dp)
+                } else {
+                    Text(
+                        text = if (song.track > 0) (song.track % 1000).toString() else "–",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isCurrent) FontWeight.SemiBold else null,
+                fontWeight = if (isCurrent) FontWeight.ExtraBold else null,
                 color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
