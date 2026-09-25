@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,7 +18,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -29,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,10 +50,33 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.danielzuniga.player.R
-import com.danielzuniga.player.ui.library.LibraryScreen
+import com.danielzuniga.player.data.Song
+import com.danielzuniga.player.ui.components.LocalCurrentSongId
+import com.danielzuniga.player.ui.components.LocalFavoriteIds
+import com.danielzuniga.player.ui.components.LocalSongActions
+import com.danielzuniga.player.ui.components.SongActions
+import com.danielzuniga.player.ui.detail.AlbumScreen
+import com.danielzuniga.player.ui.detail.ArtistScreen
+import com.danielzuniga.player.ui.equalizer.EqualizerScreen
+import com.danielzuniga.player.ui.library.HomeScreen
 import com.danielzuniga.player.ui.player.MiniPlayer
+import com.danielzuniga.player.ui.player.NowPlayingActions
 import com.danielzuniga.player.ui.player.NowPlayingScreen
+import com.danielzuniga.player.ui.player.QueueSheet
+import com.danielzuniga.player.ui.player.SleepTimerSheet
+import com.danielzuniga.player.ui.player.SpeedSheet
+import com.danielzuniga.player.ui.playlists.AddToPlaylistDialog
+import com.danielzuniga.player.ui.playlists.PlaylistDetailScreen
+import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
+import com.danielzuniga.player.ui.settings.SettingsScreen
 
 private val AUDIO_PERMISSION =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -57,8 +85,10 @@ private val AUDIO_PERMISSION =
         Manifest.permission.READ_EXTERNAL_STORAGE
     }
 
+private enum class PlayerSheet { QUEUE, SLEEP, SPEED }
+
 @Composable
-fun PlayerApp(viewModel: MusicViewModel) {
+fun PlayerApp() {
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(context.hasAudioPermission()) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -70,70 +100,277 @@ fun PlayerApp(viewModel: MusicViewModel) {
         hasPermission = context.hasAudioPermission()
     }
 
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) viewModel.loadLibrary()
-    }
-
     if (!hasPermission) {
         PermissionScreen(
             onRequest = { permissionLauncher.launch(AUDIO_PERMISSION) },
             onOpenSettings = { context.openAppSettings() },
         )
-        return
+    } else {
+        MainContent()
+    }
+}
+
+@Composable
+private fun MainContent() {
+    val context = LocalContext.current
+    val playerVm: PlayerViewModel = viewModel(factory = AppViewModels.Factory)
+    val libraryVm: LibraryViewModel = viewModel(factory = AppViewModels.Factory)
+    val playlistsVm: PlaylistsViewModel = viewModel(factory = AppViewModels.Factory)
+
+    LaunchedEffect(Unit) { libraryVm.load() }
+
+    val player by playerVm.state.collectAsStateWithLifecycle()
+    val queue by playerVm.queue.collectAsStateWithLifecycle()
+    val favoriteIds by playerVm.favoriteIds.collectAsStateWithLifecycle()
+    val libraryState by libraryVm.state.collectAsStateWithLifecycle()
+    val libraryIndex by libraryVm.library.collectAsStateWithLifecycle()
+    val playlistsState by playlistsVm.state.collectAsStateWithLifecycle()
+
+    val navController = rememberNavController()
+    var showNowPlaying by rememberSaveable { mutableStateOf(false) }
+    var sheet by rememberSaveable { mutableStateOf<PlayerSheet?>(null) }
+    var addToPlaylistSongs by remember { mutableStateOf<List<Song>?>(null) }
+    var newPlaylistSongs by remember { mutableStateOf<List<Song>?>(null) }
+
+    fun navigate(route: String) {
+        showNowPlaying = false
+        navController.navigate(route) { launchSingleTop = true }
     }
 
-    val library by viewModel.libraryState.collectAsStateWithLifecycle()
-    val player by viewModel.playerState.collectAsStateWithLifecycle()
-    var showNowPlaying by rememberSaveable { mutableStateOf(false) }
-    val nowPlaying = player.nowPlaying
+    val songActions = remember {
+        SongActions(
+            play = playerVm::play,
+            shuffle = playerVm::shuffle,
+            playNext = { songs ->
+                playerVm.playNext(songs)
+                context.toast(R.string.queued_next)
+            },
+            addToQueue = { songs ->
+                playerVm.addToQueue(songs)
+                context.toast(R.string.queued)
+            },
+            addToPlaylist = { songs -> addToPlaylistSongs = songs },
+            toggleFavorite = { song -> playerVm.toggleFavorite(song.id) },
+            openAlbum = { id -> navigate(Routes.album(id)) },
+            openArtist = { name -> navigate(Routes.artist(name)) },
+        )
+    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            bottomBar = {
+    val nowPlaying = player.nowPlaying
+    val currentSong = nowPlaying?.songId?.let(libraryIndex::song)
+
+    CompositionLocalProvider(
+        LocalSongActions provides songActions,
+        LocalFavoriteIds provides favoriteIds,
+        LocalCurrentSongId provides nowPlaying?.songId,
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                contentWindowInsets = WindowInsets(0),
+                bottomBar = {
+                    if (nowPlaying != null) {
+                        MiniPlayer(
+                            state = player,
+                            nowPlaying = nowPlaying,
+                            onClick = { showNowPlaying = true },
+                            onTogglePlay = playerVm::togglePlayPause,
+                            onNext = playerVm::next,
+                            onPrevious = playerVm::previous,
+                        )
+                    } else {
+                        Spacer(Modifier.navigationBarsPadding())
+                    }
+                },
+            ) { innerPadding ->
+                val bottomPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding())
+                AppNavHost(
+                    navController = navController,
+                    bottomPadding = bottomPadding,
+                    libraryState = libraryState,
+                    playlistsState = playlistsState,
+                    libraryVm = libraryVm,
+                    onCreatePlaylist = { newPlaylistSongs = emptyList() },
+                    navigate = ::navigate,
+                )
+            }
+
+            AnimatedVisibility(
+                visible = showNowPlaying && nowPlaying != null,
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it },
+            ) {
                 if (nowPlaying != null) {
-                    MiniPlayer(
+                    NowPlayingScreen(
                         state = player,
                         nowPlaying = nowPlaying,
-                        onClick = { showNowPlaying = true },
-                        onTogglePlay = viewModel::togglePlayPause,
-                        onNext = viewModel::next,
+                        isFavorite = nowPlaying.songId in favoriteIds,
+                        actions = NowPlayingActions(
+                            onClose = { showNowPlaying = false },
+                            onTogglePlay = playerVm::togglePlayPause,
+                            onNext = playerVm::next,
+                            onPrevious = playerVm::previous,
+                            onSeek = playerVm::seekTo,
+                            onToggleShuffle = playerVm::toggleShuffle,
+                            onCycleRepeat = playerVm::cycleRepeatMode,
+                            onToggleFavorite = { nowPlaying.songId?.let(playerVm::toggleFavorite) },
+                            onOpenQueue = { sheet = PlayerSheet.QUEUE },
+                            onOpenSleepTimer = { sheet = PlayerSheet.SLEEP },
+                            onOpenSpeed = { sheet = PlayerSheet.SPEED },
+                            onOpenEqualizer = { navigate(Routes.EQUALIZER) },
+                            onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
+                            onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
+                            onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artist)) } },
+                        ),
                     )
                 }
-            },
-        ) { innerPadding ->
-            LibraryScreen(
-                state = library,
-                onQueryChange = viewModel::onQueryChange,
-                onSongClick = viewModel::playFromList,
-                onShuffleAll = viewModel::shuffleAll,
-                onRefresh = { viewModel.loadLibrary(force = true) },
-                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
-                modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
+            }
+        }
+
+        BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
+
+        when (sheet) {
+            PlayerSheet.QUEUE -> QueueSheet(
+                queue = queue,
+                onDismiss = { sheet = null },
+                onSkipTo = playerVm::skipToQueueItem,
+                onRemove = playerVm::removeQueueItem,
+                onMove = playerVm::moveQueueItem,
+            )
+            PlayerSheet.SLEEP -> SleepTimerSheet(
+                state = player,
+                onSet = playerVm::setSleepTimer,
+                onDismiss = { sheet = null },
+            )
+            PlayerSheet.SPEED -> SpeedSheet(
+                current = player.playbackSpeed,
+                onSet = playerVm::setSpeed,
+                onDismiss = { sheet = null },
+            )
+            null -> Unit
+        }
+
+        addToPlaylistSongs?.let { songs ->
+            AddToPlaylistDialog(
+                playlists = playlistsState.playlists,
+                onSelect = { playlist ->
+                    playlistsVm.addTo(playlist.id, songs)
+                    context.toast(context.getString(R.string.added_to_playlist, playlist.name))
+                    addToPlaylistSongs = null
+                },
+                onCreateNew = {
+                    newPlaylistSongs = songs
+                    addToPlaylistSongs = null
+                },
+                onDismiss = { addToPlaylistSongs = null },
             )
         }
 
-        AnimatedVisibility(
-            visible = showNowPlaying && nowPlaying != null,
-            enter = slideInVertically { it },
-            exit = slideOutVertically { it },
-        ) {
-            if (nowPlaying != null) {
-                NowPlayingScreen(
-                    state = player,
-                    nowPlaying = nowPlaying,
-                    onClose = { showNowPlaying = false },
-                    onTogglePlay = viewModel::togglePlayPause,
-                    onNext = viewModel::next,
-                    onPrevious = viewModel::previous,
-                    onSeek = viewModel::seekTo,
-                    onToggleShuffle = viewModel::toggleShuffle,
-                    onCycleRepeat = viewModel::cycleRepeatMode,
-                )
-            }
+        newPlaylistSongs?.let { songs ->
+            PlaylistNameDialog(
+                title = stringResource(R.string.new_playlist),
+                confirmLabel = stringResource(R.string.create),
+                onConfirm = { name ->
+                    playlistsVm.create(name, songs) { id -> navigate(Routes.playlist(id)) }
+                    newPlaylistSongs = null
+                },
+                onDismiss = { newPlaylistSongs = null },
+            )
         }
     }
+}
 
-    BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
+@Composable
+private fun AppNavHost(
+    navController: NavHostController,
+    bottomPadding: PaddingValues,
+    libraryState: LibraryUiState,
+    playlistsState: PlaylistsUiState,
+    libraryVm: LibraryViewModel,
+    onCreatePlaylist: () -> Unit,
+    navigate: (String) -> Unit,
+) {
+    val libraryIndex by libraryVm.library.collectAsStateWithLifecycle()
+
+    NavHost(navController = navController, startDestination = Routes.HOME) {
+        composable(Routes.HOME) {
+            HomeScreen(
+                library = libraryState,
+                playlists = playlistsState,
+                onQueryChange = libraryVm::onQueryChange,
+                onSortChange = libraryVm::setSort,
+                onRefresh = { libraryVm.load(force = true) },
+                onOpenAlbum = { navigate(Routes.album(it)) },
+                onOpenArtist = { navigate(Routes.artist(it)) },
+                onOpenPlaylist = { navigate(Routes.playlist(it)) },
+                onOpenSmartPlaylist = { navigate(Routes.smartPlaylist(it)) },
+                onCreatePlaylist = onCreatePlaylist,
+                onOpenSettings = { navigate(Routes.SETTINGS) },
+                contentPadding = bottomPadding,
+            )
+        }
+        composable(
+            Routes.ALBUM,
+            arguments = listOf(navArgument(Routes.ARG_ID) { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong(Routes.ARG_ID) ?: 0L
+            AlbumScreen(libraryIndex.album(id), navController::popBackStack, bottomPadding)
+        }
+        composable(
+            Routes.ARTIST,
+            arguments = listOf(navArgument(Routes.ARG_NAME) { type = NavType.StringType }),
+        ) { entry ->
+            val name = entry.arguments?.getString(Routes.ARG_NAME).orEmpty()
+            ArtistScreen(libraryIndex.artist(name), navController::popBackStack, bottomPadding)
+        }
+        composable(
+            Routes.PLAYLIST,
+            arguments = listOf(
+                navArgument(Routes.ARG_KIND) { type = NavType.StringType },
+                navArgument(Routes.ARG_ID) { type = NavType.LongType },
+            ),
+        ) {
+            val vm: PlaylistDetailViewModel = viewModel(factory = AppViewModels.Factory)
+            val state by vm.state.collectAsStateWithLifecycle()
+            PlaylistDetailScreen(
+                state = state,
+                onBack = navController::popBackStack,
+                onRename = vm::rename,
+                onDelete = {
+                    vm.delete()
+                    navController.popBackStack()
+                },
+                onRemoveSong = vm::remove,
+                onReorder = vm::saveOrder,
+                bottomPadding = bottomPadding,
+            )
+        }
+        composable(Routes.EQUALIZER) {
+            val vm: EqualizerViewModel = viewModel(factory = AppViewModels.Factory)
+            val state by vm.state.collectAsStateWithLifecycle()
+            EqualizerScreen(
+                state = state,
+                onBack = navController::popBackStack,
+                onEnabledChange = vm::setEnabled,
+                onPreset = vm::usePreset,
+                onBandLevel = vm::setBandLevel,
+                onBassStrength = vm::setBassStrength,
+                bottomPadding = bottomPadding,
+            )
+        }
+        composable(Routes.SETTINGS) {
+            val vm: SettingsViewModel = viewModel(factory = AppViewModels.Factory)
+            val state by vm.state.collectAsStateWithLifecycle()
+            SettingsScreen(
+                state = state,
+                onBack = navController::popBackStack,
+                onThemeMode = vm::setThemeMode,
+                onDynamicColor = vm::setDynamicColor,
+                onMinDuration = vm::setMinDuration,
+                onRescan = vm::rescan,
+                bottomPadding = bottomPadding,
+            )
+        }
+    }
 }
 
 @Composable
@@ -176,4 +413,10 @@ private fun Context.openAppSettings() {
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
     )
+}
+
+private fun Context.toast(message: Int) = toast(getString(message))
+
+private fun Context.toast(message: String) {
+    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 }

@@ -1,23 +1,79 @@
 <resources>
     <string name="app_name">Player</string>
 
-    <string name="library_title">Mi música</string>
-    <plurals name="library_song_count">
-        <item quantity="one">%1$d canción</item>
-        <item quantity="other">%1$d canciones</item>
-    </plurals>
-    <string name="search_hint">Buscar canción, artista o álbum</string>
+    <!-- Home -->
+    <string name="tab_songs">Canciones</string>
+    <string name="tab_albums">Álbumes</string>
+    <string name="tab_artists">Artistas</string>
+    <string name="tab_playlists">Playlists</string>
+    <string name="search">Buscar</string>
+    <string name="search_hint">Buscar en tu música</string>
+    <string name="close_search">Cerrar búsqueda</string>
     <string name="clear_search">Borrar búsqueda</string>
-    <string name="refresh">Actualizar biblioteca</string>
+    <string name="settings">Ajustes</string>
+    <string name="sort">Ordenar</string>
+    <string name="sort_title">Título</string>
+    <string name="sort_artist">Artista</string>
+    <string name="sort_album">Álbum</string>
+    <string name="sort_recent">Añadidas recientemente</string>
+    <string name="sort_duration">Duración</string>
+    <string name="play_all">Reproducir</string>
     <string name="shuffle_all">Aleatorio</string>
     <string name="empty_library">No se encontró música en el dispositivo.</string>
     <string name="empty_search">Sin resultados para \"%1$s\"</string>
+    <string name="empty_list">Aquí no hay canciones todavía.</string>
+    <string name="back">Volver</string>
+    <string name="more_options">Más opciones</string>
 
+    <plurals name="song_count">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+    <plurals name="album_count">
+        <item quantity="one">%1$d álbum</item>
+        <item quantity="other">%1$d álbumes</item>
+    </plurals>
+
+    <!-- Song menu -->
+    <string name="play_next">Reproducir a continuación</string>
+    <string name="add_to_queue">Añadir a la cola</string>
+    <string name="add_to_playlist">Añadir a playlist…</string>
+    <string name="add_favorite">Añadir a favoritas</string>
+    <string name="remove_favorite">Quitar de favoritas</string>
+    <string name="go_to_album">Ir al álbum</string>
+    <string name="go_to_artist">Ir al artista</string>
+    <string name="remove_from_playlist">Quitar de la playlist</string>
+    <string name="queued_next">Se reproducirá a continuación</string>
+    <string name="queued">Añadido a la cola</string>
+    <string name="added_to_playlist">Añadido a \"%1$s\"</string>
+
+    <!-- Playlists -->
+    <string name="favorites">Favoritas</string>
+    <string name="most_played">Más escuchadas</string>
+    <string name="recently_played">Escuchadas recientemente</string>
+    <string name="recently_added">Añadidas recientemente</string>
+    <string name="new_playlist">Nueva playlist</string>
+    <string name="playlist_name">Nombre</string>
+    <string name="create">Crear</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
+    <string name="rename">Renombrar</string>
+    <string name="delete">Borrar</string>
+    <string name="rename_playlist">Renombrar playlist</string>
+    <string name="delete_playlist">Borrar playlist</string>
+    <string name="delete_playlist_confirm">¿Borrar \"%1$s\"? Las canciones no se borran del dispositivo.</string>
+    <string name="my_playlists">Mis playlists</string>
+    <string name="smart_playlists">Automáticas</string>
+    <string name="reorder">Reordenar</string>
+    <string name="save_as_playlist">Guardar como playlist</string>
+
+    <!-- Permission -->
     <string name="permission_title">Acceso a tu música</string>
     <string name="permission_body">Para mostrar y reproducir tus canciones, Player necesita permiso para leer los archivos de audio del dispositivo.</string>
     <string name="permission_grant">Conceder permiso</string>
     <string name="permission_settings">Abrir ajustes</string>
 
+    <!-- Player -->
     <string name="play">Reproducir</string>
     <string name="pause">Pausar</string>
     <string name="next">Siguiente</string>
@@ -26,6 +82,44 @@
     <string name="repeat">Repetir</string>
     <string name="close_now_playing">Cerrar reproductor</string>
     <string name="now_playing">Reproduciendo</string>
+    <string name="queue">Cola</string>
+    <string name="queue_shuffled_hint">Desactiva el aleatorio para reordenar la cola</string>
+    <string name="remove">Quitar</string>
+    <string name="speed">Velocidad</string>
+    <string name="sleep_timer">Temporizador</string>
+    <string name="sleep_minutes">%1$d min</string>
+    <string name="sleep_end_of_track">Al terminar la canción</string>
+    <string name="sleep_off">Desactivar temporizador</string>
+    <string name="sleep_remaining">La música se pausará en %1$s</string>
+    <string name="sleep_remaining_end_of_track">La música se pausará al terminar esta canción</string>
+
+    <!-- Equalizer -->
+    <string name="equalizer">Ecualizador</string>
+    <string name="equalizer_enabled">Activar ecualizador</string>
+    <string name="equalizer_presets">Presets</string>
+    <string name="equalizer_custom">Personalizado</string>
+    <string name="equalizer_bands">Bandas</string>
+    <string name="bass_boost">Refuerzo de graves</string>
+    <string name="equalizer_unavailable">Este dispositivo no ofrece ecualizador para la app.</string>
+    <string name="frequency_hz">%1$d Hz</string>
+    <string name="frequency_khz">%1$.1f kHz</string>
+    <string name="decibels">%1$+.1f dB</string>
+
+    <!-- Settings -->
+    <string name="theme">Tema</string>
+    <string name="theme_system">Según el sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_black">Negro puro (AMOLED)</string>
+    <string name="dynamic_color">Colores del fondo de pantalla</string>
+    <string name="dynamic_color_summary">Usa la paleta de Material You (Android 12+)</string>
+    <string name="library">Biblioteca</string>
+    <string name="min_duration">Ignorar audios más cortos de</string>
+    <string name="min_duration_none">Ninguno</string>
+    <string name="seconds">%1$d s</string>
+    <string name="rescan">Volver a escanear la música</string>
+    <string name="about">Acerca de</string>
+    <string name="version">Versión %1$s</string>
 
     <string name="unknown_artist">Artista desconocido</string>
     <string name="unknown_album">Álbum desconocido</string>
