@@ -1,7 +1,7 @@
 // Daniel Zúñiga design system for the showcase: tokens, fonts and the small pieces every
 // scene shares. Same values as the app's DzColors / DzType, so the video and the app match.
 import React from "react";
-import { continueRender, delayRender, Easing, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { cancelRender, continueRender, delayRender, Easing, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 
 export const C = {
   bg: "#0e0c0a",
@@ -11,7 +11,6 @@ export const C = {
   muted: "#a2978a",
   gold: "#d6a23e",
   verdigris: "#5cb09c",
-  ember: "#e0573c",
   parchmentLine: "#d3c8b4",
 };
 
@@ -34,7 +33,10 @@ if (typeof document !== "undefined") {
       document.fonts.add(face);
       return face.load();
     }),
-  ).then(() => continueRender(handle));
+  )
+    .then(() => continueRender(handle))
+    // Surface the real font error instead of a generic delayRender timeout.
+    .catch((err) => cancelRender(err));
 }
 
 /** Fast and dry, per the system's motion rules: ease-out, no bounce. */
@@ -114,17 +116,28 @@ export const Screen: React.FC<{ src: string; left: number; at?: number; border?:
   );
 };
 
-export const Bullets: React.FC<{ items: string[]; at: number }> = ({ items, at }) => (
+export type Bullet = string | { text: string; color: string };
+
+/** Staggered list; items may carry their own colour, and the gold arrow can be turned off. */
+export const Bullets: React.FC<{ items: Bullet[]; at: number; arrow?: boolean }> = ({ items, at, arrow = true }) => (
   <div>
-    {items.map((item, i) => (
-      <Enter key={item} at={at + i * 0.3} dur={0.4} x={-10}>
-        <div style={{ fontFamily: MONO, fontSize: 30, lineHeight: 1.9, color: C.ink }}>
-          <span style={{ color: C.gold }}>→ </span>
-          {item}
-        </div>
-      </Enter>
-    ))}
+    {items.map((item, i) => {
+      const { text, color } = typeof item === "string" ? { text: item, color: C.ink } : item;
+      return (
+        <Enter key={text} at={at + i * 0.3} dur={0.4} x={-10}>
+          <div style={{ fontFamily: MONO, fontSize: 30, lineHeight: arrow ? 1.9 : 1.7, color }}>
+            {arrow && <span style={{ color: C.gold }}>→ </span>}
+            {text}
+          </div>
+        </Enter>
+      );
+    })}
   </div>
+);
+
+/** Muted body paragraph. */
+export const Paragraph: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ fontFamily: MONO, fontSize: 30, lineHeight: 1.6, color: C.muted }}>{children}</div>
 );
 
 /** Left text column shared by the feature scenes. */

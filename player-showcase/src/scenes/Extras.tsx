@@ -1,30 +1,22 @@
-import { Backdrop, C, Enter, Eyebrow, LeftColumn, MONO, Title, Whisper } from "../dz";
+import { C, Enter, MONO, Whisper } from "../dz";
+import { Feature } from "./Feature";
 
-const TAGS: [string, string?][] = [
-  ["android auto", C.gold],
-  ["widget"],
-  ["ecualizador · bass boost"],
-  ["temporizador"],
-  ["cola reordenable"],
-  ["playlists inteligentes"],
-  ["retoma donde quedaste"],
-  ["búsqueda por voz"],
-  ["72 tests · ci verde", C.verdigris],
-];
-
-export const Extras: React.FC = () => (
-  <Backdrop>
-    <LeftColumn width={1600}>
-      <Enter at={0.15}>
-        <Eyebrow>06 — y además</Eyebrow>
-      </Enter>
-      <Enter at={0.3} dur={0.6} y={16}>
-        <Title>
-          Hecho para <Whisper>usarse a diario</Whisper>
-        </Title>
-      </Enter>
+export const Extras: React.FC<{ tests: number }> = ({ tests }) => {
+  const tags: [string, string?][] = [
+    ["android auto", C.gold],
+    ["widget"],
+    ["ecualizador · bass boost"],
+    ["temporizador"],
+    ["cola reordenable"],
+    ["playlists inteligentes"],
+    ["retoma donde quedaste"],
+    ["búsqueda por voz"],
+    [`${tests} tests · ci verde`, C.verdigris],
+  ];
+  return (
+    <Feature eyebrow="06 — y además" title={<>Hecho para <Whisper>usarse a diario</Whisper></>} width={1600}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18, maxWidth: 1500 }}>
-        {TAGS.map(([label, color], i) => (
+        {tags.map(([label, color], i) => (
           <Enter key={label} at={0.8 + i * 0.15} dur={0.3}>
             <div
               style={{
@@ -42,6 +34,6 @@ export const Extras: React.FC = () => (
           </Enter>
         ))}
       </div>
-    </LeftColumn>
-  </Backdrop>
-);
+    </Feature>
+  );
+};

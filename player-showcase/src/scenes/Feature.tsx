@@ -1,25 +1,30 @@
-import { Backdrop, Bullets, Enter, Eyebrow, Hairline, LeftColumn, Screen, Title } from "../dz";
+import { Backdrop, Bullet, Bullets, Enter, Eyebrow, Hairline, LeftColumn, Title } from "../dz";
 
-/** Shared layout for a feature: numbered eyebrow, title with whisper, bullets, and the app screen. */
+/**
+ * Layout every content scene shares: numbered eyebrow, title with whisper, hairline, then
+ * bullets and/or custom content, with optional app screens on the right.
+ */
 export const Feature: React.FC<{
   eyebrow: string;
   title: React.ReactNode;
-  bullets?: string[];
-  screen: string;
+  titleSize?: number;
+  width?: number;
+  bullets?: Bullet[];
+  screens?: React.ReactNode;
   children?: React.ReactNode;
-}> = ({ eyebrow, title, bullets, screen, children }) => (
+}> = ({ eyebrow, title, titleSize, width, bullets, screens, children }) => (
   <Backdrop>
-    <LeftColumn>
+    <LeftColumn width={width}>
       <Enter at={0.15}>
         <Eyebrow>{eyebrow}</Eyebrow>
       </Enter>
       <Enter at={0.3} dur={0.6} y={16}>
-        <Title>{title}</Title>
+        <Title size={titleSize}>{title}</Title>
       </Enter>
       <Hairline at={0.6} />
       {bullets && <Bullets items={bullets} at={0.9} />}
       {children}
     </LeftColumn>
-    <Screen src={screen} left={1260} />
+    {screens}
   </Backdrop>
 );

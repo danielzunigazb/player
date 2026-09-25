@@ -1,4 +1,4 @@
-import { Whisper } from "../dz";
+import { Screen, Whisper } from "../dz";
 import { Feature } from "./Feature";
 
 export const Library: React.FC = () => (
@@ -11,6 +11,6 @@ export const Library: React.FC = () => (
       "búsqueda que ignora acentos",
       "favoritas, más escuchadas, playlists",
     ]}
-    screen="dz_home.png"
+    screens={<Screen src="dz_home.png" left={1260} />}
   />
 );

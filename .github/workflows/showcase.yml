@@ -1,0 +1,54 @@
+name: Showcase video
+
+# Renders player-showcase with Remotion and publishes the MP4 as a release asset, so the
+# video is linked from the README without living in git history.
+on:
+  push:
+    paths:
+      - "player-showcase/**"
+      - "app/build.gradle.kts"
+      - ".github/workflows/showcase.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: showcase
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: player-showcase
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: player-showcase/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck and lint
+        run: npm run lint
+
+      - name: Render (version and test count come from the app)
+        run: npm run render
+
+      - name: Publish to the showcase-v1 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view showcase-v1 >/dev/null 2>&1; then
+            gh release upload showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg --clobber
+          else
+            gh release create showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg \
+              --target "$GITHUB_SHA" --title "Video de presentación" \
+              --notes "Renderizado automáticamente desde player-showcase/ con Remotion."
+          fi

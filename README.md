@@ -2,8 +2,8 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
-[![Video de presentación](docs/showcase-thumb.jpg)](docs/PlayerShowcase.mp4)
-<p><sub>▶ <a href="docs/PlayerShowcase.mp4">Video de presentación</a> (44 s): hecho con Remotion en <code>player-showcase/</code>.</sub></p>
+[![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
+<p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a> (45 s): hecho con Remotion en <code>player-showcase/</code> y publicado por CI como release. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
 
 ## Funciones
 

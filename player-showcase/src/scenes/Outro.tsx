@@ -1,6 +1,6 @@
 import { Backdrop, C, Cursor, Enter, Eyebrow, Mark, MONO, Title, Whisper } from "../dz";
 
-export const Outro: React.FC = () => (
+export const Outro: React.FC<{ version: string }> = ({ version }) => (
   <Backdrop>
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 34, textAlign: "center" }}>
       <Enter at={0.1} dur={0.6}>
@@ -8,7 +8,7 @@ export const Outro: React.FC = () => (
       </Enter>
       <Enter at={0.4} dur={0.6} y={12}>
         <Title size={110}>
-          player <span style={{ color: C.muted, fontWeight: 500 }}>1.4.0</span>
+          player <span style={{ color: C.muted, fontWeight: 500 }}>{version}</span>
           <Cursor />
         </Title>
       </Enter>

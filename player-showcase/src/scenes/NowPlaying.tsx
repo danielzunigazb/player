@@ -1,4 +1,4 @@
-import { Whisper } from "../dz";
+import { Screen, Whisper } from "../dz";
 import { Feature } from "./Feature";
 
 export const NowPlaying: React.FC = () => (
@@ -11,6 +11,6 @@ export const NowPlaying: React.FC = () => (
       "el artista como susurro en serif",
       "cola, velocidad, temporizador, ecualizador",
     ]}
-    screen="dz_now_playing.png"
+    screens={<Screen src="dz_now_playing.png" left={1260} />}
   />
 );

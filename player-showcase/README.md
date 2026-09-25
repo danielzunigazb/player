@@ -10,7 +10,9 @@ Video de presentación de Player, hecho con [Remotion](https://remotion.dev) y e
 ```console
 npm ci
 npm run dev                                   # Remotion Studio
-npx remotion render PlayerShowcase out/PlayerShowcase.mp4 --codec=h264 --crf=18
+npm run render                                # video + miniatura en out/, con la versión y los tests de la app
 ```
 
-Si Remotion no puede descargar su Chrome, pásale uno local con `--browser-executable=/ruta/a/chrome-headless-shell`.
+El workflow `.github/workflows/showcase.yml` hace lo mismo en CI y publica el resultado en el release `showcase-v1`.
+
+Si Remotion no puede descargar su Chrome, pásale uno local: `npm run render -- --browser-executable=/ruta/a/chrome-headless-shell`.
