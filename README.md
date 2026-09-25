@@ -2,6 +2,9 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
+[![Video de presentación](docs/showcase-thumb.jpg)](docs/PlayerShowcase.mp4)
+<p><sub>▶ <a href="docs/PlayerShowcase.mp4">Video de presentación</a> (44 s): hecho con Remotion en <code>player-showcase/</code>.</sub></p>
+
 ## Funciones
 
 **Biblioteca**
