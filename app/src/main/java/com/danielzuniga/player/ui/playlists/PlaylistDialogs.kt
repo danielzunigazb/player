@@ -46,7 +46,6 @@ fun PlaylistNameDialog(
         mutableStateOf(TextFieldValue(initialName, TextRange(initialName.length)))
     }
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -59,6 +58,8 @@ fun PlaylistNameDialog(
                 singleLine = true,
                 modifier = Modifier.focusRequester(focusRequester),
             )
+            // Inside the dialog's own composition so the field is attached before focusing.
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
         },
         confirmButton = {
             TextButton(

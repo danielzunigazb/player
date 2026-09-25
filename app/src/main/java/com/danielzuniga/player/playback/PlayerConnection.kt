@@ -63,6 +63,9 @@ class PlayerConnection(context: Context) {
     private val _queue = MutableStateFlow(QueueState())
     val queue: StateFlow<QueueState> = _queue.asStateFlow()
 
+    private val _isConnected = MutableStateFlow(false)
+    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
     private var controller: MediaController? = null
     private val controllerFuture: ListenableFuture<MediaController>
 
@@ -98,6 +101,7 @@ class PlayerConnection(context: Context) {
                 publish(connected)
                 publishQueue(connected)
                 publishExtras(connected.sessionExtras)
+                _isConnected.value = true
             },
             ContextCompat.getMainExecutor(context),
         )
@@ -198,6 +202,7 @@ class PlayerConnection(context: Context) {
     fun release() {
         controller?.removeListener(playerListener)
         controller = null
+        _isConnected.value = false
         MediaController.releaseFuture(controllerFuture)
     }
 

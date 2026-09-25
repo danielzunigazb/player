@@ -115,9 +115,16 @@ fun NowPlayingScreen(
         ) {
             TopRow(actions)
 
-            Spacer(Modifier.weight(1f))
-            SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
-            Spacer(Modifier.weight(1f))
+            // Takes whatever height is left so the controls always fit (small screens, landscape).
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+            ) {
+                SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -190,7 +197,6 @@ private fun SwipeableArtwork(nowPlaying: NowPlaying, onNext: () -> Unit, onPrevi
         uri = nowPlaying.artworkUri,
         cornerRadius = 16.dp,
         modifier = Modifier
-            .fillMaxWidth()
             .aspectRatio(1f)
             .offset { IntOffset((dragOffset / 3).roundToInt(), 0) }
             .pointerInput(Unit) {

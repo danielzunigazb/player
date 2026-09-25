@@ -33,9 +33,11 @@ Cada fase se entrega compilando, con pruebas y lint en verde, en su propio commi
 - [x] Deslizar el mini reproductor para cambiar de canción
 - [x] Ajustes: tema (sistema / claro / oscuro / negro puro), duración mínima de audios
 
-## Fase 5 — Verificación sin dispositivo
-- [ ] Pruebas de interfaz con Robolectric: la app arranca, se ven las pestañas, abre "Reproduciendo"
-- [ ] Pruebas de la base de datos (favoritos, playlists, estadísticas) con Room en memoria
+## Fase 5 — Verificación sin dispositivo ✅
+- [x] Pruebas de interfaz con Robolectric: la app arranca con el servicio real, reproduce, abre "Reproduciendo", favoritos, navegación y búsqueda
+- [x] Pruebas del servicio: cola, temporizador, aleatorio/repetir y reanudación de la última cola
+- [x] Pruebas de la base de datos (favoritos, playlists, estadísticas) con Room en memoria
+- [x] Arreglos encontrados: carátula que empujaba los controles fuera de pantalla en pantallas bajas; foco del teclado pedido antes de tiempo en diálogos
 
 ## Fase 6 — Más formas de explorar
 - [ ] Explorador por carpetas

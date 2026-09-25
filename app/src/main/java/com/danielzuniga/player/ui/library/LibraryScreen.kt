@@ -345,7 +345,6 @@ private fun SongSort.label(): Int = when (this) {
 @Composable
 private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = onClose) {
@@ -375,6 +374,7 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: (
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
             )
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
         },
     )
 }
