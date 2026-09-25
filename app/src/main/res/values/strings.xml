@@ -123,6 +123,9 @@
     <string name="greeting_afternoon">Buenas tardes</string>
     <string name="greeting_night">Buenas noches</string>
     <string name="album">álbum</string>
+    <string name="terminal">Terminal</string>
+    <string name="terminal_close">Cerrar terminal</string>
+    <string name="terminal_run">Ejecutar</string>
     <string name="home_title">Tu</string>
     <string name="home_title_whisper">música</string>
     <string name="dynamic_color">Colores del fondo de pantalla</string>

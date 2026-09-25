@@ -109,6 +109,7 @@ fun HomeScreen(
     onCreatePlaylist: () -> Unit,
     onOpenSettings: () -> Unit,
     contentPadding: PaddingValues,
+    onOpenTerminal: () -> Unit = {},
 ) {
     val pagerState = rememberPagerState { HomeTab.entries.size }
     val scope = rememberCoroutineScope()
@@ -131,6 +132,7 @@ fun HomeScreen(
                 onSearch = { searching = true },
                 onSortChange = onSortChange,
                 onOpenSettings = onOpenSettings,
+                onOpenTerminal = onOpenTerminal,
             )
         }
         TabPills(
@@ -400,6 +402,7 @@ private fun HomeHeader(
     onSearch: () -> Unit,
     onSortChange: (SongSort) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenTerminal: () -> Unit,
 ) {
     val greeting = remember {
         when (java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)) {
@@ -418,6 +421,7 @@ private fun HomeHeader(
             DzMark(size = 28.dp)
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DzIconButton(DzIcons.Terminal, stringResource(R.string.terminal), onOpenTerminal, tint = Dz.colors.gold)
                 DzIconButton(DzIcons.Search, stringResource(R.string.search), onSearch)
                 if (showSort) SortMenu(current = library.sort, onSortChange = onSortChange)
                 DzIconButton(DzIcons.Settings, stringResource(R.string.settings), onOpenSettings)

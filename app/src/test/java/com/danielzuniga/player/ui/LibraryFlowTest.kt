@@ -12,7 +12,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.media3.session.MediaSessionService
 import androidx.test.core.app.ActivityScenario
@@ -116,6 +118,18 @@ class LibraryFlowTest {
         compose.onNodeWithText("Buscar en tu música").performTextInput("musica")
         compose.waitUntil(5_000) { !exists("Eres") }
         compose.onNodeWithText("De Música Ligera").assertIsDisplayed()
+    }
+
+    @Test
+    fun terminalPlaysWhatYouType() {
+        compose.onNodeWithContentDescription("Terminal").performClick()
+        compose.onNodeWithTag("terminal_input").performTextInput("play eres")
+        compose.onNodeWithTag("terminal_input").performImeAction()
+
+        compose.waitUntil(5_000) { exists("▶ Eres — Café Tacvba") }
+        compose.onNodeWithContentDescription("Cerrar terminal").performClick()
+        // The mini player picks the song up.
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Eres").fetchSemanticsNodes().size >= 2 }
     }
 
     private fun exists(text: String) =

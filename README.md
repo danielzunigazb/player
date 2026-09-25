@@ -35,6 +35,19 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
 - Ignorar audios cortos (notas de voz, tonos)
 
+## Terminal
+
+El botón `>_` del inicio abre una consola para manejar la música escribiendo, con autocompletado sobre tu biblioteca:
+
+```
+$ play soda stereo        # artista, álbum o canción, sin importar acentos
+$ play album signos       # artist / album / song para ser específico
+$ queue eres              # al final de la cola · next <algo> la pone a continuación
+$ shuffle                 # toda la biblioteca
+$ now                     # progreso [████░░░░] y la línea de la letra que suena
+$ sleep 30m · speed 1.25 · seek 1:30 · repeat · fav · top · ls · help
+```
+
 ## Diseño
 
 La interfaz usa el sistema de diseño **Daniel Zúñiga** (claude.ai/design) portado a Compose:

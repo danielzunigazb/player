@@ -67,6 +67,7 @@ class PlayerViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<PlayerUiState> = connection.state
     val queue: StateFlow<QueueState> = connection.queue
     val favoriteIds: StateFlow<Set<Long>> = container.userData.favoriteIdSet.stateIn(this, emptySet())
+    val mostPlayedIds: StateFlow<List<Long>> = container.userData.mostPlayedIds(limit = 5).stateIn(this, emptyList())
 
     val lyrics: StateFlow<LyricsUiState> = connection.state
         .map { it.nowPlaying?.songId }

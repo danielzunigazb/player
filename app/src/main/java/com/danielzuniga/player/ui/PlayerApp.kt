@@ -35,7 +35,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +58,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.danielzuniga.player.R
+import com.danielzuniga.player.data.LibraryIndex
+import com.danielzuniga.player.data.lyrics.Lyrics
+import com.danielzuniga.player.playback.PlayerUiState
+import com.danielzuniga.player.ui.terminal.Shell
+import com.danielzuniga.player.ui.terminal.ShellHost
+import com.danielzuniga.player.ui.terminal.ShellLine
+import com.danielzuniga.player.ui.terminal.TerminalScreen
 import com.danielzuniga.player.ui.components.DzButton
 import com.danielzuniga.player.ui.components.DzButtonVariant
 import com.danielzuniga.player.ui.components.DzMark
@@ -142,6 +151,9 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
 
     val navController = rememberNavController()
     var showNowPlaying by rememberSaveable { mutableStateOf(false) }
+    var showTerminal by rememberSaveable { mutableStateOf(false) }
+    val terminalLines = remember { mutableStateListOf<ShellLine>() }
+    val mostPlayedIds by playerVm.mostPlayedIds.collectAsStateWithLifecycle()
     var sheet by rememberSaveable { mutableStateOf<PlayerSheet?>(null) }
     var addToPlaylistSongs by remember { mutableStateOf<List<Song>?>(null) }
     var newPlaylistSongs by remember { mutableStateOf<List<Song>?>(null) }
@@ -205,6 +217,7 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
                     playlistsState = playlistsState,
                     libraryVm = libraryVm,
                     onCreatePlaylist = { newPlaylistSongs = emptyList() },
+                    onOpenTerminal = { showTerminal = true },
                     navigate = ::navigate,
                 )
             }
@@ -242,6 +255,46 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
             }
         }
 
+        // The shell reads the latest state on every command, so it's built once.
+        val shellState = rememberUpdatedState(ShellSnapshot(player, libraryIndex, favoriteIds, mostPlayedIds, lyrics))
+        val shell = remember {
+            Shell(
+                object : ShellHost {
+                    override val library get() = shellState.value.library
+                    override val player get() = shellState.value.player
+                    override val favoriteIds get() = shellState.value.favoriteIds
+                    override val mostPlayed get() = shellState.value.library.songs(shellState.value.mostPlayedIds)
+                    override val currentLyric: String?
+                        get() {
+                            val synced = shellState.value.lyrics.lyrics as? Lyrics.Synced ?: return null
+                            return synced.lines.getOrNull(synced.indexAt(shellState.value.player.positionMs))?.text
+                        }
+
+                    override fun play(songs: List<Song>, index: Int) = playerVm.play(songs, index)
+                    override fun shuffle(songs: List<Song>) = playerVm.shuffle(songs)
+                    override fun playNext(songs: List<Song>) = playerVm.playNext(songs)
+                    override fun addToQueue(songs: List<Song>) = playerVm.addToQueue(songs)
+                    override fun togglePlay() = playerVm.togglePlayPause()
+                    override fun skip() = playerVm.next()
+                    override fun previous() = playerVm.previous()
+                    override fun seek(positionMs: Long) = playerVm.seekTo(positionMs)
+                    override fun toggleShuffle() = playerVm.toggleShuffle()
+                    override fun cycleRepeat() = playerVm.cycleRepeatMode()
+                    override fun toggleFavorite(songId: Long) = playerVm.toggleFavorite(songId)
+                    override fun setSleep(minutes: Int) = playerVm.setSleepTimer(minutes)
+                    override fun setSpeed(speed: Float) = playerVm.setSpeed(speed)
+                },
+            )
+        }
+        AnimatedVisibility(
+            visible = showTerminal,
+            enter = slideInVertically { it },
+            exit = slideOutVertically { it },
+        ) {
+            TerminalScreen(shell = shell, lines = terminalLines, onClose = { showTerminal = false })
+        }
+
+        BackHandler(enabled = showTerminal) { showTerminal = false }
         BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
 
         when (sheet) {
@@ -303,6 +356,7 @@ private fun AppNavHost(
     playlistsState: PlaylistsUiState,
     libraryVm: LibraryViewModel,
     onCreatePlaylist: () -> Unit,
+    onOpenTerminal: () -> Unit,
     navigate: (String) -> Unit,
 ) {
     val libraryIndex by libraryVm.library.collectAsStateWithLifecycle()
@@ -323,6 +377,7 @@ private fun AppNavHost(
                 onCreatePlaylist = onCreatePlaylist,
                 onOpenSettings = { navigate(Routes.SETTINGS) },
                 contentPadding = bottomPadding,
+                onOpenTerminal = onOpenTerminal,
             )
         }
         composable(
@@ -440,3 +495,12 @@ private fun Context.toast(message: Int) = toast(getString(message))
 private fun Context.toast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 }
+
+/** What the terminal needs to read, captured together so it always sees one consistent moment. */
+private data class ShellSnapshot(
+    val player: PlayerUiState,
+    val library: LibraryIndex,
+    val favoriteIds: Set<Long>,
+    val mostPlayedIds: List<Long>,
+    val lyrics: LyricsUiState,
+)

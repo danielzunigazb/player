@@ -33,5 +33,5 @@ private fun String.matches(needle: String): Boolean = normalizedForSearch().cont
 
 private val DIACRITICS = "\\p{Mn}+".toRegex()
 
-private fun String.normalizedForSearch(): String =
+internal fun String.normalizedForSearch(): String =
     Normalizer.normalize(trim(), Normalizer.Form.NFD).replace(DIACRITICS, "").lowercase()
