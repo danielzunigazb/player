@@ -12,6 +12,7 @@ import android.net.Uri
 import android.view.KeyEvent
 import android.widget.RemoteViews
 import androidx.annotation.OptIn
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
@@ -36,18 +37,23 @@ class NowPlayingWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray) {
         val state = loadState(context)
-        val pending = goAsync()
-        thread {
+        // Null when onReceive() is invoked directly rather than through a real broadcast.
+        val pending: PendingResult? = goAsync()
+        runInBackground {
             try {
                 push(context, state, loadArtwork(context, state.artworkUri))
             } finally {
-                pending.finish()
+                pending?.finish()
             }
         }
     }
 
     companion object {
         private const val PREFS = "widget_state"
+
+        /** Where [onUpdate] decodes artwork; tests swap it for an inline runner to avoid races. */
+        @VisibleForTesting
+        internal var runInBackground: (() -> Unit) -> Unit = { block -> thread(block = block) }
         private const val ART_SIZE_PX = 192
 
         fun hasWidgets(context: Context): Boolean =

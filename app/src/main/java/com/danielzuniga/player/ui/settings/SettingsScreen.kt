@@ -42,6 +42,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
+    onOnlineLyrics: (Boolean) -> Unit,
     onMinDuration: (Int) -> Unit,
     onRescan: () -> Unit,
     bottomPadding: PaddingValues,
@@ -120,6 +121,16 @@ fun SettingsScreen(
                         modifier = Modifier.padding(start = 16.dp),
                     )
                 }
+            }
+
+            item { Section(stringResource(R.string.lyrics)) }
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.online_lyrics),
+                    summary = stringResource(R.string.online_lyrics_summary),
+                    checked = state.onlineLyrics,
+                    onChange = onOnlineLyrics,
+                )
             }
 
             item { Section(stringResource(R.string.about)) }

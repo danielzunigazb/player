@@ -12,6 +12,7 @@ import com.danielzuniga.player.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -25,6 +26,13 @@ class NowPlayingWidgetTest {
     private val app = ApplicationProvider.getApplicationContext<Application>()
     private val widgets: ShadowAppWidgetManager =
         shadowOf(android.appwidget.AppWidgetManager.getInstance(app))
+
+    // onUpdate() normally renders on a worker thread; run it inline so it can't race the
+    // test's own push() over Robolectric's (non-thread-safe) views.
+    @Before
+    fun renderInline() {
+        NowPlayingWidget.runInBackground = { it() }
+    }
 
     @Test
     fun showsIdleStateBeforeAnythingPlays() {

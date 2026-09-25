@@ -24,6 +24,9 @@ class SettingsStore(context: Context) {
     private val _dynamicColor = MutableStateFlow(prefs.getBoolean(KEY_DYNAMIC_COLOR, false))
     val dynamicColor: StateFlow<Boolean> = _dynamicColor.asStateFlow()
 
+    private val _onlineLyrics = MutableStateFlow(prefs.getBoolean(KEY_ONLINE_LYRICS, true))
+    val onlineLyrics: StateFlow<Boolean> = _onlineLyrics.asStateFlow()
+
     private val _minDurationSec = MutableStateFlow(prefs.getInt(KEY_MIN_DURATION, 10))
     val minDurationSec: StateFlow<Int> = _minDurationSec.asStateFlow()
 
@@ -42,6 +45,11 @@ class SettingsStore(context: Context) {
         _dynamicColor.value = enabled
     }
 
+    fun setOnlineLyrics(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_ONLINE_LYRICS, enabled) }
+        _onlineLyrics.value = enabled
+    }
+
     fun setMinDurationSec(seconds: Int) {
         prefs.edit { putInt(KEY_MIN_DURATION, seconds) }
         _minDurationSec.value = seconds
@@ -56,6 +64,7 @@ class SettingsStore(context: Context) {
         const val KEY_SORT = "song_sort"
         const val KEY_THEME = "theme_mode"
         const val KEY_DYNAMIC_COLOR = "dynamic_color"
+        const val KEY_ONLINE_LYRICS = "online_lyrics"
         const val KEY_MIN_DURATION = "min_duration_sec"
     }
 }

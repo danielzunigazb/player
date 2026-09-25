@@ -96,7 +96,10 @@
 
     <string name="lyrics">Letra</string>
     <string name="lyrics_none">No se encontró letra para esta canción.</string>
-    <string name="lyrics_hint">Pon un archivo .lrc con el mismo nombre junto a la canción, o incrusta la letra en sus etiquetas.</string>
+    <string name="lyrics_hint">Pon un archivo .lrc con el mismo nombre junto a la canción, incrusta la letra en sus etiquetas o activa la búsqueda en internet en Ajustes.</string>
+    <string name="online_lyrics">Buscar letras en internet</string>
+    <string name="online_lyrics_summary">Si la canción no trae letra, la busca en LRCLIB (gratis, sin cuenta). Solo se envían título, artista, álbum y duración, y cada letra se descarga una vez.</string>
+    <string name="lyrics_source_online">letra · lrclib.net</string>
 
     <!-- Equalizer -->
     <string name="equalizer">Ecualizador</string>

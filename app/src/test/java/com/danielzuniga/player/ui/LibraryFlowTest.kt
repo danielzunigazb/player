@@ -22,6 +22,7 @@ import com.danielzuniga.player.FakeMediaProvider
 import com.danielzuniga.player.FakeSong
 import com.danielzuniga.player.MainActivity
 import com.danielzuniga.player.playback.PlaybackService
+import com.danielzuniga.player.appContainer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -47,6 +48,8 @@ class LibraryFlowTest {
     fun launch() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        // Keep UI tests off the network: no LRCLIB lookups.
+        app.appContainer.settings.setOnlineLyrics(false)
         FakeMediaProvider.install(
             listOf(
                 FakeSong(1, "De Música Ligera", "Soda Stereo", "Canción Animal", albumId = 10, track = 1),

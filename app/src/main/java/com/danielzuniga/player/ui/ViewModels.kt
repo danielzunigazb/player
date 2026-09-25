@@ -20,6 +20,7 @@ import com.danielzuniga.player.data.ThemeMode
 import com.danielzuniga.player.data.Folder
 import com.danielzuniga.player.data.db.PlaylistSummary
 import com.danielzuniga.player.data.lyrics.Lyrics
+import com.danielzuniga.player.data.lyrics.LyricsSource
 import com.danielzuniga.player.data.filterAlbums
 import com.danielzuniga.player.data.filterArtists
 import com.danielzuniga.player.data.filterFolders
@@ -52,7 +53,11 @@ private fun <T> Flow<T>.stateIn(vm: ViewModel, initial: T): StateFlow<T> =
 
 // ---------------------------------------------------------------- Player
 
-data class LyricsUiState(val loading: Boolean = false, val lyrics: Lyrics? = null)
+data class LyricsUiState(
+    val loading: Boolean = false,
+    val lyrics: Lyrics? = null,
+    val source: LyricsSource? = null,
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModel(private val container: AppContainer) : ViewModel() {
@@ -72,7 +77,8 @@ class PlayerViewModel(private val container: AppContainer) : ViewModel() {
                 emit(LyricsUiState())
             } else {
                 emit(LyricsUiState(loading = true))
-                emit(LyricsUiState(lyrics = container.lyrics.load(song)))
+                val found = container.lyrics.load(song)
+                emit(LyricsUiState(lyrics = found?.lyrics, source = found?.source))
             }
         }
         .stateIn(this, LyricsUiState())
@@ -302,6 +308,7 @@ class EqualizerViewModel(private val container: AppContainer) : ViewModel() {
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = false,
+    val onlineLyrics: Boolean = true,
     val minDurationSec: Int = 10,
 )
 
@@ -311,19 +318,22 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<SettingsUiState> = combine(
         settings.themeMode,
         settings.dynamicColor,
+        settings.onlineLyrics,
         settings.minDurationSec,
-    ) { theme, dynamic, minDuration -> SettingsUiState(theme, dynamic, minDuration) }
+    ) { theme, dynamic, online, minDuration -> SettingsUiState(theme, dynamic, online, minDuration) }
         .stateIn(
             this,
             SettingsUiState(
                 settings.themeMode.value,
                 settings.dynamicColor.value,
+                settings.onlineLyrics.value,
                 settings.minDurationSec.value,
             ),
         )
 
     fun setThemeMode(mode: ThemeMode) = settings.setThemeMode(mode)
     fun setDynamicColor(enabled: Boolean) = settings.setDynamicColor(enabled)
+    fun setOnlineLyrics(enabled: Boolean) = settings.setOnlineLyrics(enabled)
     fun setMinDuration(seconds: Int) = settings.setMinDurationSec(seconds)
     fun rescan() = container.musicRepository.load(force = true)
 }

@@ -22,7 +22,7 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Temporizador de apagado (por minutos o al terminar la canción), velocidad de reproducción
 - Ecualizador con presets y refuerzo de graves
 - Pantalla "Reproduciendo" con el color de la carátula; desliza la carátula o el mini reproductor para cambiar de canción
-- Letras sincronizadas (resaltan la línea actual; toca una línea para saltar): desde un `.lrc` junto a la canción o incrustadas en MP3/FLAC
+- Letras sincronizadas (resaltan la línea actual; toca una línea para saltar): desde un `.lrc` junto a la canción, incrustadas en MP3/FLAC o, si no trae, buscadas en [LRCLIB](https://lrclib.net) (gratis y sin cuenta). Solo se envían título, artista, álbum y duración; cada letra se guarda en el teléfono tras la primera descarga. Se desactiva en *Ajustes → Letras*.
 
 **Widget**
 - Widget de pantalla de inicio con carátula y controles; reproducir retoma la última cola aunque la app esté cerrada
@@ -53,7 +53,7 @@ Kotlin, Jetpack Compose (Material 3), MVVM, Media3/ExoPlayer, Room, Navigation C
 app/src/main/java/com/danielzuniga/player/
 ├── PlayerApplication.kt   AppContainer: repositorios compartidos por la UI y el servicio
 ├── data/                  MediaStore (MusicRepository), Room (db/, UserDataRepository), ajustes,
-│                          letras (lyrics/: LRC, ID3 USLT, FLAC Vorbis)
+│                          letras (lyrics/: LRC, ID3 USLT, FLAC Vorbis, cliente LRCLIB)
 ├── playback/              PlaybackService (ExoPlayer + MediaSession), PlayerConnection,
 │                          ecualizador, guardado de la cola
 ├── widget/                Widget de pantalla de inicio

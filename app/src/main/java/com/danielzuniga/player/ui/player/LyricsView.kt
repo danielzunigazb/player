@@ -26,6 +26,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.lyrics.Lyrics
+import com.danielzuniga.player.data.lyrics.LyricsSource
+import com.danielzuniga.player.ui.components.Eyebrow
+import com.danielzuniga.player.ui.theme.Dz
 import com.danielzuniga.player.ui.LyricsUiState
 
 @Composable
@@ -35,35 +38,49 @@ fun LyricsView(
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        when (val lyrics = state.lyrics) {
-            null -> if (state.loading) {
-                CircularProgressIndicator()
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.lyrics_none),
-                        style = MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = stringResource(R.string.lyrics_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-            is Lyrics.Plain -> Text(
-                text = lyrics.text,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-            )
-            is Lyrics.Synced -> SyncedLyrics(lyrics, positionMs, onSeek)
+    Column(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            LyricsBody(state, positionMs, onSeek)
         }
+        if (state.source == LyricsSource.ONLINE) {
+            // Credit the free database the lyrics came from.
+            Eyebrow(
+                text = stringResource(R.string.lyrics_source_online),
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LyricsBody(state: LyricsUiState, positionMs: Long, onSeek: (Long) -> Unit) {
+    when (val lyrics = state.lyrics) {
+        null -> if (state.loading) {
+            CircularProgressIndicator(color = Dz.colors.gold, strokeWidth = 2.dp)
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.lyrics_none),
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = stringResource(R.string.lyrics_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+        is Lyrics.Plain -> Text(
+            text = lyrics.text,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        )
+        is Lyrics.Synced -> SyncedLyrics(lyrics, positionMs, onSeek)
     }
 }
 

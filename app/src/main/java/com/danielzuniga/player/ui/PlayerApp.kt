@@ -389,6 +389,7 @@ private fun AppNavHost(
                 onBack = navController::popBackStack,
                 onThemeMode = vm::setThemeMode,
                 onDynamicColor = vm::setDynamicColor,
+                onOnlineLyrics = vm::setOnlineLyrics,
                 onMinDuration = vm::setMinDuration,
                 onRescan = vm::rescan,
                 bottomPadding = bottomPadding,

@@ -16,6 +16,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.MainActivity
 import com.danielzuniga.player.playback.PlaybackService
+import com.danielzuniga.player.appContainer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -41,6 +42,8 @@ class AppSmokeTest {
     fun launch() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
+        // Keep UI tests off the network: no LRCLIB lookups.
+        app.appContainer.settings.setOnlineLyrics(false)
 
         // Robolectric doesn't bind services on its own; hand it the real session binder.
         service = Robolectric.buildService(PlaybackService::class.java).create()
