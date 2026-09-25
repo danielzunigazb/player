@@ -207,18 +207,21 @@ class PlayerConnection(context: Context) {
     }
 
     private fun publish(player: Player) {
+        // The player-level metadata can lag behind a queue change; the item's own is always set.
         val metadata = player.mediaMetadata
+        val itemMetadata = player.currentMediaItem?.mediaMetadata
         val duration = player.duration.takeIf { it != C.TIME_UNSET }
             ?: metadata.durationMs
+            ?: itemMetadata?.durationMs
             ?: 0L
         _state.update { current ->
             current.copy(
                 nowPlaying = player.currentMediaItem?.let {
                     NowPlaying(
                         songId = it.mediaId.toLongOrNull(),
-                        title = metadata.title?.toString().orEmpty(),
-                        artist = metadata.artist?.toString().orEmpty(),
-                        artworkUri = metadata.artworkUri,
+                        title = (metadata.title ?: itemMetadata?.title)?.toString().orEmpty(),
+                        artist = (metadata.artist ?: itemMetadata?.artist)?.toString().orEmpty(),
+                        artworkUri = metadata.artworkUri ?: itemMetadata?.artworkUri,
                     )
                 },
                 isPlaying = player.isPlaying,

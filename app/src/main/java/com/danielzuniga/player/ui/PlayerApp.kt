@@ -89,7 +89,7 @@ private val AUDIO_PERMISSION =
 private enum class PlayerSheet { QUEUE, SLEEP, SPEED }
 
 @Composable
-fun PlayerApp() {
+fun PlayerApp(searchRequest: String? = null, onSearchHandled: () -> Unit = {}) {
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(context.hasAudioPermission()) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -107,18 +107,24 @@ fun PlayerApp() {
             onOpenSettings = { context.openAppSettings() },
         )
     } else {
-        MainContent()
+        MainContent(searchRequest, onSearchHandled)
     }
 }
 
 @Composable
-private fun MainContent() {
+private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
     val context = LocalContext.current
     val playerVm: PlayerViewModel = viewModel(factory = AppViewModels.Factory)
     val libraryVm: LibraryViewModel = viewModel(factory = AppViewModels.Factory)
     val playlistsVm: PlaylistsViewModel = viewModel(factory = AppViewModels.Factory)
 
     LaunchedEffect(Unit) { libraryVm.load() }
+    LaunchedEffect(searchRequest) {
+        if (searchRequest != null) {
+            playerVm.playFromSearch(searchRequest)
+            onSearchHandled()
+        }
+    }
 
     val player by playerVm.state.collectAsStateWithLifecycle()
     val queue by playerVm.queue.collectAsStateWithLifecycle()

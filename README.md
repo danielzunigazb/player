@@ -24,6 +24,10 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Pantalla "Reproduciendo" con el color de la carátula; desliza la carátula o el mini reproductor para cambiar de canción
 - Letras sincronizadas (resaltan la línea actual; toca una línea para saltar): desde un `.lrc` junto a la canción o incrustadas en MP3/FLAC
 
+**Android Auto y voz**
+- Explora tu biblioteca desde el coche; elegir una canción encola su álbum o playlist
+- "Pon X en Player" por voz reproduce lo que coincida
+
 **Ajustes**
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
 - Ignorar audios cortos (notas de voz, tonos)
@@ -55,6 +59,8 @@ Desde la terminal, con el móvil conectado por USB (depuración USB activada):
 ./gradlew testDebugUnitTest     # pruebas (JVM + Robolectric: UI, servicio y base de datos)
 ./gradlew lintDebug             # análisis estático
 ```
+
+Cada push a GitHub compila, prueba y publica el APK como artefacto en la pestaña **Actions** (`player-apk`).
 
 El build `release` se firma con la clave de debug para poder instalarlo sin configurar un keystore. Está bien para uso personal, pero no sirve para publicarlo en Play Store.
 

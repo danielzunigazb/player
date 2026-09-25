@@ -26,6 +26,7 @@ import com.danielzuniga.player.data.filterFolders
 import com.danielzuniga.player.data.filterSongs
 import com.danielzuniga.player.data.sortedBy
 import com.danielzuniga.player.playback.EqualizerState
+import com.danielzuniga.player.playback.LibraryBrowser
 import com.danielzuniga.player.playback.PlayerConnection
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.playback.QueueState
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -88,6 +90,15 @@ class PlayerViewModel(private val container: AppContainer) : ViewModel() {
 
     fun shuffle(songs: List<Song>) {
         if (songs.isNotEmpty()) connection.play(songs, songs.indices.random(), shuffle = true)
+    }
+
+    /** Plays what a voice/search request asked for once the player and library are ready. */
+    fun playFromSearch(query: String) {
+        viewModelScope.launch {
+            connection.isConnected.first { it }
+            val results = LibraryBrowser.searchResults(query, container.musicRepository.awaitLibrary())
+            if (results.isNotEmpty()) connection.play(results, 0)
+        }
     }
 
     fun playNext(songs: List<Song>) = connection.playNext(songs)

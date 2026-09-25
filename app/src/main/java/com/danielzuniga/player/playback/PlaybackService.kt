@@ -15,12 +15,16 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
-import androidx.media3.session.MediaSessionService
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibraryService.LibraryParams
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.danielzuniga.player.MainActivity
 import com.danielzuniga.player.appContainer
-import com.danielzuniga.player.data.songUri
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
@@ -34,14 +38,15 @@ import kotlinx.coroutines.launch
  * this service persists the queue, counts plays, runs the sleep timer and hosts audio effects.
  */
 @OptIn(UnstableApi::class)
-class PlaybackService : MediaSessionService() {
+class PlaybackService : MediaLibraryService() {
 
     private val container by lazy { appContainer }
     private val scope = MainScope()
     private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var player: ExoPlayer
-    private var mediaSession: MediaSession? = null
+    private var mediaSession: MediaLibrarySession? = null
+    private val browser by lazy { LibraryBrowser(this, container) }
 
     private var currentPlayCounted = false
     private var sleepAtMs = 0L
@@ -79,16 +84,15 @@ class PlaybackService : MediaSessionService() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        mediaSession = MediaSession.Builder(this, player)
+        mediaSession = MediaLibrarySession.Builder(this, player, SessionCallback())
             .setSessionActivity(openAppIntent)
-            .setCallback(SessionCallback())
             .build()
 
         restoreQueue()
         handler.postDelayed(periodicSave, SAVE_INTERVAL_MS)
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
         mediaSession
 
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -218,13 +222,13 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    private inner class SessionCallback : MediaSession.Callback {
+    private inner class SessionCallback : MediaLibrarySession.Callback {
 
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
         ): MediaSession.ConnectionResult {
-            val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+            val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
                 .add(SessionCommand(SessionCommands.SLEEP_TIMER, Bundle.EMPTY))
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
@@ -245,44 +249,114 @@ class PlaybackService : MediaSessionService() {
             return super.onCustomCommand(session, controller, customCommand, args)
         }
 
-        // Media items reaching the session from a controller may arrive without their URI,
-        // so rebuild it from the MediaStore id carried in mediaId.
+        // Items from controllers or browsers can arrive with only an id; fill in URI and metadata.
         override fun onAddMediaItems(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
-        ): ListenableFuture<MutableList<MediaItem>> {
-            val resolved = mediaItems.mapTo(mutableListOf()) { item ->
-                if (item.localConfiguration != null) {
-                    item
-                } else {
-                    item.buildUpon().setUri(songUri(item.mediaId.toLong())).build()
-                }
+        ): ListenableFuture<MutableList<MediaItem>> =
+            Futures.immediateFuture(mediaItems.mapTo(mutableListOf()) { browser.resolveItem(it) })
+
+        // A song picked in Android Auto queues the rest of its album or playlist too.
+        override fun onSetMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>,
+            startIndex: Int,
+            startPositionMs: Long,
+        ): ListenableFuture<MediaItemsWithStartPosition> = future {
+            val (items, index) = browser.resolveQueue(mediaItems, startIndex)
+            val position = if (index == startIndex) startPositionMs else C.TIME_UNSET
+            MediaItemsWithStartPosition(items, index, position)
+        }
+
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<MediaItem>> =
+            Futures.immediateFuture(LibraryResult.ofItem(this@PlaybackService.browser.root(), params))
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = future {
+            val children = this@PlaybackService.browser.children(parentId)
+            if (children == null) {
+                LibraryResult.ofError(SessionError.ERROR_BAD_VALUE)
+            } else {
+                LibraryResult.ofItemList(children.page(page, pageSize), params)
             }
-            return Futures.immediateFuture(resolved)
+        }
+
+        override fun onGetItem(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String,
+        ): ListenableFuture<LibraryResult<MediaItem>> = future {
+            this@PlaybackService.browser.item(mediaId)
+                ?.let { LibraryResult.ofItem(it, null) }
+                ?: LibraryResult.ofError(SessionError.ERROR_BAD_VALUE)
+        }
+
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<Void>> = future {
+            val count = this@PlaybackService.browser.search(query).size
+            session.notifySearchResultChanged(browser, query, count, params)
+            LibraryResult.ofVoid()
+        }
+
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = future {
+            LibraryResult.ofItemList(this@PlaybackService.browser.search(query).page(page, pageSize), params)
         }
 
         // Lets the system media controls (Android 13+) resume the last queue after a reboot.
         override fun onPlaybackResumption(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
-        ): ListenableFuture<MediaItemsWithStartPosition> {
-            val future = SettableFuture.create<MediaItemsWithStartPosition>()
-            scope.launch {
-                val restored = loadSavedItems()
-                if (restored == null) {
-                    future.setException(UnsupportedOperationException("Nothing to resume"))
-                } else {
-                    player.shuffleModeEnabled = restored.shuffle
-                    player.repeatMode = restored.repeatMode
-                    future.set(restored.items)
-                }
-            }
-            return future
+        ): ListenableFuture<MediaItemsWithStartPosition> = future {
+            val restored = loadSavedItems() ?: throw UnsupportedOperationException("Nothing to resume")
+            player.shuffleModeEnabled = restored.shuffle
+            player.repeatMode = restored.repeatMode
+            restored.items
         }
+    }
+
+    /** Runs [block] on the main scope and exposes it as the future Media3 callbacks expect. */
+    private fun <T> future(block: suspend () -> T): ListenableFuture<T> {
+        val result = SettableFuture.create<T>()
+        scope.launch {
+            try {
+                result.set(block())
+            } catch (e: Exception) {
+                result.setException(e)
+            }
+        }
+        return result
     }
 
     private companion object {
         const val SAVE_INTERVAL_MS = 15_000L
+
+        fun <T> List<T>.page(page: Int, pageSize: Int): ImmutableList<T> {
+            if (pageSize <= 0 || pageSize == Int.MAX_VALUE) return ImmutableList.copyOf(this)
+            val from = (page.toLong() * pageSize).coerceAtMost(size.toLong()).toInt()
+            return ImmutableList.copyOf(subList(from, minOf(from + pageSize, size)))
+        }
     }
 }

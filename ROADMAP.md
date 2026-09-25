@@ -44,5 +44,10 @@ Cada fase se entrega compilando, con pruebas y lint en verde, en su propio commi
 - [x] Letras: archivo `.lrc` junto a la canción (cuando Android permite leerlo) o letra incrustada en MP3 (ID3 `USLT`) y FLAC (`LYRICS`)
 - [x] Letra sincronizada: resalta la línea actual y tocar una línea salta a ese momento
 
+## Fase 7 — Fuera del teléfono ✅
+- [x] Android Auto: explorar Canciones, Álbumes, Artistas y Playlists desde el coche; al elegir una canción se encola su álbum/lista
+- [x] Búsqueda por voz/texto ("pon X en Player") desde Android Auto y el asistente
+- [x] GitHub Actions: compila, prueba y deja el APK descargable en cada push
+
 ## Ideas futuras
-- Widget de pantalla de inicio, Android Auto, scrobbling a Last.fm
+- Widget de pantalla de inicio, scrobbling a Last.fm (requiere tu API key)
