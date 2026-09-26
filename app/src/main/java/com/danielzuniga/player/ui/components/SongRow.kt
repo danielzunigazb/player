@@ -153,7 +153,7 @@ fun SongMenu(
             if (isFavorite) DzIcons.HeartFilled else DzIcons.Heart,
         ) { actions.toggleFavorite(song); onDismiss() }
         MenuItem(R.string.go_to_album, DzIcons.Album) { actions.openAlbum(song.albumId); onDismiss() }
-        MenuItem(R.string.go_to_artist, DzIcons.Artist) { actions.openArtist(song.artist); onDismiss() }
+        MenuItem(R.string.go_to_artist, DzIcons.Artist) { actions.openArtist(song.artists.first()); onDismiss() }
         extraItems(onDismiss)
     }
 }

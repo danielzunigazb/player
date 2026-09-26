@@ -75,4 +75,17 @@ class LibraryIndexTest {
         added: Long,
         duration: Long = 200_000,
     ) = Song(id, title, artist, album, albumId, duration, track, year, added)
+
+    @Test
+    fun collaborationsCountForEveryCreditedArtist() {
+        val collab = Song(
+            id = 9, title = "Olivia La Flaka", artist = "Natanael Cano, Tito Double P", album = "Single",
+            albumId = 90, durationMs = 360_000, artists = listOf("Natanael Cano", "Tito Double P"),
+        )
+        val index = LibraryIndex(listOf(collab))
+        assertEquals(listOf("Natanael Cano", "Tito Double P"), index.artists.map { it.name })
+        assertEquals(listOf(9L), index.artist("Tito Double P")!!.songs.map { it.id })
+        // The album is credited to its lead artist, not the whole list.
+        assertEquals("Natanael Cano", index.album(90)!!.artist)
+    }
 }

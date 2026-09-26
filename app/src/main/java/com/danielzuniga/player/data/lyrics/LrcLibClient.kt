@@ -59,7 +59,7 @@ class LrcLibClient(
         val search = fetch(
             "$baseUrl/api/search?" + query(
                 "track_name" to cleanTitle(song.title),
-                "artist_name" to song.artist,
+                "artist_name" to song.artists.first(),
             ),
             userAgent,
         )

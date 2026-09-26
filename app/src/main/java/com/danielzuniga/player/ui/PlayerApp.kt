@@ -248,7 +248,7 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
                             onOpenEqualizer = { navigate(Routes.EQUALIZER) },
                             onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
                             onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
-                            onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artist)) } },
+                            onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artists.first())) } },
                         ),
                     )
                 }

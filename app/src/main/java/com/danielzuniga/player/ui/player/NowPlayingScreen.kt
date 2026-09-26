@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import com.danielzuniga.player.R
+import com.danielzuniga.player.data.TagText
 import com.danielzuniga.player.playback.NowPlaying
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.ui.LyricsUiState
@@ -116,7 +117,8 @@ fun NowPlayingScreen(
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
                 DzTitle(
                     text = nowPlaying.title,
-                    whisper = nowPlaying.artist.takeIf { it.isNotBlank() },
+                    // The whisper is meant to be a few words: long collab credits get shortened.
+                    whisper = TagText.shortCredit(TagText.artists(nowPlaying.artist), keepNamesWhole = true).takeIf { it.isNotBlank() },
                     whisperOnNewLine = true,
                     style = DzType.h1.copy(fontSize = DzType.h2.fontSize * 1.3f, lineHeight = DzType.h2.lineHeight * 1.3f),
                     maxLines = 3,

@@ -136,12 +136,17 @@ class MusicRepository(
 
             buildList(cursor.count) {
                 while (cursor.moveToNext()) {
+                    // Tags are messy ("A, ,, B", NUL-separated lists, ALL CAPS): clean them once here.
+                    val artists = cursor.getString(artistCol).takeUnless { it == MediaStore.UNKNOWN_STRING }
+                        .let(TagText::artists)
+                        .ifEmpty { listOf(unknownArtist) }
                     add(
                         Song(
                             id = cursor.getLong(idCol),
-                            title = cursor.getString(titleCol).orEmpty(),
-                            artist = cursor.getString(artistCol).orUnknown(unknownArtist),
-                            album = cursor.getString(albumCol).orUnknown(unknownAlbum),
+                            title = TagText.title(cursor.getString(titleCol)),
+                            artist = TagText.joinArtists(artists),
+                            artists = artists,
+                            album = TagText.title(cursor.getString(albumCol)).orUnknown(unknownAlbum),
                             albumId = cursor.getLong(albumIdCol),
                             durationMs = cursor.getLong(durationCol),
                             track = cursor.getInt(trackCol),

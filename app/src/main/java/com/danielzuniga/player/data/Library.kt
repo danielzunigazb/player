@@ -36,15 +36,18 @@ class LibraryIndex(val songs: List<Song>) {
             Album(
                 id = albumId,
                 title = first.album,
-                artist = albumSongs.groupingBy { it.artist }.eachCount().maxBy { it.value }.key,
+                // The album's lead artist: the one most tracks credit first, not a long collab list.
+                artist = albumSongs.groupingBy { it.artists.first() }.eachCount().maxBy { it.value }.key,
                 year = albumSongs.maxOf { it.year },
                 songs = albumSongs.sortedWith(compareBy<Song> { it.track }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }),
             )
         }
         .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
 
+    // A collaboration counts for every artist it credits, so "A, B" shows up under A and under B.
     val artists: List<Artist> = songs
-        .groupBy { it.artist }
+        .flatMap { song -> song.artists.map { it to song } }
+        .groupBy({ it.first }, { it.second })
         .map { (name, artistSongs) ->
             val albumIds = artistSongs.mapTo(HashSet()) { it.albumId }
             Artist(

@@ -109,7 +109,8 @@ class ScreensTest {
             }
         }
         // The artist rides along as the serif whisper in the same title text.
-        compose.onNodeWithText("De Música Ligera\nSoda Stereo").assertIsDisplayed()
+        // Names in the whisper use non-breaking spaces so they never split across lines.
+        compose.onNodeWithText("De Música Ligera\nSoda\u00A0Stereo").assertIsDisplayed()
         compose.onNodeWithText("0:30").assertIsDisplayed()
         compose.onNodeWithText("3:30").assertIsDisplayed()
         compose.onNodeWithContentDescription("Añadir a favoritas").performClick()

@@ -17,6 +17,8 @@ data class Song(
     val dateAddedSec: Long = 0L,
     /** Absolute file path from MediaStore; may be blank or unreadable under scoped storage. */
     val path: String = "",
+    /** Each credited artist on its own; [artist] is these joined for display. */
+    val artists: List<String> = listOf(artist),
 ) {
     val folder: String get() = path.substringBeforeLast('/', missingDelimiterValue = "")
 
