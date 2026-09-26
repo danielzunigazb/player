@@ -54,6 +54,7 @@
         <item quantity="other">Compartir %1$d líneas</item>
     </plurals>
     <string name="share_lines_limit">Hasta %1$d líneas</string>
+    <string name="share_failed">No se pudo crear la imagen para compartir</string>
     <string name="added_to_playlist">Añadido a \"%1$s\"</string>
 
     <!-- Playlists -->

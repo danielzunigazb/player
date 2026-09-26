@@ -13,8 +13,11 @@ import coil.request.SuccessResult
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Song
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 /**
  * Shares a song as a story image through Android's share sheet, so it reaches Instagram and
@@ -26,15 +29,24 @@ object SongSharer {
     /** Up to this many lyric lines fit a card legibly. */
     const val MAX_LINES = 4
 
-    suspend fun share(context: Context, song: Song, lines: List<String> = emptyList()) {
-        val file = createCard(context, song, lines)
+    /** Opens the share sheet with the card; false when the card couldn't be written (disk full). */
+    suspend fun share(context: Context, song: Song, lines: List<String> = emptyList()): Boolean {
+        val file = try {
+            createCard(context, song, lines)
+        } catch (e: IOException) {
+            return false
+        }
         context.startActivity(chooser(context, uriFor(context, file), caption(song, lines)))
+        return true
     }
 
+    // One card at a time, so a second share can't delete the file of one still being written.
+    private val cardLock = Mutex()
+
     /** Renders the card to a fresh PNG in the cache and returns it. */
-    suspend fun createCard(context: Context, song: Song, lines: List<String>): File {
+    suspend fun createCard(context: Context, song: Song, lines: List<String>): File = cardLock.withLock {
         val artwork = loadArtwork(context, song)
-        return withContext(Dispatchers.Default) {
+        withContext(Dispatchers.Default) {
             val content = ShareCardContent(
                 title = song.title,
                 artist = song.artist,
@@ -46,10 +58,14 @@ object SongSharer {
             withContext(Dispatchers.IO) {
                 val dir = File(context.cacheDir, DIR).apply { mkdirs() }
                 // A new name each time: some apps cache by URI and would show the previous card.
-                dir.listFiles()?.forEach { it.delete() }
+                // The previous card is kept, since the app it went to may still be reading it.
+                dir.listFiles()?.sortedByDescending { it.name }?.drop(1)?.forEach { it.delete() }
                 File(dir, "player-${System.currentTimeMillis()}.png").also { file ->
-                    file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-                    bitmap.recycle()
+                    try {
+                        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    } finally {
+                        bitmap.recycle()
+                    }
                 }
             }
         }

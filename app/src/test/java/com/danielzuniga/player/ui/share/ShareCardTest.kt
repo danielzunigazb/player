@@ -12,7 +12,9 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.data.Song
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,5 +87,29 @@ class ShareCardTest {
         val dir = File(context.cacheDir, "share").apply { mkdirs() }
         val file = File(dir, "card.png").apply { writeBytes(byteArrayOf(1)) }
         assertEquals("content", SongSharer.uriFor(context, file).scheme)
+    }
+
+    @Test
+    fun aNewCardKeepsThePreviousOneForTheAppStillReadingIt() = runBlocking {
+        File(context.cacheDir, "share").deleteRecursively()
+        val first = SongSharer.createCard(context, song, emptyList())
+        Thread.sleep(2)
+        val second = SongSharer.createCard(context, song, emptyList())
+        Thread.sleep(2)
+        val third = SongSharer.createCard(context, song, emptyList())
+        assertTrue(second.exists() && third.exists())
+        assertFalse(first.exists())
+    }
+
+    @Test
+    fun aCardThatCantBeWrittenIsReportedInsteadOfCrashing() = runBlocking {
+        // A file where the share folder should be: the card has nowhere to go.
+        val dir = File(context.cacheDir, "share").apply { deleteRecursively() }
+        dir.writeBytes(byteArrayOf(1))
+        try {
+            assertFalse(SongSharer.share(context, song))
+        } finally {
+            dir.delete()
+        }
     }
 }
