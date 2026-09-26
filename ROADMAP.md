@@ -84,7 +84,7 @@ Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proy
 
 **Mantenimiento solo**
 - [x] CI de PRs: si cambia `versionName`, exige `versionCode` mayor y `docs/releases/vX.Y.Z.md`
-- [x] Cada release estable adjunta `CHANGELOG.md` (de todas las notas) y `HISTORIAL-COMMITS.md` (de `git log`), generados por `scripts/`
+- [x] Cada release estable adjunta `CHANGELOG.md`, generado desde las notas por `scripts/`
 - [x] Dependabot semanal para Gradle, npm y Actions
 
 ## v1.5.2: mantenimiento de la cadena de herramientas (siguiente)
