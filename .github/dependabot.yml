@@ -1,5 +1,7 @@
-# Keeps dependencies current without anyone watching: one grouped PR per ecosystem a week.
-# Each PR runs the Android CI (tests + lint); merging it publishes a dev build.
+# Keeps dependencies current without anyone watching, in bundles that can be reviewed and merged
+# on their own. Each PR runs the Android CI (tests + lint); merging publishes a dev build.
+# Major jumps of the build toolchain (AGP) and the showcase's tools are left for a deliberate
+# upgrade PR: they change how the project builds, not just a version number.
 version: 2
 updates:
   - package-ecosystem: gradle
@@ -8,10 +10,21 @@ updates:
       interval: weekly
       day: monday
     groups:
-      android:
-        patterns: ["*"]
+      # Kotlin, its Compose plugin and KSP only work in matching versions.
+      kotlin-toolchain:
+        patterns: ["org.jetbrains.kotlin*", "com.google.devtools.ksp*"]
+      androidx:
+        patterns: ["androidx.*"]
         update-types: [minor, patch]
-    open-pull-requests-limit: 3
+      testing:
+        patterns: ["org.robolectric*", "junit*", "org.jetbrains.kotlinx:kotlinx-coroutines-test"]
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "com.android.application"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "androidx.compose:compose-bom"
+        update-types: ["version-update:semver-major"]
+    open-pull-requests-limit: 4
 
   - package-ecosystem: npm
     directory: /player-showcase
@@ -22,6 +35,9 @@ updates:
       showcase:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 2
 
   - package-ecosystem: github-actions

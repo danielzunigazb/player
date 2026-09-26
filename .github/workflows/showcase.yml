@@ -21,8 +21,10 @@ on:
 permissions:
   contents: write
 
+# One queue per trigger: a newer push replaces an older push render, but the run after a release
+# (often a no-op) must never cancel a push that has real work, or the other way round.
 concurrency:
-  group: showcase-${{ github.ref }}
+  group: showcase-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
