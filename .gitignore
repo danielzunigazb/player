@@ -13,3 +13,6 @@
 *.aab
 *.keystore
 *.jks
+keystore.properties
+*.lineage
+dist/
