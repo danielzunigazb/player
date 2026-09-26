@@ -3,7 +3,7 @@ import { Feature } from "./Feature";
 
 export const Themes: React.FC = () => (
   <Feature
-    eyebrow="05 — dos temas"
+    eyebrow="06 — dos temas"
     title={<>Obsidiana <Whisper>y pergamino</Whisper></>}
     titleSize={80}
     width={640}

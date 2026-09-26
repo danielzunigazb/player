@@ -1,12 +1,20 @@
 name: Showcase video
 
-# Renders player-showcase with Remotion and publishes the MP4 as a release asset, so the
-# video is linked from the README without living in git history.
+# Renders the presentation video with Remotion and publishes it, with nothing to do by hand:
+# - after Release publishes a stable version, the video is rebuilt with that version's news
+#   (docs/releases/v<version>.md), fresh screens drawn from the app itself (ShowcaseShotsTest)
+#   and the current test count, then attached to that release and to showcase-v1, which the
+#   README and the website link. The Site workflow redeploys when this one finishes.
+# - dev builds don't re-render; editing player-showcase/ on main does, to showcase-v1 only.
+# - on other branches, player-showcase/ changes just render as a check (the MP4 is an artifact).
 on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   push:
     paths:
       - "player-showcase/**"
-      - "app/build.gradle.kts"
+      - "app/src/test/java/com/danielzuniga/player/ui/ShowcaseShotsTest.kt"
       - ".github/workflows/showcase.yml"
   workflow_dispatch:
 
@@ -14,34 +22,73 @@ permissions:
   contents: write
 
 concurrency:
-  group: showcase
+  group: showcase-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   render:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: player-showcase
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          # After a release, render exactly the commit that was released.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Decide what to publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          TARGET=""; PUBLISH=showcase
+          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+            # Only a stable release without its video yet; dev builds leave the video alone.
+            ASSETS=$(gh release view "v$VERSION" --json assets --jq '.assets[].name' 2>/dev/null || echo "__none__")
+            if [ "$ASSETS" = "__none__" ]; then
+              echo "No stable release v$VERSION (dev build): nothing to render."; PUBLISH=none
+            elif echo "$ASSETS" | grep -qx "PlayerShowcase.mp4"; then
+              echo "v$VERSION already has its video."; PUBLISH=none
+            else
+              TARGET="v$VERSION"
+            fi
+          elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            PUBLISH=artifact
+          fi
+          echo "version $VERSION · publish: $PUBLISH ${TARGET:+(and $TARGET)}"
+          { echo "VERSION=$VERSION"; echo "TARGET=$TARGET"; echo "PUBLISH=$PUBLISH"; } >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        if: env.PUBLISH != 'none'
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: env.PUBLISH != 'none'
+
+      - name: Draw the app's screens
+        if: env.PUBLISH != 'none'
+        run: ./gradlew testDebugUnitTest --tests '*ShowcaseShotsTest*' -PshowcaseShots="$GITHUB_WORKSPACE/player-showcase/public/img" --console=plain
 
       - uses: actions/setup-node@v4
+        if: env.PUBLISH != 'none'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: player-showcase/package-lock.json
 
-      - run: npm ci
+      - name: Render (version, tests and news come from the repo)
+        if: env.PUBLISH != 'none'
+        working-directory: player-showcase
+        run: |
+          npm ci
+          npm run lint
+          npm run render
 
-      - name: Typecheck and lint
-        run: npm run lint
-
-      - name: Render (version and test count come from the app)
-        run: npm run render
-
-      - name: Publish to the showcase-v1 release
+      - name: Publish
+        if: env.PUBLISH == 'showcase'
+        working-directory: player-showcase
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -52,3 +99,15 @@ jobs:
               --target "$GITHUB_SHA" --title "Video de presentación" \
               --notes "Renderizado automáticamente desde player-showcase/ con Remotion."
           fi
+          if [ -n "$TARGET" ]; then
+            gh release upload "$TARGET" out/PlayerShowcase.mp4 out/showcase-thumb.jpg --clobber
+          fi
+
+      - name: Keep the render as an artifact
+        if: env.PUBLISH == 'artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: showcase
+          path: |
+            player-showcase/out/PlayerShowcase.mp4
+            player-showcase/out/showcase-thumb.jpg

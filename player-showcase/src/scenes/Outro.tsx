@@ -18,7 +18,7 @@ export const Outro: React.FC<{ version: string }> = ({ version }) => (
         </div>
       </Enter>
       <Enter at={1.5} dur={0.6}>
-        <Eyebrow>github.com/danielzunigazb/player</Eyebrow>
+        <Eyebrow>player.danzuniga.xyz · github.com/danielzunigazb/player</Eyebrow>
       </Enter>
     </div>
   </Backdrop>

@@ -82,7 +82,14 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
-        unitTests.all { it.maxHeapSize = "3g" }
+        unitTests.all { test ->
+            test.maxHeapSize = "3g"
+            // ShowcaseShotsTest writes the video's app screens here: -PshowcaseShots=<dir>.
+            providers.gradleProperty("showcaseShots").orNull?.let { dir ->
+                test.systemProperty("shots.dir", dir)
+                test.outputs.upToDateWhen { false }
+            }
+        }
     }
 
     androidResources {

@@ -1,7 +1,8 @@
-// Renders the showcase with facts read from the app itself, so the video can't drift from it:
-// the version from app/build.gradle.kts and the number of @Test methods in app/src/test.
+// Renders the showcase with facts read from the repo itself, so the video can't drift from it:
+// the version from app/build.gradle.kts, the number of @Test methods in app/src/test and the
+// version's news from docs/releases/v<version>.md.
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const app = new URL("../../app/", import.meta.url).pathname;
@@ -18,9 +19,48 @@ const countTests = (dir) =>
   }, 0);
 const tests = countTests(join(app, "src/test"));
 
-const props = JSON.stringify({ version, tests });
+// One item per "###" section of the release notes (install instructions aside): its title and
+// the first sentence of its first bullet, without markdown.
+const plain = (md) =>
+  md
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[*`_]/g, "")
+    .trim();
+const firstSentence = (text) => {
+  const sentence = text.split(/(?<=\.)\s/)[0].replace(/\.$/, "");
+  if (sentence.length <= 90) return sentence;
+  return sentence.slice(0, 88).replace(/\s+\S*$/, "") + "…";
+};
+const parseNews = (md) => {
+  const sections = [];
+  let current = null;
+  for (const line of md.split("\n")) {
+    const heading = line.match(/^###\s+(.+)/);
+    if (heading) {
+      current = /instalar|install/i.test(heading[1]) ? null : { title: plain(heading[1]), bullets: [] };
+      if (current) sections.push(current);
+      continue;
+    }
+    const bullet = line.match(/^\s*-\s+(.+)/);
+    if (current && bullet) current.bullets.push(bullet[1]);
+  }
+  return sections
+    .filter((s) => s.bullets.length > 0)
+    .slice(0, 5)
+    .map(({ title, bullets }) => {
+      // Bullets led by a bold label ("**Búsqueda**: …") read best as the list of labels.
+      const labels = bullets.map((b) => b.match(/^\*\*([^*]+)\*\*\s*[:—-]/)?.[1]).filter(Boolean);
+      const detail = labels.length >= 2 ? firstSentence(labels.join(" · ")) : firstSentence(plain(bullets[0]));
+      return { title, detail };
+    });
+};
+const notes = new URL(`../../docs/releases/v${version}.md`, import.meta.url).pathname;
+const news = existsSync(notes) ? parseNews(readFileSync(notes, "utf8")) : [];
+
+const props = JSON.stringify({ version, tests, news });
 const extra = process.argv.slice(2);
-console.log(`rendering player ${version} · ${tests} tests`);
+console.log(`rendering player ${version} · ${tests} tests · ${news.length} news items`);
+for (const item of news) console.log(`  · ${item.title}: ${item.detail}`);
 execFileSync(
   "npx",
   ["remotion", "render", "PlayerShowcase", "out/PlayerShowcase.mp4", "--codec=h264", "--crf=18", `--props=${props}`, ...extra],
