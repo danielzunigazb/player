@@ -87,6 +87,14 @@ Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proy
 - [x] Cada release estable adjunta `CHANGELOG.md` (de todas las notas) y `HISTORIAL-COMMITS.md` (de `git log`), generados por `scripts/`
 - [x] Dependabot semanal para Gradle, npm y Actions
 
+## v1.5.2: mantenimiento de la cadena de herramientas (siguiente)
+
+Dependabot propuso saltos que no pasan el CI tal como vienen y que deben ir juntos en un PR propio, probados a mano en el teléfono:
+- [ ] Kotlin 2.1 → 2.4 con su plugin de Compose y KSP 2.3
+- [ ] Media3 1.6 → 1.11, Room 2.8, Robolectric 4.17
+- [ ] AGP 8.9 → 9 y Compose BOM 2026 (las actualizaciones mayores están en pausa en Dependabot hasta hacerlas a propósito)
+- [ ] ESLint 10 en `player-showcase/`
+
 ## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
 
 Ideas para cuando 1.5.x esté cerrada; no son compromisos:
