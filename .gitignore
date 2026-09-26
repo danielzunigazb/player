@@ -16,3 +16,4 @@
 keystore.properties
 *.lineage
 dist/
+_site/

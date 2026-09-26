@@ -2,7 +2,7 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
-**Última versión estable: [v1.4.2](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior).
+**Última versión estable: [v1.4.2](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
 
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
 <p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a> (45 s): hecho con Remotion en <code>player-showcase/</code> y publicado por CI como release. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
@@ -67,7 +67,7 @@ La interfaz usa el sistema de diseño **Daniel Zúñiga** (claude.ai/design) por
 
 Los APK de release se firman con la llave de release de Player (certificado SHA-256 `8d7449ce…4f23cf36c`). Es la misma que firmó todas las versiones desde la 1.0.0, así que cada actualización se instala encima sin perder datos. **Si se pierde esa llave, ninguna versión futura podrá actualizar la app instalada**: guárdala en un lugar seguro.
 
-- **CI:** toma la llave de cuatro secrets del repo: `PLAYER_KEYSTORE_BASE64` (el `.jks` en base64), `PLAYER_KEYSTORE_PASSWORD`, `PLAYER_KEY_ALIAS` y `PLAYER_KEY_PASSWORD`. El paso "Show signing certificate" imprime la huella del APK para comprobarla.
+- **CI:** toma la llave de tres secrets del repo: `PLAYER_KEYSTORE_BASE64` (el `.jks` en base64), `PLAYER_KEYSTORE_PASSWORD` y `PLAYER_KEY_PASSWORD`. El alias (`player`) va como valor fijo en los workflows. El paso "Show signing certificate" imprime la huella del APK para comprobarla.
 - **Local:** copia `keystore.properties.example` a `keystore.properties` (ignorado por git) y completa la ruta y las contraseñas. También sirven las variables de entorno `PLAYER_KEYSTORE_FILE`, `PLAYER_KEYSTORE_PASSWORD`, `PLAYER_KEY_ALIAS` y `PLAYER_KEY_PASSWORD`.
 - **Sin llave:** el build de release se firma con la llave de debug de esa máquina y avisa. Con `PLAYER_REQUIRE_RELEASE_KEY=true` (builds de versiones estables) falla en vez de hacerlo.
 
@@ -113,3 +113,7 @@ Las versiones estables se publican en [Releases](https://github.com/danielzuniga
 El workflow `release.yml` comprueba que el tag coincida con `versionName`, corre tests y lint, firma con la llave de release, verifica que el certificado sea el esperado y publica el APK con su `.sha256`. El video de presentación se vuelve a renderizar solo cada vez que cambia la versión.
 
 Android 8.0 (API 26) o superior.
+
+## Web
+
+[player.danzuniga.xyz](https://player.danzuniga.xyz) sale de `site/` y la publica el workflow **Site** en GitHub Pages. Se vuelve a publicar cuando cambian el sitio, las capturas o `versionName`, y después de cada release o video nuevo, así que el enlace de descarga y el video no se quedan viejos. `site/build.sh` arma la página en `_site/` para verla en local (`python3 -m http.server -d _site`); el video solo lo agrega CI.

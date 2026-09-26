@@ -1,0 +1,56 @@
+name: Site
+
+# Publishes site/ to GitHub Pages (player.danzuniga.xyz) with the current version, the app
+# screenshots and the showcase video. Rebuilds when the site or the version changes, and after
+# a new release or a re-rendered showcase so the download link and the video stay current.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "player-showcase/public/img/**"
+      - "app/build.gradle.kts"
+      - ".github/workflows/pages.yml"
+  workflow_run:
+    workflows: ["Release", "Showcase video"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble the site
+        run: site/build.sh "$GITHUB_WORKSPACE/_site"
+
+      - name: Add the showcase video
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download showcase-v1 -p PlayerShowcase.mp4 -p showcase-thumb.jpg -D _site/media --clobber
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
