@@ -89,11 +89,11 @@ Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proy
 
 ## v1.5.2: mantenimiento de la cadena de herramientas (siguiente)
 
-Dependabot propuso saltos que no pasan el CI tal como vienen y que deben ir juntos en un PR propio, probados a mano en el teléfono:
-- [ ] Kotlin 2.1 → 2.4 con su plugin de Compose y KSP 2.3
-- [ ] Media3 1.6 → 1.11, Room 2.8, Robolectric 4.17
-- [ ] AGP 8.9 → 9 y Compose BOM 2026 (las actualizaciones mayores están en pausa en Dependabot hasta hacerlas a propósito)
-- [ ] ESLint 10 en `player-showcase/`
+Dependabot ya abrió los PR. No pasan el CI tal como vienen porque dependen unos de otros: van juntos en un PR propio, probados a mano en el teléfono.
+- [ ] Kotlin 2.1 → 2.4 con su plugin de Compose y KSP 2.3 (#15)
+- [ ] AndroidX: Media3 1.6 → 1.11, Room 2.8 y demás (#16; necesitan el Kotlin nuevo)
+- [ ] reorderable 2.4 → 3.1 (#18): pasa los tests, pero hay que probar a mano el arrastre en playlists y en la cola
+- [ ] AGP 8.9 → 9, Compose BOM 2026 y ESLint 10: saltos mayores en pausa en Dependabot hasta hacerlos a propósito
 
 ## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
 
