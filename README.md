@@ -61,6 +61,14 @@ La interfaz usa el sistema de diseño **Daniel Zúñiga** (claude.ai/design) por
 - **Componentes** en `ui/components/Dz.kt`: `DzButton`, `DzIconButton`, `DzTag`, `DzTitle` (con susurro y cursor), `DzMark`, `Eyebrow` y `Hairline`.
 - El **ícono de la app** es el monograma: la ñ recortada de un bloque dorado.
 
+## Firma
+
+Los APK de release se firman con la llave de release de Player (certificado SHA-256 `8d7449ce…4f23cf36c`). Es la misma que firmó todas las versiones desde la 1.0.0, así que cada actualización se instala encima sin perder datos. **Si se pierde esa llave, ninguna versión futura podrá actualizar la app instalada**: guárdala en un lugar seguro.
+
+- **CI:** toma la llave de cuatro secrets del repo: `PLAYER_KEYSTORE_BASE64` (el `.jks` en base64), `PLAYER_KEYSTORE_PASSWORD`, `PLAYER_KEY_ALIAS` y `PLAYER_KEY_PASSWORD`. El paso "Show signing certificate" imprime la huella del APK para comprobarla.
+- **Local:** copia `keystore.properties.example` a `keystore.properties` (ignorado por git) y completa la ruta y las contraseñas. También sirven las variables de entorno `PLAYER_KEYSTORE_FILE`, `PLAYER_KEYSTORE_PASSWORD`, `PLAYER_KEY_ALIAS` y `PLAYER_KEY_PASSWORD`.
+- **Sin llave:** el build de release se firma con la llave de debug de esa máquina y avisa. Con `PLAYER_REQUIRE_RELEASE_KEY=true` (builds de versiones estables) falla en vez de hacerlo.
+
 ## Arquitectura
 
 Kotlin, Jetpack Compose (Material 3), MVVM, Media3/ExoPlayer, Room, Navigation Compose.
