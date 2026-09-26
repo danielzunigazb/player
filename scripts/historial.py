@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Writes HISTORIAL-COMMITS.md: every commit with date, author, message, files and lines, grouped by
-the app version in each commit and by published release. Used by the Release workflow and by hand:
+the app version in each commit and by published release. For the owner only: run it by hand and
+keep the result private; it is never attached to releases, the website or the repo.
 
     python3 scripts/historial.py [salida.md]
 """
