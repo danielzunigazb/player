@@ -5,7 +5,7 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 **Última versión estable: [v1.5.0](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
 
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
-<p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a> (45 s): hecho con Remotion en <code>player-showcase/</code> y publicado por CI como release. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
+<p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a>: se regenera solo con cada versión estable (Remotion en <code>player-showcase/</code>), con las novedades de sus notas y pantallas dibujadas desde la app. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
 
 ## Funciones
 
@@ -118,15 +118,21 @@ Cada push a GitHub compila, prueba y publica el APK como artefacto en la pestañ
 
 ## Versiones
 
-Las versiones estables se publican en [Releases](https://github.com/danielzunigazb/player/releases). Para sacar una nueva:
+Los releases salen solos, desde el workflow **Release** en cada push a `main`:
 
-1. Sube `versionCode` y `versionName` en `app/build.gradle.kts`.
-2. Escribe las notas en `docs/releases/vX.Y.Z.md`; si no existen, GitHub las genera a partir de los commits.
-3. Publica: sube el tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) o, desde GitHub, **Actions → Release → Run workflow** sobre `main`, que crea el tag a partir de `versionName`.
+- **Estable:** cuando `main` trae un `versionName` sin release todavía. Sube `versionName` y `versionCode` en `app/build.gradle.kts`, escribe las notas en `docs/releases/vX.Y.Z.md`, mergea, y se publica `vX.Y.Z` como *latest*, con el APK y su `.sha256`. También sale al subir un tag `vX.Y.Z`.
+- **Dev:** cualquier otro push a `main` reemplaza el prerelease `dev` con `Player-dev.apk` (versión `X.Y.Z-dev.N`). Sirve para probar lo último antes de que sea versión. La app solo avisa de versiones estables.
 
-El workflow `release.yml` comprueba que el tag coincida con `versionName`, corre tests y lint, firma con la llave de release, verifica que el certificado sea el esperado y publica el APK con su `.sha256`. El video de presentación se vuelve a renderizar solo cada vez que cambia la versión.
+Los dos pasan tests y lint, exigen la llave de release y comprueban el certificado antes de publicar. La web lee las dos versiones de GitHub al abrirse, así que muestra un release nuevo al instante.
 
-Android 8.0 (API 26) o superior.
+Después de cada estable, el workflow **Showcase video** hace tres cosas: dibuja las pantallas desde la app (`ShowcaseShotsTest`), arma la escena "Novedades" con cada `###` de las notas de la versión (su título y la primera oración, o las etiquetas en negrita si las hay) y renderiza el video. Luego lo adjunta al release y a `showcase-v1`, y la web se vuelve a publicar con él. En la práctica: **escribe código, sube `versionName`, escribe las notas y mergea**; lo demás sale solo.
+
+Para ver las pantallas o el video en local:
+
+```sh
+./gradlew testDebugUnitTest --tests '*ShowcaseShotsTest*' -PshowcaseShots="$PWD/player-showcase/public/img"
+cd player-showcase && npm ci && npm run render   # o npm run dev para Remotion Studio
+```
 
 ## Web
 

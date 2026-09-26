@@ -1,5 +1,5 @@
 import { Composition, Folder } from "remotion";
-import { DEFAULT_PROPS, PlayerShowcase, SCENES, ShowcaseProps, TOTAL_FRAMES } from "./PlayerShowcase";
+import { DEFAULT_PROPS, PlayerShowcase, SCENES, ShowcaseProps, totalFrames } from "./PlayerShowcase";
 
 const SceneById: React.FC<ShowcaseProps & { id: string }> = ({ id, ...props }) => <>{SCENES.find((s) => s.id === id)!.render(props)}</>;
 
@@ -23,7 +23,9 @@ export const RemotionRoot: React.FC = () => (
       id="PlayerShowcase"
       component={PlayerShowcase}
       defaultProps={DEFAULT_PROPS}
-      durationInFrames={TOTAL_FRAMES}
+      durationInFrames={totalFrames(DEFAULT_PROPS)}
+      // The length follows the props: no release notes, no "WhatsNew" scene.
+      calculateMetadata={({ props }) => ({ durationInFrames: totalFrames(props) })}
       fps={30}
       width={1920}
       height={1080}

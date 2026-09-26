@@ -76,6 +76,7 @@
   .steps li b { color: var(--ink); font-weight: 600; }
   .hash { font-size: var(--text-small-size); word-break: break-all; }
   .text-muted { color: var(--ink-muted); }
+  [hidden] { display: none !important; }
   .section-alt { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); }
   .section-alt .project-card, .section-alt .term, .section-alt .code-block { background: var(--bg); }
 
@@ -107,18 +108,19 @@
     <div class="hero-inner">
       <div class="hero-main">
         <div class="title reveal">
-          <span class="label eyebrow">$ player --version → {{VERSION}} estable</span>
+          <span class="label eyebrow">$ player --version → <span data-stable-version>{{VERSION}}</span> estable</span>
           <h1 class="text-display name">player<span class="cursor" aria-hidden="true">&nbsp;</span></h1>
           <span class="whisper-lg">tu música, sin nube</span>
         </div>
         <p class="sub reveal">Un reproductor para la música que ya tienes en el teléfono. Sin cuentas ni anuncios, y nada sale del teléfono salvo lo necesario para buscar una letra. Letras sincronizadas, una terminal para manejarlo escribiendo, Android Auto y widget.</p>
         <div class="actions reveal">
-          <a href="https://github.com/danielzunigazb/player/releases/download/v{{VERSION}}/Player-{{VERSION}}.apk" class="btn btn-primary">descargar apk ↓</a>
+          <a href="https://github.com/danielzunigazb/player/releases/download/v{{VERSION}}/Player-{{VERSION}}.apk" class="btn btn-primary" data-stable-apk>descargar apk ↓</a>
           <a href="#video" class="btn btn-secondary">ver video</a>
           <a href="https://github.com/danielzunigazb/player" class="btn btn-ghost">código <svg class="icon"><use href="/icons.svg#icon-arrow-up-right"/></svg></a>
         </div>
         <div class="facts reveal">
-          <div class="row"><span>versión</span><b>{{VERSION}}</b></div>
+          <div class="row"><span>estable</span><b data-stable-version>{{VERSION}}</b></div>
+          <div class="row" data-dev-row hidden><span>dev</span><b><a data-dev-apk href="https://github.com/danielzunigazb/player/releases/tag/dev"><span data-dev-version></span> ↓</a> <span class="text-muted" data-dev-age></span></b></div>
           <div class="row"><span>requiere</span><b>android 8.0+</b></div>
           <div class="row"><span>tests</span><b style="color:var(--verdigris);">● {{TESTS}} en verde</b></div>
           <div class="row"><span>hecho con</span><b>kotlin · compose · media3</b></div>
@@ -251,11 +253,11 @@
   <div class="container">
     <div class="title reveal">
       <span class="label eyebrow">04 — instalar</span>
-      <h1>Instalar {{VERSION}}</h1>
+      <h1>Instalar <span data-stable-version>{{VERSION}}</span></h1>
     </div>
     <div class="split">
       <ol class="steps reveal">
-        <li><b>Descarga el APK</b> desde <a class="mark-n" href="https://github.com/danielzunigazb/player/releases/download/v{{VERSION}}/Player-{{VERSION}}.apk">Player-{{VERSION}}.apk</a> o desde la <a class="mark-n" href="https://github.com/danielzunigazb/player/releases/latest">página del release</a>.</li>
+        <li><b>Descarga el APK</b> desde <a class="mark-n" href="https://github.com/danielzunigazb/player/releases/download/v{{VERSION}}/Player-{{VERSION}}.apk" data-stable-apk><span data-stable-file>Player-{{VERSION}}.apk</span></a> o desde la <a class="mark-n" href="https://github.com/danielzunigazb/player/releases/latest">página del release</a>.</li>
         <li><b>Ábrelo en el teléfono</b> y permite instalar desde esa app si Android lo pide. Requiere Android 8.0 o superior.</li>
         <li><b>Da permiso de música</b> la primera vez: Player lee tu biblioteca local y nada más.</li>
         <li><b>Las actualizaciones se instalan encima</b> sin perder favoritas, playlists ni estadísticas.</li>
@@ -266,10 +268,11 @@
           <code class="hash" style="color:var(--ink);">8d7449ce0513e75468cf03b8845420ea7cc6f767dad064934c1e61b4f23cf36c</code>
         </div>
         <div class="code-block" style="margin-top: var(--space-4);">
-          <span class="dim">$</span> sha256sum -c Player-{{VERSION}}.apk.sha256<br>
-          <span class="dim">$</span> apksigner verify --print-certs Player-{{VERSION}}.apk
+          <span class="dim">$</span> sha256sum -c <span data-stable-file>Player-{{VERSION}}.apk</span>.sha256<br>
+          <span class="dim">$</span> apksigner verify --print-certs <span data-stable-file>Player-{{VERSION}}.apk</span>
         </div>
         <p class="text-small text-muted" style="margin-top: var(--space-4);">Cada release lo compila CI, que comprueba que el certificado sea este antes de publicar.</p>
+        <p class="text-small text-muted" data-dev-row hidden style="margin-top: var(--space-4);">¿Lo último de <code>main</code> antes de que sea versión? <a class="mark-n" data-dev-apk href="https://github.com/danielzunigazb/player/releases/tag/dev">build dev <span data-dev-version></span> ↓</a>. Puede tener fallos; se instala encima con la misma firma.</p>
       </div>
     </div>
   </div>
@@ -278,7 +281,7 @@
 
 <footer class="dz-footer container">
   <span>player — hecho por <a class="mark-n" href="https://danzuniga.xyz/">daniel zúñiga</a></span>
-  <span><a href="https://github.com/danielzunigazb/player">github</a> · v{{VERSION}}</span>
+  <span><a href="https://github.com/danielzunigazb/player">github</a> · v<span data-stable-version>{{VERSION}}</span></span>
 </footer>
 
 <script>
@@ -313,6 +316,36 @@ if (!reduced && 'IntersectionObserver' in window) {
 } else {
   document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
 }
+
+// Versions straight from GitHub when the page opens, so a new release shows up at once; the
+// values baked in at build time stay if GitHub can't be reached.
+(async () => {
+  try {
+    const res = await fetch('https://api.github.com/repos/danielzunigazb/player/releases?per_page=20', {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) return;
+    const releases = await res.json();
+    const apkOf = r => (r.assets || []).find(a => a.name.endsWith('.apk'));
+    const stable = releases.find(r => !r.draft && !r.prerelease && /^v\d/.test(r.tag_name) && apkOf(r));
+    if (stable) {
+      const apk = apkOf(stable);
+      document.querySelectorAll('[data-stable-version]').forEach(e => { e.textContent = stable.tag_name.replace(/^v/, ''); });
+      document.querySelectorAll('[data-stable-file]').forEach(e => { e.textContent = apk.name; });
+      document.querySelectorAll('[data-stable-apk]').forEach(a => { a.href = apk.browser_download_url; });
+    }
+    const dev = releases.find(r => r.tag_name === 'dev' && apkOf(r));
+    if (dev) {
+      const version = dev.name.replace(/^Player\s+/, '');
+      const hours = Math.max(0, Math.round((Date.now() - Date.parse(dev.published_at || dev.created_at)) / 36e5));
+      const age = hours < 1 ? 'hace un momento' : hours < 48 ? `hace ${hours} h` : `hace ${Math.round(hours / 24)} días`;
+      document.querySelectorAll('[data-dev-version]').forEach(e => { e.textContent = version; });
+      document.querySelectorAll('[data-dev-age]').forEach(e => { e.textContent = '· ' + age; });
+      document.querySelectorAll('[data-dev-apk]').forEach(a => { a.href = apkOf(dev).browser_download_url; });
+      document.querySelectorAll('[data-dev-row]').forEach(e => { e.hidden = false; });
+    }
+  } catch (e) { /* offline or rate-limited: keep the build-time values */ }
+})();
 
 // Types the terminal session line by line the first time it scrolls into view.
 const term = document.getElementById('term');

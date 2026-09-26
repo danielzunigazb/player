@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && git config user.name danielzunigazb && git config user.email danielzunigazb@gmail.com && git config core.hooksPath .githooks"
+          }
+        ]
+      }
+    ]
+  }
+}

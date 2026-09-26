@@ -37,6 +37,8 @@ android {
         targetSdk = 35
         versionCode = 9
         versionName = "1.5.0"
+        // Dev builds from main are "1.5.0-dev.<run>" (set by the Release workflow).
+        System.getenv("PLAYER_VERSION_SUFFIX")?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = it }
     }
 
     signingConfigs {
@@ -80,7 +82,14 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
-        unitTests.all { it.maxHeapSize = "3g" }
+        unitTests.all { test ->
+            test.maxHeapSize = "3g"
+            // ShowcaseShotsTest writes the video's app screens here: -PshowcaseShots=<dir>.
+            providers.gradleProperty("showcaseShots").orNull?.let { dir ->
+                test.systemProperty("shots.dir", dir)
+                test.outputs.upToDateWhen { false }
+            }
+        }
     }
 
     androidResources {

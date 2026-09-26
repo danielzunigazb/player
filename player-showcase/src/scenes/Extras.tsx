@@ -4,6 +4,9 @@ import { Feature } from "./Feature";
 export const Extras: React.FC<{ tests: number }> = ({ tests }) => {
   const tags: [string, string?][] = [
     ["android auto", C.gold],
+    ["español · english"],
+    ["etiquetas completadas"],
+    ["avisa de versiones nuevas"],
     ["widget"],
     ["ecualizador · bass boost"],
     ["temporizador"],
@@ -14,7 +17,7 @@ export const Extras: React.FC<{ tests: number }> = ({ tests }) => {
     [`${tests} tests · ci verde`, C.verdigris],
   ];
   return (
-    <Feature eyebrow="06 — y además" title={<>Hecho para <Whisper>usarse a diario</Whisper></>} width={1600}>
+    <Feature eyebrow="07 — y además" title={<>Hecho para <Whisper>usarse a diario</Whisper></>} width={1600}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18, maxWidth: 1500 }}>
         {tags.map(([label, color], i) => (
           <Enter key={label} at={0.8 + i * 0.15} dur={0.3}>

@@ -1,21 +1,29 @@
 name: Release
 
-# Publishes a version: tests, lint and a release build signed with the release key, checked
-# against the known certificate, attached to a GitHub release. Two ways in:
-# - push a tag like v1.4.2, or
-# - run it by hand from Actions on main: it reads versionName and creates the tag itself.
+# Publishes Player on its own; nobody has to remember to cut a release:
+# - stable: when main carries a versionName that has no release yet (bump versionName in a PR,
+#   merge, done), or when a tag like v1.5.0 is pushed. Becomes the "latest" release, which the
+#   app's update check and the website offer.
+# - dev: every other push to main rebuilds the rolling "dev" prerelease ("1.5.0-dev.<run>"),
+#   for trying what's on main before it's a version.
+# Both are tested, linted, signed with the release key and checked against its certificate.
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 env:
   # Certificate every installed Player build is signed with; a different one could not update them.
   EXPECTED_CERT_SHA256: 8d7449ce0513e75468cf03b8845420ea7cc6f767dad064934c1e61b4f23cf36c
+  DEV_TAG: dev
 
 jobs:
   release:
@@ -31,23 +39,35 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Resolve version and tag
+      - name: Decide stable or dev
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
-              echo "::error::Manual releases only run from main"; exit 1
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match versionName $VERSION"; exit 1
             fi
-            if gh release view "v$VERSION" >/dev/null 2>&1; then
-              echo "::error::v$VERSION is already released; bump versionName first"; exit 1
-            fi
-          elif [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match versionName $VERSION"; exit 1
+            CHANNEL=stable
+          elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Releases only come from main"; exit 1
+          elif gh release view "v$VERSION" >/dev/null 2>&1; then
+            CHANNEL=dev
+          else
+            CHANNEL=stable
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+          if [ "$CHANNEL" = dev ]; then
+            SUFFIX="-dev.$GITHUB_RUN_NUMBER"
+          else
+            SUFFIX=""
+          fi
+          echo "channel: $CHANNEL · version: $VERSION$SUFFIX"
+          {
+            echo "CHANNEL=$CHANNEL"
+            echo "VERSION=$VERSION"
+            echo "FULL_VERSION=$VERSION$SUFFIX"
+            echo "PLAYER_VERSION_SUFFIX=$SUFFIX"
+          } >> "$GITHUB_ENV"
 
       - name: Restore release key
         env:
@@ -74,15 +94,42 @@ jobs:
           if [ "$ACTUAL" != "$EXPECTED_CERT_SHA256" ]; then
             echo "::error::APK is signed with an unexpected certificate"; exit 1
           fi
-          cp "$APK" "Player-$VERSION.apk"
-          sha256sum "Player-$VERSION.apk" > "Player-$VERSION.apk.sha256"
+          # Dev builds keep one file name, so a link to it never goes stale.
+          if [ "$CHANNEL" = dev ]; then NAME="Player-dev.apk"; else NAME="Player-$VERSION.apk"; fi
+          cp "$APK" "$NAME"
+          sha256sum "$NAME" > "$NAME.sha256"
+          echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
 
-      - name: Publish release
+      - name: Publish stable release
+        if: env.CHANNEL == 'stable'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          TAG="v$VERSION"
           NOTES="docs/releases/$TAG.md"
           if [ -f "$NOTES" ]; then NOTES_ARGS=(--notes-file "$NOTES"); else NOTES_ARGS=(--generate-notes); fi
-          # --target creates the tag at this commit when the run was started by hand.
-          gh release create "$TAG" "Player-$VERSION.apk" "Player-$VERSION.apk.sha256" \
+          gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" \
             --target "$GITHUB_SHA" --title "Player $VERSION" --latest "${NOTES_ARGS[@]}"
+          # A dev build older than this stable one would only confuse; the next push to main
+          # starts a new one.
+          gh release delete "$DEV_TAG" --cleanup-tag --yes 2>/dev/null || true
+
+      - name: Publish dev build
+        if: env.CHANNEL == 'dev'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHORT=${GITHUB_SHA::7}
+          SUBJECT=$(git log -1 --format=%s)
+          cat > dev-notes.md <<NOTES
+          **Build de desarrollo** de \`main\` ($SHORT): lo último, antes de ser versión estable. Puede tener fallos.
+
+          Último cambio: $SUBJECT
+
+          Se instala encima de la estable (misma firma). La app solo avisa de versiones estables.
+          NOTES
+          # One rolling prerelease: replace the previous build and move the tag to this commit.
+          gh release delete "$DEV_TAG" --cleanup-tag --yes 2>/dev/null || true
+          gh release create "$DEV_TAG" "$APK_NAME" "$APK_NAME.sha256" \
+            --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "Player $FULL_VERSION" --notes-file dev-notes.md
