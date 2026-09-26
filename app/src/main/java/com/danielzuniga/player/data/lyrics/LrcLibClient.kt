@@ -49,7 +49,8 @@ class LrcLibClient(
             userAgent,
         )
         if (exact.code == 200) {
-            exact.body?.let(::JSONObject)?.let { json ->
+            // A 200 that isn't JSON (captive portal, maintenance page) falls through to the search.
+            exact.body?.let { runCatching { JSONObject(it) }.getOrNull() }?.let { json ->
                 if (json.optBoolean("instrumental")) return Result.NotFound
                 lyricsFrom(json)?.let { return Result.Found(it) }
             }
@@ -69,7 +70,9 @@ class LrcLibClient(
             val definitive = search.code in 400..499 || exact.code == 404
             return if (definitive) Result.NotFound else Result.Failed
         }
-        val best = pickBest(JSONArray(search.body), song) ?: return Result.NotFound
+        val results = runCatching { JSONArray(search.body) }.getOrNull()
+            ?: return Result.Failed // not LRCLIB talking: try again another time
+        val best = pickBest(results, song) ?: return Result.NotFound
         return lyricsFrom(best)?.let { Result.Found(it) } ?: Result.NotFound
     }
 
@@ -152,10 +155,15 @@ class LrcLibClient(
         }
 
         /** Drops decorations that rarely match a lyrics database: "(Remastered 2011)", "- Live", "feat. X". */
+        private val BRACKETED_DECORATION =
+            Regex("""\s*[(\[][^)\]]*(remaster|live|version|edit|mix|mono|stereo|feat|ft\.|en vivo|versi[oó]n)[^)\]]*[)\]]""", RegexOption.IGNORE_CASE)
+        private val DASHED_DECORATION = Regex("""\s+-\s+.*(remaster|live|version|edit|mix|en vivo).*$""", RegexOption.IGNORE_CASE)
+        private val FEATURING_TAIL = Regex("""\s+(feat\.|ft\.|featuring)\s+.*$""", RegexOption.IGNORE_CASE)
+
         internal fun cleanTitle(title: String): String = title
-            .replace(Regex("""\s*[(\[][^)\]]*(remaster|live|version|edit|mix|mono|stereo|feat|ft\.|en vivo|versi[oó]n)[^)\]]*[)\]]""", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("""\s+-\s+.*(remaster|live|version|edit|mix|en vivo).*$""", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("""\s+(feat\.|ft\.|featuring)\s+.*$""", RegexOption.IGNORE_CASE), "")
+            .replace(BRACKETED_DECORATION, "")
+            .replace(DASHED_DECORATION, "")
+            .replace(FEATURING_TAIL, "")
             .trim()
             .ifEmpty { title }
 

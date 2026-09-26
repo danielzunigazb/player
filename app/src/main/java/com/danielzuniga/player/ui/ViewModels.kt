@@ -287,10 +287,12 @@ class PlaylistDetailViewModel(
         container.appScope.launch { userData.deletePlaylist(id) }
     }
 
-    fun remove(song: Song) = saveOrder(state.value.songs.filterNot { it.id == song.id })
+    fun remove(song: Song) {
+        viewModelScope.launch { userData.removeFromPlaylist(id, song.id) }
+    }
 
     fun saveOrder(songs: List<Song>) {
-        viewModelScope.launch { userData.setPlaylistOrder(id, songs.map { it.id }) }
+        viewModelScope.launch { userData.reorderPlaylist(id, songs.map { it.id }) }
     }
 }
 

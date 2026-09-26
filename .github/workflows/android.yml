@@ -11,6 +11,30 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A PR that changes the version must be releasable as-is: a higher versionCode (Android
+      # refuses to install a lower or equal one over the current app) and release notes, which
+      # become the release page, the video's "Novedades" and the changelog.
+      - name: Version bump is complete
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          read_gradle() { git show "$1:app/build.gradle.kts" | sed -n "s/.*$2 = \"\{0,1\}\([^\"]*\)\"\{0,1\}$/\1/p" | head -1; }
+          OLD_NAME=$(read_gradle "$BASE" versionName); NEW_NAME=$(read_gradle HEAD versionName)
+          OLD_CODE=$(read_gradle "$BASE" versionCode); NEW_CODE=$(read_gradle HEAD versionCode)
+          echo "versionName $OLD_NAME → $NEW_NAME · versionCode $OLD_CODE → $NEW_CODE"
+          if [ "$OLD_NAME" = "$NEW_NAME" ]; then echo "Version unchanged: nothing to check."; exit 0; fi
+          FAIL=0
+          if [ "$NEW_CODE" -le "$OLD_CODE" ]; then
+            echo "::error file=app/build.gradle.kts::versionName changed but versionCode didn't go up ($OLD_CODE → $NEW_CODE)"; FAIL=1
+          fi
+          if [ ! -s "docs/releases/v$NEW_NAME.md" ]; then
+            echo "::error::Missing release notes docs/releases/v$NEW_NAME.md"; FAIL=1
+          fi
+          exit $FAIL
 
       - uses: actions/setup-java@v4
         with:

@@ -178,6 +178,23 @@ class LrcLibClientTest {
     }
 
     @Test
+    fun answersThatArentJsonAreRetriedNotCrashes() {
+        val portal = "<html><body>Inicia sesión en la red WiFi</body></html>"
+        // Exact lookup and search both answered by a captive portal.
+        assertEquals(
+            LrcLibClient.Result.Failed,
+            client(LrcLibClient.Response(200, portal), LrcLibClient.Response(200, portal)).find(song),
+        )
+        // A broken exact answer still lets the search find the song.
+        requests.clear()
+        val search = JSONArray().put(track(211.0, synced = "[00:01.00]hola")).toString()
+        assertEquals(
+            LrcLibClient.Result.Found("[00:01.00]hola"),
+            client(LrcLibClient.Response(200, "null"), LrcLibClient.Response(200, search)).find(song),
+        )
+    }
+
+    @Test
     fun cleansDecoratedTitles() {
         assertEquals("Persiana Americana", LrcLibClient.cleanTitle("Persiana Americana (Remastered 2007)"))
         assertEquals("Eres", LrcLibClient.cleanTitle("Eres - En Vivo"))

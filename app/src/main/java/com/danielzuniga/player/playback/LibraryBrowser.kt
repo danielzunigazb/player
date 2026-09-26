@@ -1,6 +1,7 @@
 package com.danielzuniga.player.playback
 
 import android.content.Context
+import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.danielzuniga.player.AppContainer
@@ -35,7 +36,7 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
                 folder("$ALBUM${it.id}", it.title, subtitle = it.artist, mediaType = MediaMetadata.MEDIA_TYPE_ALBUM)
             }
             parentId == ARTISTS -> library.artists.map {
-                folder("$ARTIST${it.name}", it.name, mediaType = MediaMetadata.MEDIA_TYPE_ARTIST)
+                folder(artistId(it.name), it.name, mediaType = MediaMetadata.MEDIA_TYPE_ARTIST)
             }
             parentId == PLAYLISTS -> smartPlaylists() + container.userData.playlistSummaries.first().map {
                 folder("$PLAYLIST${it.id}", it.name, mediaType = MediaMetadata.MEDIA_TYPE_PLAYLIST)
@@ -47,7 +48,7 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
     suspend fun item(id: String): MediaItem? {
         if (id == ROOT) return root()
         val library = container.musicRepository.awaitLibrary()
-        songIdOf(id)?.let { songId -> return library.song(songId)?.toBrowsableSong(id.substringBefore('|')) }
+        songIdOf(id)?.let { songId -> return library.song(songId)?.toBrowsableSong(id.substringBeforeLast('|')) }
         return children(ROOT)?.firstOrNull { it.mediaId == id }
     }
 
@@ -70,7 +71,7 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
         if (items.size == 1) {
             val id = items.single().mediaId
             val songId = songIdOf(id)
-            val parent = id.substringBefore('|', missingDelimiterValue = "")
+            val parent = id.substringBeforeLast('|', missingDelimiterValue = "")
             val siblings = if (songId != null && parent.isNotEmpty()) songsOf(parent, library) else null
             val index = siblings?.indexOfFirst { it.id == songId } ?: -1
             if (siblings != null && index >= 0) return siblings.map { it.toMediaItem() } to index
@@ -93,7 +94,7 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
         parentId == SONGS -> library.songs
         parentId == SEARCH -> null
         parentId.startsWith(ALBUM) -> parentId.removePrefix(ALBUM).toLongOrNull()?.let(library::album)?.songs
-        parentId.startsWith(ARTIST) -> library.artist(parentId.removePrefix(ARTIST))?.songs
+        parentId.startsWith(ARTIST) -> library.artist(Uri.decode(parentId.removePrefix(ARTIST)))?.songs
         parentId.startsWith(PLAYLIST) -> parentId.removePrefix(PLAYLIST).toLongOrNull()
             ?.let { library.songs(container.userData.playlistSongIds(it).first()) }
         parentId == SMART_FAVORITES -> library.songs(container.userData.favoriteIds.first())
@@ -144,6 +145,12 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
         const val SMART_FAVORITES = "smart:favorites"
         const val SMART_MOST_PLAYED = "smart:most_played"
         private const val SEARCH_LIMIT = 50
+
+        /**
+         * An artist's browse id. The name is encoded: a "|" in it ("Blink|182") would otherwise be
+         * read as the separator before a song id.
+         */
+        fun artistId(name: String): String = ARTIST + Uri.encode(name)
 
         /** Song id from either a plain id ("42") or a browse id ("album:7|42"). */
         fun songIdOf(mediaId: String): Long? = mediaId.substringAfterLast('|').toLongOrNull()

@@ -42,6 +42,9 @@ class LibraryBrowseTest {
                 FakeSong(1, "De Música Ligera", "Soda Stereo", "Canción Animal", albumId = 10, track = 1),
                 FakeSong(2, "Un Millón de Años Luz", "Soda Stereo", "Canción Animal", albumId = 10, track = 2),
                 FakeSong(3, "Eres", "Café Tacvba", "Cuatro Caminos", albumId = 20, track = 1),
+                // A "|" in the name used to be read as the separator before a song id.
+                FakeSong(4, "All the Small Things", "Blink|182", "Enema of the State", albumId = 30, track = 1),
+                FakeSong(5, "What's My Age Again?", "Blink|182", "Enema of the State", albumId = 30, track = 2),
             )
         )
         service = Robolectric.buildService(PlaybackService::class.java).create()
@@ -70,7 +73,7 @@ class LibraryBrowseTest {
     @Test
     fun albumsContainTheirSongsInTrackOrder() {
         val albums = await(browser.getChildren(LibraryBrowser.ALBUMS, 0, 100, null)).value!!
-        assertEquals(listOf("Canción Animal", "Cuatro Caminos"), albums.map { it.mediaMetadata.title.toString() })
+        assertEquals(listOf("Canción Animal", "Cuatro Caminos", "Enema of the State"), albums.map { it.mediaMetadata.title.toString() })
 
         val songs = await(browser.getChildren(albums.first().mediaId, 0, 100, null)).value!!
         assertEquals(listOf("De Música Ligera", "Un Millón de Años Luz"), songs.map { it.mediaMetadata.title.toString() })
@@ -80,9 +83,23 @@ class LibraryBrowseTest {
     @Test
     fun pagesLargeLists() {
         val firstPage = await(browser.getChildren(LibraryBrowser.SONGS, 0, 2, null)).value!!
-        val secondPage = await(browser.getChildren(LibraryBrowser.SONGS, 1, 2, null)).value!!
+        val lastPage = await(browser.getChildren(LibraryBrowser.SONGS, 2, 2, null)).value!!
         assertEquals(2, firstPage.size)
-        assertEquals(1, secondPage.size)
+        assertEquals(1, lastPage.size)
+    }
+
+    @Test
+    fun artistNamesWithABarBrowseAndQueue() {
+        val artists = await(browser.getChildren(LibraryBrowser.ARTISTS, 0, 100, null)).value!!
+        val blink = artists.single { it.mediaMetadata.title.toString() == "Blink|182" }
+        // The node is the artist, not "song 182".
+        assertEquals(null, LibraryBrowser.songIdOf(blink.mediaId))
+        val songs = await(browser.getChildren(blink.mediaId, 0, 100, null)).value!!
+        assertEquals(listOf("4", "5"), songs.map { LibraryBrowser.songIdOf(it.mediaId).toString() })
+
+        browser.setMediaItem(songs[1])
+        awaitUntil { browser.mediaItemCount == 2 }
+        assertEquals("5", browser.currentMediaItem?.mediaId)
     }
 
     @Test

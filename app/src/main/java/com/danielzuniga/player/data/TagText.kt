@@ -70,6 +70,9 @@ object TagText {
 
     private const val NBSP = '\u00A0'
 
+    /** A lower-case letter right after an opening bracket, quote or hyphen. */
+    private val CAPITAL_AFTER_OPENER = Regex("""([(\["'¿¡-])(\p{Ll})""")
+
     /**
      * "OLIVIA LA FLAKA" → "Olivia La Flaka". Only strings with no lower-case letters and at
      * least two words are touched, so one-word stylisations ("HUMBLE.") and names with
@@ -85,7 +88,7 @@ object TagText {
             } else {
                 word.lowercase().replaceFirstChar { it.titlecase() }
                     // Keep the letter after an opening bracket, quote or hyphen capitalised: "(Remix)", "Hip-Hop".
-                    .replace(Regex("""([(\["'¿¡-])(\p{Ll})""")) { it.groupValues[1] + it.groupValues[2].uppercase() }
+                    .replace(CAPITAL_AFTER_OPENER) { it.groupValues[1] + it.groupValues[2].uppercase() }
             }
         }
     }

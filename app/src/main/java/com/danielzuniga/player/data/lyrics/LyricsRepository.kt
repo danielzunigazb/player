@@ -29,7 +29,14 @@ class LyricsRepository(
 
     suspend fun load(song: Song): FoundLyrics? {
         cache.get(song.id)?.let { return it.found }
-        val (found, remember) = withContext(Dispatchers.IO) { resolve(song) }
+        // Lyrics are a nicety: nothing that goes wrong finding them may reach the player screen.
+        val (found, remember) = withContext(Dispatchers.IO) {
+            try {
+                resolve(song)
+            } catch (e: Exception) {
+                null to false
+            }
+        }
         // Network failures aren't remembered, so the next play tries again.
         if (remember) cache.put(song.id, Result(found))
         return found

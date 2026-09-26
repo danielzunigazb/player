@@ -72,6 +72,12 @@ interface PlaylistDao {
         clearSongs(playlistId)
         insertSongs(songIds.distinct().mapIndexed { i, id -> PlaylistSongEntity(playlistId, id, i) })
     }
+
+    /** Rewrites the playlist from its stored ids (all of them, including songs not in the library right now). */
+    @Transaction
+    suspend fun editSongs(playlistId: Long, edit: (List<Long>) -> List<Long>) {
+        replaceSongs(playlistId, edit(songIds(playlistId)))
+    }
 }
 
 @Dao

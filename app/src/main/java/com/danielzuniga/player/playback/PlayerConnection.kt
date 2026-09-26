@@ -67,6 +67,8 @@ class PlayerConnection(context: Context) {
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
     private var controller: MediaController? = null
+    /** Set by [release]; a connection that completes afterwards is dropped, not kept. */
+    private var released = false
     private val controllerFuture: ListenableFuture<MediaController>
 
     private val playerListener = object : Player.Listener {
@@ -94,8 +96,14 @@ class PlayerConnection(context: Context) {
             .buildAsync()
         controllerFuture.addListener(
             {
-                if (controllerFuture.isCancelled) return@addListener
-                val connected = controllerFuture.get()
+                if (released || controllerFuture.isCancelled) return@addListener
+                // The session can refuse the connection or the service can die while starting:
+                // stay disconnected rather than crash the screen.
+                val connected = try {
+                    controllerFuture.get()
+                } catch (e: Exception) {
+                    return@addListener
+                }
                 connected.addListener(playerListener)
                 controller = connected
                 publish(connected)
@@ -200,6 +208,7 @@ class PlayerConnection(context: Context) {
     }
 
     fun release() {
+        released = true
         controller?.removeListener(playerListener)
         controller = null
         _isConnected.value = false

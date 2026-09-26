@@ -165,6 +165,17 @@ class ShellTest {
     }
 
     @Test
+    fun noSpanishLeaksIntoTheEnglishShell() {
+        // Nothing playing and no history: the paths that answer with a message, not an action.
+        val english = Shell(host, ShellText.English)
+        val spanish = Regex("""\b(nada|sonando|canci[oó]n|uso|comando|biblioteca|pausa|cola|favoritas|letra)\b""", RegexOption.IGNORE_CASE)
+        val inputs = english.commandNames.flatMap { listOf(it, "$it zzz") } + listOf("sudo", "dance", "seek x", "sleep x", "speed x")
+        val leaks = inputs.flatMap { input -> english.run(input).drop(1).map { input to it.text } }
+            .filter { (_, text) -> spanish.containsMatchIn(text) }
+        assertTrue("Spanish in English replies: $leaks", leaks.isEmpty())
+    }
+
+    @Test
     fun speaksEnglish() {
         val english = Shell(host, ShellText.English)
         val drop = { input: String -> english.run(input).drop(1) }

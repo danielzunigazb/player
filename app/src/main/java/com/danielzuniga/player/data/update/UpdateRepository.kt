@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicBoolean
 
 sealed interface UpdateState {
     data object Idle : UpdateState
@@ -41,9 +40,11 @@ class UpdateRepository(
     private val _offer = MutableStateFlow<Release?>(null)
     val offer: StateFlow<Release?> = _offer.asStateFlow()
 
-    /** A check is in flight; cleared before its result is published, so a check asked for right
-     * after seeing that result always runs. */
-    private val checking = AtomicBoolean(false)
+    /**
+     * A check is in flight; cleared before its result is published, so a check asked for right
+     * after seeing that result always runs. Everything here runs on the main thread.
+     */
+    private var checking = false
 
     fun checkIfDue() {
         if (!autoCheck()) return
@@ -60,13 +61,14 @@ class UpdateRepository(
     }
 
     private fun check(manual: Boolean) {
-        if (!checking.compareAndSet(false, true)) return
+        if (checking) return
+        checking = true
         scope.launch {
             _state.value = UpdateState.Checking
             val latest = try {
                 withContext(Dispatchers.IO) { checker.latest() }
             } finally {
-                checking.set(false)
+                checking = false
             }
             if (latest == null) {
                 _state.value = UpdateState.Failed

@@ -123,7 +123,7 @@ Los releases salen solos, desde el workflow **Release** en cada push a `main`:
 - **Estable:** cuando `main` trae un `versionName` sin release todavía. Sube `versionName` y `versionCode` en `app/build.gradle.kts`, escribe las notas en `docs/releases/vX.Y.Z.md`, mergea, y se publica `vX.Y.Z` como *latest*, con el APK y su `.sha256`. También sale al subir un tag `vX.Y.Z`.
 - **Dev:** cualquier otro push a `main` reemplaza el prerelease `dev` con `Player-dev.apk` (versión `X.Y.Z-dev.N`). Sirve para probar lo último antes de que sea versión. La app solo avisa de versiones estables.
 
-Los dos pasan tests y lint, exigen la llave de release y comprueban el certificado antes de publicar. La web lee las dos versiones de GitHub al abrirse, así que muestra un release nuevo al instante.
+Los dos pasan tests y lint, exigen la llave de release y comprueban el certificado antes de publicar. Cada estable adjunta además `CHANGELOG.md` y `HISTORIAL-COMMITS.md`, generados por `scripts/`. En los PR, el CI rechaza un cambio de `versionName` si no sube `versionCode` o si faltan sus notas. Dependabot propone cada lunes las actualizaciones de Gradle, npm y Actions, agrupadas. La web lee las dos versiones de GitHub al abrirse, así que muestra un release nuevo al instante.
 
 Después de cada estable, el workflow **Showcase video** hace tres cosas: dibuja las pantallas desde la app (`ShowcaseShotsTest`), arma la escena "Novedades" con cada `###` de las notas de la versión (su título y la primera oración, o las etiquetas en negrita si las hay) y renderiza el video. Luego lo adjunta al release y a `showcase-v1`, y la web se vuelve a publicar con él. En la práctica: **escribe código, sube `versionName`, escribe las notas y mergea**; lo demás sale solo.
 

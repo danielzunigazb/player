@@ -18,5 +18,8 @@ Todo lo publica CI al mergear a `main`: no hay pasos a mano.
 
 - Para una versión estable: sube `versionName` y `versionCode` en `app/build.gradle.kts` y escribe `docs/releases/vX.Y.Z.md` con secciones `###`. De ahí sale la escena "Novedades" del video: el título de cada sección y su primera oración, o las etiquetas en negrita. Al mergear se publican, en cadena, el release, el video y la web.
 - Cualquier otro push a `main` publica el prerelease `dev`.
+- El CI de los PR bloquea un cambio de `versionName` si no sube `versionCode` o si faltan las notas.
+- Cada release estable adjunta `CHANGELOG.md` (lo genera `scripts/changelog.py` desde `docs/releases/`) y `HISTORIAL-COMMITS.md` (lo genera `scripts/historial.py`). No se editan a mano.
+- Madurez antes que funciones: lee el `ROADMAP.md`. Lo de "ecosistema personal" no se empieza hasta cerrar 1.5.x.
 - Las pantallas del video salen de `ShowcaseShotsTest`. Si cambia una pantalla o se agrega una función visible, actualiza ese test y las escenas de `player-showcase/src/scenes/`.
 
