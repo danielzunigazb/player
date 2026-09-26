@@ -33,6 +33,7 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -175,6 +176,7 @@ class PlaybackService : MediaLibraryService() {
 
     private var widgetArtUri: Uri? = null
     private var widgetArt: Bitmap? = null
+    private var widgetJob: Job? = null
 
     private fun updateWidget() {
         if (!NowPlayingWidget.hasWidgets(this)) return
@@ -187,10 +189,14 @@ class PlaybackService : MediaLibraryService() {
             artworkUri = metadata?.artworkUri,
         )
         NowPlayingWidget.saveState(this, state)
-        scope.launch {
+        // Only the latest song may reach the widget: skipping fast cancels the older pushes, so a
+        // slow cover decode can't land after a newer song and show the wrong one.
+        widgetJob?.cancel()
+        widgetJob = scope.launch {
             // Only decode the cover again when the album changes.
             if (state.artworkUri != widgetArtUri) {
-                widgetArt = withContext(Dispatchers.IO) { NowPlayingWidget.loadArtwork(this@PlaybackService, state.artworkUri) }
+                val art = withContext(Dispatchers.IO) { NowPlayingWidget.loadArtwork(this@PlaybackService, state.artworkUri) }
+                widgetArt = art
                 widgetArtUri = state.artworkUri
             }
             NowPlayingWidget.push(this@PlaybackService, state, widgetArt)

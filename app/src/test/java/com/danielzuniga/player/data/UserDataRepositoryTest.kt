@@ -57,7 +57,8 @@ class UserDataRepositoryTest {
     @Test
     fun reorderRenameAndDeletePlaylist() = runTest {
         val id = repo.createPlaylist("Chill", listOf(1, 2, 3))
-        repo.setPlaylistOrder(id, listOf(3, 1))
+        repo.reorderPlaylist(id, listOf(3, 2, 1))
+        repo.removeFromPlaylist(id, 2)
         repo.renamePlaylist(id, "Relax")
 
         assertEquals(listOf(3L, 1L), repo.playlistSongIds(id).first())
@@ -66,6 +67,24 @@ class UserDataRepositoryTest {
         repo.deletePlaylist(id)
         assertNull(repo.playlist(id).first())
         assertTrue(repo.playlistSongIds(id).first().isEmpty())
+    }
+
+    @Test
+    fun editingKeepsSongsTheLibraryHidesRightNow() = runTest {
+        // 2 and 4 live on an SD card that isn't mounted: the screen only shows 1, 3 and 5.
+        val id = repo.createPlaylist("Viaje", listOf(1, 2, 3, 4, 5))
+        repo.reorderPlaylist(id, listOf(5, 1, 3))
+        assertEquals(listOf(5L, 2L, 1L, 4L, 3L), repo.playlistSongIds(id).first())
+
+        repo.removeFromPlaylist(id, 1)
+        assertEquals(listOf(5L, 2L, 4L, 3L), repo.playlistSongIds(id).first())
+    }
+
+    @Test
+    fun mergeOrderFillsVisibleSlotsInTheNewOrder() {
+        assertEquals(listOf(3L, 9L, 1L), UserDataRepository.mergeOrder(listOf(1, 9, 3), listOf(3, 1)))
+        assertEquals(listOf(1L, 2L), UserDataRepository.mergeOrder(listOf(1), listOf(1, 2)))
+        assertEquals(emptyList<Long>(), UserDataRepository.mergeOrder(emptyList(), emptyList()))
     }
 
     @Test

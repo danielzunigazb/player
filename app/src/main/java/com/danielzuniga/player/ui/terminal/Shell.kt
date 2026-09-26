@@ -191,8 +191,11 @@ class Shell(private val host: ShellHost, private val text: ShellText) {
 
     private enum class Kind { ARTIST, ALBUM, SONG }
 
+    /** Normalized names, computed once: suggestions run on every keystroke over the whole library. */
+    private val normalized = HashMap<String, String>()
+
     private fun score(name: String, needle: String): Int? {
-        val hay = name.normalizedForSearch()
+        val hay = normalized.getOrPut(name) { name.normalizedForSearch() }
         return when {
             hay == needle -> 300
             hay.startsWith(needle) -> 200
@@ -221,7 +224,7 @@ class Shell(private val host: ShellHost, private val text: ShellText) {
 
     private fun now(): List<ShellLine> {
         val state = host.player
-        val np = state.nowPlaying ?: return listOf(dim("nada sonando."))
+        val np = state.nowPlaying ?: return listOf(dim(text.nothingPlaying))
         val bar = progressBar(state.progress())
         val flags = listOfNotNull(
             if (state.isPlaying) "▶" else "‖",
@@ -245,7 +248,7 @@ class Shell(private val host: ShellHost, private val text: ShellText) {
 
     private fun seek(arg: String): List<ShellLine> {
         val state = host.player
-        if (state.nowPlaying == null || state.durationMs <= 0) return listOf(dim("nada sonando."))
+        if (state.nowPlaying == null || state.durationMs <= 0) return listOf(dim(text.nothingPlaying))
         val target = parseSeek(arg.trim(), state.positionMs)
             ?: return listOf(err(text.seekUsage))
         val clamped = target.coerceIn(0L, state.durationMs)
@@ -254,7 +257,7 @@ class Shell(private val host: ShellHost, private val text: ShellText) {
     }
 
     private fun fav(): List<ShellLine> {
-        val id = host.player.nowPlaying?.songId ?: return listOf(dim("nada sonando."))
+        val id = host.player.nowPlaying?.songId ?: return listOf(dim(text.nothingPlaying))
         val wasFav = id in host.favoriteIds
         host.toggleFavorite(id)
         return listOf(ok(if (wasFav) text.favoriteRemoved else text.favoriteAdded))

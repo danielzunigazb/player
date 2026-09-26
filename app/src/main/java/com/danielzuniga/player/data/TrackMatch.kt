@@ -19,6 +19,10 @@ object TrackMatch {
     const val DURATION_TOLERANCE_SEC = 10L
 
     private val COMBINING_MARKS = Regex("\\p{Mn}+")
+    private val D_STROKE = Regex("[đĐ]")
+    private val SHARP_S = Regex("[ßẞ]")
+    private val AE = Regex("[æÆ]")
+    private val OE = Regex("[œŒ]")
     private val NON_WORD = Regex("[^\\w\\s]+")
     private val SPACES = Regex("\\s+")
     private val LOOSE_PUNCTUATION = Regex("[/\\\\_\\-|.&+]")
@@ -143,10 +147,10 @@ object TrackMatch {
 
     internal fun removeDiacritics(value: String): String =
         Normalizer.normalize(value, Normalizer.Form.NFD).replace(COMBINING_MARKS, "")
-            .replace(Regex("[đĐ]"), "dj")
-            .replace(Regex("[ßẞ]"), "ss")
-            .replace(Regex("[æÆ]"), "ae")
-            .replace(Regex("[œŒ]"), "oe")
+            .replace(D_STROKE, "dj")
+            .replace(SHARP_S, "ss")
+            .replace(AE, "ae")
+            .replace(OE, "oe")
 
     internal fun normalizeSearchText(value: String): String =
         removeDiacritics(value).lowercase()

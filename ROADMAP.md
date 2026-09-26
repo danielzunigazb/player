@@ -68,3 +68,29 @@ Llave de release propia, releases automáticos por tag (`release.yml`), revisió
 - [x] Aleatorio: la cola mezclada empieza por la canción actual y se reproduce completa
 - [x] Aleatorio: "Reproducir a continuación" suena a continuación y "Añadir a la cola" va al final
 - [x] Letras: las canciones sin etiqueta de artista no se buscan en LRCLIB con "Artista desconocido"
+
+## v1.5.1: madurez (en curso)
+
+Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proyecto tiene que mantenerse solo.
+
+**Robustez** (de una auditoría del código completo)
+- [x] Letras: una respuesta de LRCLIB que no es JSON (portal cautivo, mantenimiento) tumbaba la app
+- [x] Playlists: quitar o reordenar borraba para siempre las canciones ocultas en ese momento (SD desmontada, filtro de duración)
+- [x] Widget: al saltar rápido podía quedarse mostrando la canción anterior
+- [x] Conexión con el reproductor: si fallaba, la app se cerraba en vez de quedar desconectada
+- [x] Android Auto: artistas con `|` en el nombre rompían la cola y la búsqueda de elementos
+- [x] Terminal: "nada sonando." sin traducir en tres comandos
+- [x] Rendimiento: índice de la biblioteca, sugerencias de la terminal y expresiones regulares fuera del hilo principal o precalculadas
+
+**Mantenimiento solo**
+- [ ] CI de PRs: si cambia `versionName`, exige `versionCode` mayor y `docs/releases/vX.Y.Z.md`
+- [ ] Cada release estable adjunta `CHANGELOG.md` (de todas las notas) y `HISTORIAL-COMMITS.md` (de `git log`), generados por `scripts/`
+- [ ] Dependabot semanal para Gradle, npm y Actions
+
+## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
+
+Ideas para cuando 1.5.x esté cerrada; no son compromisos:
+- Exportar e importar playlists, favoritas y estadísticas (JSON y M3U)
+- Sincronizar esos datos entre dispositivos sin servidor propio
+- Editor de metadatos y vista de estadísticas de escucha
+

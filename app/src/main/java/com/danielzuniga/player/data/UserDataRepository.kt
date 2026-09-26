@@ -49,11 +49,31 @@ class UserDataRepository(private val db: AppDatabase) {
 
     suspend fun addToPlaylist(id: Long, songIds: List<Long>) = playlists.appendSongs(id, songIds)
 
-    suspend fun setPlaylistOrder(id: Long, songIds: List<Long>) = playlists.replaceSongs(id, songIds)
+    /** Removes one song, keeping every other entry, visible in the library or not. */
+    suspend fun removeFromPlaylist(id: Long, songId: Long) = playlists.editSongs(id) { ids -> ids - songId }
+
+    /**
+     * Applies a new order of the songs the screen shows. Songs hidden right now (on an unmounted
+     * card, or shorter than the minimum length) keep their places instead of being dropped.
+     */
+    suspend fun reorderPlaylist(id: Long, visibleOrder: List<Long>) =
+        playlists.editSongs(id) { stored -> mergeOrder(stored, visibleOrder) }
 
     suspend fun recordPlay(songId: Long) = stats.recordPlay(songId, System.currentTimeMillis())
 
-    private companion object {
-        const val SMART_LIMIT = 100
+    companion object {
+        private const val SMART_LIMIT = 100
+
+        /**
+         * [stored] with its visible entries replaced, in place, by [visibleOrder]: the slots the
+         * visible songs occupied get them in the new order, hidden songs stay where they were.
+         */
+        internal fun mergeOrder(stored: List<Long>, visibleOrder: List<Long>): List<Long> {
+            val visible = visibleOrder.toHashSet()
+            val next = visibleOrder.iterator()
+            val merged = stored.map { id -> if (id in visible && next.hasNext()) next.next() else id }
+            // Anything the screen had that the stored list didn't (shouldn't happen) goes last.
+            return (merged + visibleOrder).distinct()
+        }
     }
 }

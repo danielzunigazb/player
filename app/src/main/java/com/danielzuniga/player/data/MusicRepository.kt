@@ -118,8 +118,16 @@ class MusicRepository(
         }
     }
 
-    private fun publish() {
-        _library.value = LibraryIndex(scanned.map(tagFixes::apply))
+    private val publishMutex = Mutex()
+
+    /**
+     * Builds the index off the main thread (grouping a big library is real work, and it runs again
+     * whenever a song is identified). The lock makes each build read the latest scan and fixes, so
+     * an older build can't overwrite a newer one.
+     */
+    private suspend fun publish() = publishMutex.withLock {
+        val songs = scanned
+        _library.value = withContext(Dispatchers.Default) { LibraryIndex(songs.map(tagFixes::apply)) }
     }
 
     /** Looks up untagged songs in the background; the library updates as each one is found. */
