@@ -108,7 +108,7 @@ Las versiones estables se publican en [Releases](https://github.com/danielzuniga
 
 1. Sube `versionCode` y `versionName` en `app/build.gradle.kts`.
 2. Escribe las notas en `docs/releases/vX.Y.Z.md`; si no existen, GitHub las genera a partir de los commits.
-3. Crea y sube el tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+3. Publica: sube el tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) o, desde GitHub, **Actions → Release → Run workflow** sobre `main`, que crea el tag a partir de `versionName`.
 
 El workflow `release.yml` comprueba que el tag coincida con `versionName`, corre tests y lint, firma con la llave de release, verifica que el certificado sea el esperado y publica el APK con su `.sha256`. El video de presentación se vuelve a renderizar solo cada vez que cambia la versión.
 

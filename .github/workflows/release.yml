@@ -1,11 +1,14 @@
 name: Release
 
-# Pushing a tag like v1.4.2 publishes that version: tests, lint and a release build signed
-# with the release key, checked against the known certificate, attached to a GitHub release.
+# Publishes a version: tests, lint and a release build signed with the release key, checked
+# against the known certificate, attached to a GitHub release. Two ways in:
+# - push a tag like v1.4.2, or
+# - run it by hand from Actions on main: it reads versionName and creates the tag itself.
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -28,13 +31,23 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Tag must match versionName
+      - name: Resolve version and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
-          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "::error::Manual releases only run from main"; exit 1
+            fi
+            if gh release view "v$VERSION" >/dev/null 2>&1; then
+              echo "::error::v$VERSION is already released; bump versionName first"; exit 1
+            fi
+          elif [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match versionName $VERSION"; exit 1
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
 
       - name: Restore release key
         env:
@@ -68,7 +81,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES="docs/releases/$GITHUB_REF_NAME.md"
+          NOTES="docs/releases/$TAG.md"
           if [ -f "$NOTES" ]; then NOTES_ARGS=(--notes-file "$NOTES"); else NOTES_ARGS=(--generate-notes); fi
-          gh release create "$GITHUB_REF_NAME" "Player-$VERSION.apk" "Player-$VERSION.apk.sha256" \
-            --title "Player $VERSION" --latest "${NOTES_ARGS[@]}"
+          # --target creates the tag at this commit when the run was started by hand.
+          gh release create "$TAG" "Player-$VERSION.apk" "Player-$VERSION.apk.sha256" \
+            --target "$GITHUB_SHA" --title "Player $VERSION" --latest "${NOTES_ARGS[@]}"
