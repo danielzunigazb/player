@@ -69,7 +69,7 @@ Llave de release propia, releases automáticos por tag (`release.yml`), revisió
 - [x] Aleatorio: "Reproducir a continuación" suena a continuación y "Añadir a la cola" va al final
 - [x] Letras: las canciones sin etiqueta de artista no se buscan en LRCLIB con "Artista desconocido"
 
-## v1.5.1: madurez (en curso)
+## v1.5.1: madurez ✅
 
 Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proyecto tiene que mantenerse solo.
 
@@ -83,9 +83,9 @@ Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proy
 - [x] Rendimiento: índice de la biblioteca, sugerencias de la terminal y expresiones regulares fuera del hilo principal o precalculadas
 
 **Mantenimiento solo**
-- [ ] CI de PRs: si cambia `versionName`, exige `versionCode` mayor y `docs/releases/vX.Y.Z.md`
-- [ ] Cada release estable adjunta `CHANGELOG.md` (de todas las notas) y `HISTORIAL-COMMITS.md` (de `git log`), generados por `scripts/`
-- [ ] Dependabot semanal para Gradle, npm y Actions
+- [x] CI de PRs: si cambia `versionName`, exige `versionCode` mayor y `docs/releases/vX.Y.Z.md`
+- [x] Cada release estable adjunta `CHANGELOG.md` (de todas las notas) y `HISTORIAL-COMMITS.md` (de `git log`), generados por `scripts/`
+- [x] Dependabot semanal para Gradle, npm y Actions
 
 ## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
 

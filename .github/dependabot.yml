@@ -1,0 +1,35 @@
+# Keeps dependencies current without anyone watching: one grouped PR per ecosystem a week.
+# Each PR runs the Android CI (tests + lint); merging it publishes a dev build.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      android:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: npm
+    directory: /player-showcase
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      showcase:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    open-pull-requests-limit: 2
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
