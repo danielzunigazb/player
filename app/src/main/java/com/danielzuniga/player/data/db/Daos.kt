@@ -94,3 +94,12 @@ interface PlayStatDao {
         if (increment(songId, now) == 0) insert(PlayStatEntity(songId, 1, now))
     }
 }
+
+@Dao
+interface TagFixDao {
+    @Query("SELECT * FROM tag_fixes")
+    fun observeAll(): Flow<List<TagFixEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(fix: TagFixEntity)
+}

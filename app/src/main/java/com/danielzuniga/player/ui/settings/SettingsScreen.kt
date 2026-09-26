@@ -46,6 +46,7 @@ fun SettingsScreen(
     onDynamicColor: (Boolean) -> Unit,
     onOnlineLyrics: (Boolean) -> Unit,
     onMinDuration: (Int) -> Unit,
+    onOnlineTags: (Boolean) -> Unit,
     onRescan: () -> Unit,
     bottomPadding: PaddingValues,
 ) {
@@ -117,6 +118,15 @@ fun SettingsScreen(
                         modifier = Modifier.padding(start = 16.dp),
                     )
                 }
+            }
+
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.online_tags),
+                    summary = stringResource(R.string.online_tags_summary),
+                    checked = state.onlineTags,
+                    onChange = onOnlineTags,
+                )
             }
 
             item { Section(stringResource(R.string.lyrics)) }

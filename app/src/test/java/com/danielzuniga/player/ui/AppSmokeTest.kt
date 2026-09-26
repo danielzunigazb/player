@@ -44,6 +44,7 @@ class AppSmokeTest {
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         // Keep UI tests off the network: no LRCLIB lookups.
         app.appContainer.settings.setOnlineLyrics(false)
+        app.appContainer.settings.setOnlineTags(false)
 
         // Robolectric doesn't bind services on its own; hand it the real session binder.
         service = Robolectric.buildService(PlaybackService::class.java).create()

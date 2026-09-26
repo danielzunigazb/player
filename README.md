@@ -40,6 +40,7 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
 - Idioma: español o inglés, según el teléfono o elegido en *Ajustes → Idioma* (en Android 13+ también en los ajustes del sistema para la app)
 - Ignorar audios cortos (notas de voz, tonos)
+- Completar etiquetas en internet: las canciones sin artista ("24K - T3R Elemento") se comprueban en LRCLIB y se corrigen solo si coincide la duración. No modifica los archivos y cada una se puede restaurar desde su menú
 
 ## Terminal
 

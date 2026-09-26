@@ -45,6 +45,7 @@
     <string name="remove_from_playlist">Quitar de la playlist</string>
     <string name="queued_next">Se reproducirá a continuación</string>
     <string name="queued">Añadido a la cola</string>
+    <string name="restore_tags">Restaurar etiquetas originales</string>
     <string name="added_to_playlist">Añadido a \"%1$s\"</string>
 
     <!-- Playlists -->
@@ -134,6 +135,8 @@
     <string name="min_duration">Ignorar audios más cortos de</string>
     <string name="min_duration_none">Ninguno</string>
     <string name="seconds">%1$d s</string>
+    <string name="online_tags">Completar etiquetas en internet</string>
+    <string name="online_tags_summary">En canciones sin artista, lee el nombre del archivo (\"24K - T3R Elemento\") y lo comprueba en LRCLIB. Solo usa coincidencias confirmadas, no modifica tus archivos y cada canción se puede restaurar desde su menú.</string>
     <string name="rescan">Volver a escanear la música</string>
     <string name="language">Idioma</string>
     <string name="language_system">Según el sistema</string>

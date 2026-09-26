@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import com.danielzuniga.player.R
+import com.danielzuniga.player.data.tags.TagFixRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,8 +23,13 @@ import kotlinx.coroutines.withContext
 class MusicRepository(
     private val context: Context,
     private val settings: SettingsStore,
+    private val tagFixes: TagFixRepository,
     private val scope: CoroutineScope,
 ) {
+    /** Songs exactly as the last scan read them; [library] shows them with [tagFixes] applied. */
+    private var scanned: List<Song> = emptyList()
+    private var identifyJob: Job? = null
+
     private val _library = MutableStateFlow(LibraryIndex.EMPTY)
     val library: StateFlow<LibraryIndex> = _library.asStateFlow()
 
@@ -49,6 +55,13 @@ class MusicRepository(
     }
 
     init {
+        // A song identified or restored: show it right away.
+        scope.launch {
+            tagFixes.entries.collect { if (_hasScanned.value) publish() }
+        }
+        scope.launch {
+            settings.onlineTags.collect { enabled -> if (enabled && _hasScanned.value) identifyUntagged() }
+        }
         scope.launch {
             var first = true
             settings.minDurationSec.collect {
@@ -92,14 +105,33 @@ class MusicRepository(
         _isScanning.value = true
         try {
             val songs = querySongs(settings.minDurationSec.first())
-            _library.value = LibraryIndex(songs)
+            tagFixes.awaitLoaded()
+            scanned = songs
+            publish()
             _hasScanned.value = true
+            identifyUntagged()
             registerObserver()
         } catch (_: SecurityException) {
             // Permission not granted yet; the UI asks for it and triggers another load.
         } finally {
             _isScanning.value = false
         }
+    }
+
+    private fun publish() {
+        _library.value = LibraryIndex(scanned.map(tagFixes::apply))
+    }
+
+    /** Looks up untagged songs in the background; the library updates as each one is found. */
+    private fun identifyUntagged() {
+        identifyJob?.cancel()
+        val songs = scanned
+        identifyJob = scope.launch { tagFixes.identifyUntagged(songs) }
+    }
+
+    /** Back to the file's own tags for [songId]. */
+    fun restoreTags(songId: Long) {
+        scope.launch { tagFixes.restore(songId) }
     }
 
     private fun registerObserver() {

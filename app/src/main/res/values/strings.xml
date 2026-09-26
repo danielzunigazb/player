@@ -47,6 +47,7 @@
     <string name="remove_from_playlist">Remove from playlist</string>
     <string name="queued_next">Playing next</string>
     <string name="queued">Added to queue</string>
+    <string name="restore_tags">Restore original tags</string>
     <string name="added_to_playlist">Added to \"%1$s\"</string>
 
     <!-- Playlists -->
@@ -136,6 +137,8 @@
     <string name="min_duration">Skip audio shorter than</string>
     <string name="min_duration_none">None</string>
     <string name="seconds">%1$d s</string>
+    <string name="online_tags">Complete tags online</string>
+    <string name="online_tags_summary">For songs without an artist, reads the file name (\"24K - T3R Elemento\") and checks it against LRCLIB. Only confirmed matches are used, your files aren\'t modified, and each song can be restored from its menu.</string>
     <string name="rescan">Rescan music</string>
     <string name="language">Language</string>
     <string name="language_system">System default</string>

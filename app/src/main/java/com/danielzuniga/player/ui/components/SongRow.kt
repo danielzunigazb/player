@@ -154,6 +154,9 @@ fun SongMenu(
         ) { actions.toggleFavorite(song); onDismiss() }
         MenuItem(R.string.go_to_album, DzIcons.Album) { actions.openAlbum(song.albumId); onDismiss() }
         MenuItem(R.string.go_to_artist, DzIcons.Artist) { actions.openArtist(song.artists.first()); onDismiss() }
+        if (song.tagsFixed) {
+            MenuItem(R.string.restore_tags, DzIcons.Refresh) { actions.restoreTags(song); onDismiss() }
+        }
         extraItems(onDismiss)
     }
 }

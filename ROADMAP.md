@@ -61,6 +61,7 @@ Llave de release propia, releases automáticos por tag (`release.yml`), revisió
 
 ## v1.5.0 — idiomas y correcciones ✅
 - [x] Inglés y español completos, incluida la terminal; selector en Ajustes → Idioma
+- [x] Canciones sin etiquetas: artista y título confirmados en LRCLIB por nombre de archivo y duración, sin tocar los archivos y reversibles
 - [x] Búsqueda: el cursor ya no se queda atrás al escribir rápido
 - [x] Aleatorio: la cola mezclada empieza por la canción actual y se reproduce completa
 - [x] Aleatorio: "Reproducir a continuación" suena a continuación y "Añadir a la cola" va al final

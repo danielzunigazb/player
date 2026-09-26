@@ -52,6 +52,7 @@ class LibraryFlowTest {
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         // Keep UI tests off the network: no LRCLIB lookups.
         app.appContainer.settings.setOnlineLyrics(false)
+        app.appContainer.settings.setOnlineTags(false)
         FakeMediaProvider.install(
             listOf(
                 FakeSong(1, "De Música Ligera", "Soda Stereo", "Canción Animal", albumId = 10, track = 1),

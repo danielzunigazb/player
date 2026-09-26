@@ -59,6 +59,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.danielzuniga.player.R
+import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.data.LibraryIndex
 import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.playback.PlayerUiState
@@ -182,6 +183,7 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
             toggleFavorite = { song -> playerVm.toggleFavorite(song.id) },
             openAlbum = { id -> navigate(Routes.album(id)) },
             openArtist = { name -> navigate(Routes.artist(name)) },
+            restoreTags = { song -> context.appContainer.musicRepository.restoreTags(song.id) },
         )
     }
 
@@ -455,6 +457,7 @@ private fun AppNavHost(
                 onDynamicColor = vm::setDynamicColor,
                 onOnlineLyrics = vm::setOnlineLyrics,
                 onMinDuration = vm::setMinDuration,
+                onOnlineTags = vm::setOnlineTags,
                 onRescan = vm::rescan,
                 bottomPadding = bottomPadding,
             )

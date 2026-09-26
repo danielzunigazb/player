@@ -44,6 +44,26 @@ data class PlayStatEntity(
     val lastPlayedAt: Long,
 )
 
+/**
+ * What the app learned about a song whose file has no usable tags. [status] is one of
+ * [TagFixEntity.FIXED] (use [title] and [artist]), [TagFixEntity.NO_MATCH] (nothing confirmed,
+ * don't ask again) or [TagFixEntity.RESTORED] (the user wants the file's own tags back).
+ */
+@Entity(tableName = "tag_fixes")
+data class TagFixEntity(
+    @PrimaryKey val songId: Long,
+    val status: String,
+    val title: String?,
+    val artist: String?,
+    val checkedAt: Long,
+) {
+    companion object {
+        const val FIXED = "fixed"
+        const val NO_MATCH = "no_match"
+        const val RESTORED = "restored"
+    }
+}
+
 data class PlaylistSummary(
     val id: Long,
     val name: String,
