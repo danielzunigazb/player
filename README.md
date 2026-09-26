@@ -118,15 +118,12 @@ Cada push a GitHub compila, prueba y publica el APK como artefacto en la pestañ
 
 ## Versiones
 
-Las versiones estables se publican en [Releases](https://github.com/danielzunigazb/player/releases). Para sacar una nueva:
+Los releases salen solos, desde el workflow **Release** en cada push a `main`:
 
-1. Sube `versionCode` y `versionName` en `app/build.gradle.kts`.
-2. Escribe las notas en `docs/releases/vX.Y.Z.md`; si no existen, GitHub las genera a partir de los commits.
-3. Publica: sube el tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) o, desde GitHub, **Actions → Release → Run workflow** sobre `main`, que crea el tag a partir de `versionName`.
+- **Estable:** cuando `main` trae un `versionName` sin release todavía. Sube `versionName` y `versionCode` en `app/build.gradle.kts`, escribe las notas en `docs/releases/vX.Y.Z.md`, mergea, y se publica `vX.Y.Z` como *latest*, con el APK y su `.sha256`. También sale al subir un tag `vX.Y.Z`.
+- **Dev:** cualquier otro push a `main` reemplaza el prerelease `dev` con `Player-dev.apk` (versión `X.Y.Z-dev.N`). Sirve para probar lo último antes de que sea versión. La app solo avisa de versiones estables.
 
-El workflow `release.yml` comprueba que el tag coincida con `versionName`, corre tests y lint, firma con la llave de release, verifica que el certificado sea el esperado y publica el APK con su `.sha256`. El video de presentación se vuelve a renderizar solo cada vez que cambia la versión.
-
-Android 8.0 (API 26) o superior.
+Los dos pasan tests y lint, exigen la llave de release y comprueban el certificado antes de publicar. La web lee las dos versiones de GitHub al abrirse, así que muestra un release nuevo al instante.
 
 ## Web
 

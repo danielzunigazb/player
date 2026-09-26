@@ -44,6 +44,9 @@ class UpdateCheckerTest {
         assertFalse(UpdateChecker.isNewer("1.5.0", "1.5.0"))
         assertFalse(UpdateChecker.isNewer("1.4.2", "1.5.0"))
         assertFalse(UpdateChecker.isNewer("latest", "1.5.0"))
+        // Someone on a dev build gets the stable release of those numbers, and nothing older.
+        assertTrue(UpdateChecker.isNewer("1.5.0", "1.5.0-dev.12"))
+        assertFalse(UpdateChecker.isNewer("1.4.2", "1.5.0-dev.12"))
     }
 
     @Test

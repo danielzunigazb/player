@@ -41,7 +41,10 @@ class UpdateChecker(
             Release(version, apk, json.optString("html_url"))
         }.getOrNull()
 
-        /** Whether [candidate] ("1.6.0") comes after [current] ("1.5.0"), comparing numbers, not text. */
+        /**
+         * Whether [candidate] ("1.6.0") comes after [current] ("1.5.0"), comparing numbers, not
+         * text. A stable version is newer than a dev build of the same numbers ("1.5.0-dev.12").
+         */
         fun isNewer(candidate: String, current: String): Boolean {
             val a = numbers(candidate) ?: return false
             val b = numbers(current) ?: return false
@@ -50,7 +53,7 @@ class UpdateChecker(
                 val y = b.getOrElse(i) { 0 }
                 if (x != y) return x > y
             }
-            return false
+            return '-' in current && '-' !in candidate
         }
 
         private fun numbers(version: String): List<Int>? =

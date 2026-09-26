@@ -1,0 +1,10 @@
+#!/bin/sh
+# Commits in this repo are authored by the owner alone: strip AI attribution trailers
+# (Co-Authored-By for Claude/Anthropic, Claude-Session, "Generated with Claude Code") before
+# the commit is created.
+msg="$1"
+tmp="$msg.tmp"
+grep -viE '^(co-authored-by:.*(claude|anthropic)|claude-session:|.*generated with \[?claude code)' "$msg" > "$tmp"
+# Drop the blank lines the removed trailers leave at the end.
+sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$tmp" > "$msg"
+rm -f "$tmp"

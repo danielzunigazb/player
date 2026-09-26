@@ -37,6 +37,8 @@ android {
         targetSdk = 35
         versionCode = 9
         versionName = "1.5.0"
+        // Dev builds from main are "1.5.0-dev.<run>" (set by the Release workflow).
+        System.getenv("PLAYER_VERSION_SUFFIX")?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = it }
     }
 
     signingConfigs {
