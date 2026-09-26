@@ -4,12 +4,12 @@ import android.content.Context
 import androidx.core.content.edit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 sealed interface UpdateState {
     data object Idle : UpdateState
@@ -41,7 +41,9 @@ class UpdateRepository(
     private val _offer = MutableStateFlow<Release?>(null)
     val offer: StateFlow<Release?> = _offer.asStateFlow()
 
-    private var job: Job? = null
+    /** A check is in flight; cleared before its result is published, so a check asked for right
+     * after seeing that result always runs. */
+    private val checking = AtomicBoolean(false)
 
     fun checkIfDue() {
         if (!autoCheck()) return
@@ -58,10 +60,14 @@ class UpdateRepository(
     }
 
     private fun check(manual: Boolean) {
-        if (job?.isActive == true) return
-        job = scope.launch {
+        if (!checking.compareAndSet(false, true)) return
+        scope.launch {
             _state.value = UpdateState.Checking
-            val latest = withContext(Dispatchers.IO) { checker.latest() }
+            val latest = try {
+                withContext(Dispatchers.IO) { checker.latest() }
+            } finally {
+                checking.set(false)
+            }
             if (latest == null) {
                 _state.value = UpdateState.Failed
                 return@launch
