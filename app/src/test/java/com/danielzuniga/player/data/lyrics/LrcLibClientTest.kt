@@ -25,8 +25,17 @@ class LrcLibClientTest {
         fetch = { url, _ -> requests += url; responses[requests.size - 1] },
     )
 
-    private fun track(duration: Double, synced: String? = null, plain: String? = null, instrumental: Boolean = false) =
+    private fun track(
+        duration: Double,
+        synced: String? = null,
+        plain: String? = null,
+        instrumental: Boolean = false,
+        name: String = "De Música Ligera",
+        artist: String = "Soda Stereo",
+    ) =
         JSONObject()
+            .put("trackName", name)
+            .put("artistName", artist)
             .put("duration", duration)
             .put("instrumental", instrumental)
             .put("syncedLyrics", synced ?: JSONObject.NULL)
@@ -67,6 +76,30 @@ class LrcLibClientTest {
         assertEquals(
             LrcLibClient.Result.NotFound,
             client(LrcLibClient.Response(404, null), LrcLibClient.Response(200, "[]")).find(song),
+        )
+    }
+
+    @Test
+    fun searchIgnoresOtherSongsThatLastAsLong() {
+        val results = JSONArray()
+            // Same length, wrong song and artist: must not be picked just for its duration.
+            .put(track(211.0, synced = "[00:01.00]otra letra", name = "Lamento Boliviano", artist = "Enanitos Verdes"))
+            // A remix of the right song is a different recording.
+            .put(track(210.0, synced = "[00:01.00]remix", name = "De Música Ligera (Remix)"))
+            .put(track(212.0, plain = "Ella durmió", name = "De musica ligera", artist = "Soda Stereo, Gustavo Cerati"))
+        val result = client(
+            LrcLibClient.Response(404, null),
+            LrcLibClient.Response(200, results.toString()),
+        ).find(song)
+        assertEquals(LrcLibClient.Result.Found("Ella durmió"), result)
+    }
+
+    @Test
+    fun searchWithOnlyMismatchesIsNotFound() {
+        val results = JSONArray().put(track(211.0, synced = "[00:01.00]x", name = "Lamento Boliviano", artist = "Enanitos Verdes"))
+        assertEquals(
+            LrcLibClient.Result.NotFound,
+            client(LrcLibClient.Response(404, null), LrcLibClient.Response(200, results.toString())).find(song),
         )
     }
 

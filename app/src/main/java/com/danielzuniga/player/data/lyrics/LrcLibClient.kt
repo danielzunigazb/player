@@ -1,6 +1,7 @@
 package com.danielzuniga.player.data.lyrics
 
 import com.danielzuniga.player.data.Song
+import com.danielzuniga.player.data.TrackMatch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -67,7 +68,7 @@ class LrcLibClient(
             val definitive = search.code in 400..499 || exact.code == 404
             return if (definitive) Result.NotFound else Result.Failed
         }
-        val best = pickBest(JSONArray(search.body), durationSec) ?: return Result.NotFound
+        val best = pickBest(JSONArray(search.body), song) ?: return Result.NotFound
         return lyricsFrom(best)?.let { Result.Found(it) } ?: Result.NotFound
     }
 
@@ -80,16 +81,26 @@ class LrcLibClient(
             return json.optNonBlank("syncedLyrics") ?: json.optNonBlank("plainLyrics")
         }
 
-        /** Closest-duration match that has lyrics, preferring synced ones on ties. */
-        internal fun pickBest(results: JSONArray, durationSec: Long): JSONObject? =
-            (0 until results.length())
+        /**
+         * The search result that is really this song: same recording by title and artist
+         * (TrackMatch, so another song that happens to last as long never qualifies), within
+         * a few seconds so synced lines land on time, closest length first, synced preferred.
+         */
+        internal fun pickBest(results: JSONArray, song: Song): JSONObject? {
+            val durationSec = song.durationMs / 1000
+            return (0 until results.length())
                 .map { results.getJSONObject(it) }
                 .filter { lyricsFrom(it) != null }
                 .filter { durationSec <= 0 || abs(it.optDouble("duration", 0.0) - durationSec) <= MAX_DURATION_DIFF_SEC }
+                .filter {
+                    TrackMatch.trackTitlesMatch(song.title, it.optString("trackName")) &&
+                        TrackMatch.artistNamesMatch(song.artist, it.optString("artistName"))
+                }
                 .minWithOrNull(
                     compareBy<JSONObject> { abs(it.optDouble("duration", 0.0) - durationSec) }
                         .thenBy { if (it.optNonBlank("syncedLyrics") != null) 0 else 1 },
                 )
+        }
 
         /** Drops decorations that rarely match a lyrics database: "(Remastered 2011)", "- Live", "feat. X". */
         internal fun cleanTitle(title: String): String = title
