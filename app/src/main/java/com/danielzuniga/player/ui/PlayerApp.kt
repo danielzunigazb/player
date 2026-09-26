@@ -174,7 +174,9 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
     val shareScope = rememberCoroutineScope()
     // Renders the card off the main thread, then opens the share sheet.
     val shareSong: (Song, List<String>) -> Unit = { song, lines ->
-        shareScope.launch { SongSharer.share(context, song, lines) }
+        shareScope.launch {
+            if (!SongSharer.share(context, song, lines)) context.toast(R.string.share_failed)
+        }
     }
     val songActions = remember {
         SongActions(

@@ -29,6 +29,20 @@ class LibraryIndexTest {
     }
 
     @Test
+    fun artistAlbumsOfTheSameYearKeepTitleOrder() {
+        val index = LibraryIndex(
+            listOf(
+                song(1, "a", "Cerati", "Siempre es hoy", albumId = 20, track = 1, year = 2002, added = 1),
+                song(2, "b", "Cerati", "Bocanada", albumId = 21, track = 1, year = 1999, added = 1),
+                song(3, "c", "Cerati", "Amor amarillo", albumId = 22, track = 1, year = 2002, added = 1),
+                song(4, "d", "Cerati", "Amor amarillo", albumId = 22, track = 2, year = 2002, added = 1),
+            )
+        )
+        assertEquals(listOf(22L, 20L, 21L), index.artist("Cerati")!!.albums.map { it.id })
+        assertNull(index.album(99))
+    }
+
+    @Test
     fun resolvesIdsSkippingMissingSongs() {
         assertEquals(listOf(3L, 1L), index.songs(listOf(3, 99, 1)).map { it.id })
         assertNull(index.song(99))
@@ -44,9 +58,9 @@ class LibraryIndexTest {
 
     @Test
     fun filtersAlbumsAndArtistsIgnoringAccents() {
-        assertEquals(listOf(10L), filterAlbums(index.albums, "cancion").map { it.id })
-        assertEquals(listOf("Café Tacvba"), filterArtists(index.artists, "CAFE").map { it.name })
-        assertEquals(index.albums, filterAlbums(index.albums, " "))
+        assertEquals(listOf(10L), index.filterAlbums("cancion").map { it.id })
+        assertEquals(listOf("Café Tacvba"), index.filterArtists("CAFE").map { it.name })
+        assertEquals(index.albums, index.filterAlbums(" "))
     }
 
     @Test
@@ -61,7 +75,7 @@ class LibraryIndexTest {
         )
         assertEquals(listOf("Download", "Rock"), index.folders.map { it.name })
         assertEquals(listOf(2L, 1L), index.folder("/sdcard/Music/Rock")!!.songs.map { it.id })
-        assertEquals(listOf("Rock"), filterFolders(index.folders, "roc").map { it.name })
+        assertEquals(listOf("Rock"), index.filterFolders("roc").map { it.name })
     }
 
     private fun song(

@@ -21,10 +21,6 @@ import com.danielzuniga.player.data.Folder
 import com.danielzuniga.player.data.db.PlaylistSummary
 import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.data.lyrics.LyricsSource
-import com.danielzuniga.player.data.filterAlbums
-import com.danielzuniga.player.data.filterArtists
-import com.danielzuniga.player.data.filterFolders
-import com.danielzuniga.player.data.filterSongs
 import com.danielzuniga.player.data.sortedBy
 import com.danielzuniga.player.playback.EqualizerState
 import com.danielzuniga.player.playback.LibraryBrowser
@@ -162,10 +158,10 @@ class LibraryViewModel(private val container: AppContainer) : ViewModel() {
         repository.hasScanned,
     ) { library, q, sort, scanning, scanned ->
         LibraryUiState(
-            songs = filterSongs(library.songs, q).sortedBy(sort),
-            albums = filterAlbums(library.albums, q),
-            artists = filterArtists(library.artists, q),
-            folders = filterFolders(library.folders, q),
+            songs = library.filterSongs(q).sortedBy(sort),
+            albums = library.filterAlbums(q),
+            artists = library.filterArtists(q),
+            folders = library.filterFolders(q),
             totalSongs = library.songs.size,
             query = q,
             sort = sort,

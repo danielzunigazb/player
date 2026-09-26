@@ -90,8 +90,8 @@ Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proy
 ## v1.5.2: mantenimiento de la cadena de herramientas (siguiente)
 
 Dependabot ya abrió los PR. No pasan el CI tal como vienen porque dependen unos de otros: van juntos en un PR propio, probados a mano en el teléfono.
-- [ ] Kotlin 2.1 → 2.4 con su plugin de Compose y KSP 2.3 (#15)
-- [ ] AndroidX: Media3 1.6 → 1.11, Room 2.8 y demás (#16; necesitan el Kotlin nuevo)
+- [ ] Kotlin 2.1 → 2.4 con su plugin de Compose y KSP 2.3 (#15; KSP 2.3 pide AGP 8.12 o más)
+- [ ] AndroidX: Media3 1.6 → 1.11, Room 2.8 y demás (#16; Media3 1.11 pide compileSdk 36, targetSdk puede quedarse en 35)
 - [ ] reorderable 2.4 → 3.1 (#18): pasa los tests, pero hay que probar a mano el arrastre en playlists y en la cola
 - [ ] AGP 8.9 → 9, Compose BOM 2026 y ESLint 10: saltos mayores en pausa en Dependabot hasta hacerlos a propósito
 

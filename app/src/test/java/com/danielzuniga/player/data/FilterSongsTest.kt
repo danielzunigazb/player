@@ -10,27 +10,36 @@ class FilterSongsTest {
         song(2, "Bohemian Rhapsody", "Queen", "A Night at the Opera"),
         song(3, "Oye Cómo Va", "Santana", "Abraxas"),
     )
+    private val index = LibraryIndex(songs)
 
     @Test
     fun blankQueryReturnsEverything() {
-        assertEquals(songs, filterSongs(songs, "   "))
+        assertEquals(songs, index.filterSongs("   "))
     }
 
     @Test
     fun matchesIgnoringCaseAndAccents() {
-        assertEquals(listOf(1L), filterSongs(songs, "CANCION").map { it.id })
-        assertEquals(listOf(3L), filterSongs(songs, "como va").map { it.id })
+        assertEquals(listOf(1L), index.filterSongs("CANCION").map { it.id })
+        assertEquals(listOf(3L), index.filterSongs("como va").map { it.id })
     }
 
     @Test
     fun matchesArtistAndAlbum() {
-        assertEquals(listOf(2L), filterSongs(songs, "queen").map { it.id })
-        assertEquals(listOf(3L), filterSongs(songs, "abrax").map { it.id })
+        assertEquals(listOf(2L), index.filterSongs("queen").map { it.id })
+        assertEquals(listOf(3L), index.filterSongs("abrax").map { it.id })
     }
 
     @Test
     fun noMatchReturnsEmpty() {
-        assertEquals(emptyList<Song>(), filterSongs(songs, "metallica"))
+        assertEquals(emptyList<Song>(), index.filterSongs("metallica"))
+    }
+
+    @Test
+    fun normalizesEachSongOnceNotOnEveryKeystroke() {
+        var normalized = 0
+        val search = SearchIndex(songs) { normalized++; listOf(it.title) }
+        listOf("c", "ca", "can", "canc").forEach(search::filter)
+        assertEquals(songs.size, normalized)
     }
 
     private fun song(id: Long, title: String, artist: String, album: String) =

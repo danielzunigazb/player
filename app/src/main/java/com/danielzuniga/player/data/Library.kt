@@ -44,15 +44,19 @@ class LibraryIndex(val songs: List<Song>) {
         }
         .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
 
+    private val albumPosition: Map<Long, Int> = albums.withIndex().associate { (i, album) -> album.id to i }
+
     // A collaboration counts for every artist it credits, so "A, B" shows up under A and under B.
     val artists: List<Artist> = songs
         .flatMap { song -> song.artists.map { it to song } }
         .groupBy({ it.first }, { it.second })
         .map { (name, artistSongs) ->
-            val albumIds = artistSongs.mapTo(HashSet()) { it.albumId }
             Artist(
                 name = name,
-                albums = albums.filter { it.id in albumIds }.sortedByDescending { it.year },
+                // Positions in [albums] keep its title order, without scanning every album per artist.
+                albums = artistSongs.mapTo(sortedSetOf()) { albumPosition.getValue(it.albumId) }
+                    .map(albums::get)
+                    .sortedByDescending { it.year },
                 songs = artistSongs.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }),
             )
         }
@@ -70,13 +74,23 @@ class LibraryIndex(val songs: List<Song>) {
         }
         .sortedWith(compareBy<Folder, String>(String.CASE_INSENSITIVE_ORDER) { it.name }.thenBy { it.path })
 
+    private val songSearch = SearchIndex(songs) { listOf(it.title, it.artist, it.album) }
+    private val albumSearch = SearchIndex(albums) { listOf(it.title, it.artist) }
+    private val artistSearch = SearchIndex(artists) { listOf(it.name) }
+    private val folderSearch = SearchIndex(folders) { listOf(it.name) }
+
+    fun filterSongs(query: String): List<Song> = songSearch.filter(query)
+    fun filterAlbums(query: String): List<Album> = albumSearch.filter(query)
+    fun filterArtists(query: String): List<Artist> = artistSearch.filter(query)
+    fun filterFolders(query: String): List<Folder> = folderSearch.filter(query)
+
     fun song(id: Long): Song? = byId[id]
 
     fun folder(path: String): Folder? = folders.firstOrNull { it.path == path }
 
     fun songs(ids: List<Long>): List<Song> = ids.mapNotNull { byId[it] }
 
-    fun album(id: Long): Album? = albums.firstOrNull { it.id == id }
+    fun album(id: Long): Album? = albumPosition[id]?.let(albums::get)
 
     fun artist(name: String): Artist? = artists.firstOrNull { it.name == name }
 

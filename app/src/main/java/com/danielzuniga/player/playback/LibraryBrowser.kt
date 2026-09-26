@@ -8,7 +8,6 @@ import com.danielzuniga.player.AppContainer
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.LibraryIndex
 import com.danielzuniga.player.data.Song
-import com.danielzuniga.player.data.filterSongs
 import com.danielzuniga.player.data.songUri
 import kotlinx.coroutines.flow.first
 
@@ -54,7 +53,7 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
 
     suspend fun search(query: String): List<MediaItem> {
         val library = container.musicRepository.awaitLibrary()
-        return filterSongs(library.songs, query).take(SEARCH_LIMIT).map { it.toBrowsableSong(SEARCH) }
+        return library.filterSongs(query).take(SEARCH_LIMIT).map { it.toBrowsableSong(SEARCH) }
     }
 
     /**
@@ -131,7 +130,7 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
     companion object {
         /** Songs for a spoken or typed request; an empty request means "play something". */
         fun searchResults(query: String, library: LibraryIndex): List<Song> =
-            if (query.isBlank()) library.songs.shuffled() else filterSongs(library.songs, query)
+            if (query.isBlank()) library.songs.shuffled() else library.filterSongs(query)
 
         const val ROOT = "root"
         const val SONGS = "songs"
