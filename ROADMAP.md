@@ -61,6 +61,8 @@ Llave de release propia, releases automáticos por tag (`release.yml`), revisió
 
 ## v1.5.0 — idiomas y correcciones ✅
 - [x] Inglés y español completos, incluida la terminal; selector en Ajustes → Idioma
+- [x] Compartir canciones y letras como imagen 9:16 para historias (menú, Reproduciendo, selección de líneas, `share` en la terminal)
+- [x] Aviso de actualizaciones desde los releases de GitHub
 - [x] Canciones sin etiquetas: artista y título confirmados en LRCLIB por nombre de archivo y duración, sin tocar los archivos y reversibles
 - [x] Búsqueda: el cursor ya no se queda atrás al escribir rápido
 - [x] Aleatorio: la cola mezclada empieza por la canción actual y se reproduce completa

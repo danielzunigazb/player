@@ -148,6 +148,7 @@ fun SongMenu(
         MenuItem(R.string.play_next, DzIcons.PlayNext) { actions.playNext(listOf(song)); onDismiss() }
         MenuItem(R.string.add_to_queue, DzIcons.AddToQueue) { actions.addToQueue(listOf(song)); onDismiss() }
         MenuItem(R.string.add_to_playlist, DzIcons.PlaylistAdd) { actions.addToPlaylist(listOf(song)); onDismiss() }
+        MenuItem(R.string.share, DzIcons.Share) { actions.share(song); onDismiss() }
         MenuItem(
             if (isFavorite) R.string.remove_favorite else R.string.add_favorite,
             if (isFavorite) DzIcons.HeartFilled else DzIcons.Heart,

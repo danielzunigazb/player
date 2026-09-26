@@ -9,6 +9,8 @@ import com.danielzuniga.player.data.db.AppDatabase
 import com.danielzuniga.player.data.lyrics.LrcLibClient
 import com.danielzuniga.player.data.lyrics.LyricsRepository
 import com.danielzuniga.player.data.tags.TagFixRepository
+import com.danielzuniga.player.data.update.UpdateChecker
+import com.danielzuniga.player.data.update.UpdateRepository
 import com.danielzuniga.player.playback.AudioEffects
 import com.danielzuniga.player.playback.PlaybackStateStore
 import kotlinx.coroutines.CoroutineScope
@@ -21,7 +23,8 @@ class AppContainer(context: Context) {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val settings = SettingsStore(context)
     private val database = AppDatabase.create(context)
-    private val lrcLib = LrcLibClient(userAgent = "Player/${BuildConfig.VERSION_NAME} (https://github.com/danielzunigazb/player)")
+    private val userAgent = "Player/${BuildConfig.VERSION_NAME} (https://github.com/danielzunigazb/player)"
+    private val lrcLib = LrcLibClient(userAgent = userAgent)
     val tagFixes = TagFixRepository(
         dao = database.tagFixDao(),
         client = lrcLib,
@@ -32,6 +35,13 @@ class AppContainer(context: Context) {
     val userData = UserDataRepository(database)
     val playbackState = PlaybackStateStore(context)
     val audioEffects = AudioEffects(context)
+    val updates = UpdateRepository(
+        context = context,
+        currentVersion = BuildConfig.VERSION_NAME,
+        checker = UpdateChecker(userAgent),
+        autoCheck = { settings.autoUpdates.value },
+        scope = appScope,
+    )
     val lyrics = LyricsRepository(
         context = context,
         onlineEnabled = { settings.onlineLyrics.value },

@@ -25,6 +25,8 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         if (savedInstanceState == null) handleIntent(intent)
         val settings = appContainer.settings
+        // At most once a day, and only if the automatic check is on.
+        appContainer.updates.checkIfDue()
         appContainer.musicRepository.setUnknownLabels(
             getString(R.string.unknown_artist),
             getString(R.string.unknown_album),

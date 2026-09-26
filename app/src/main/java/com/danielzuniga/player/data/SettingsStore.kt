@@ -30,6 +30,9 @@ class SettingsStore(context: Context) {
     private val _onlineTags = MutableStateFlow(prefs.getBoolean(KEY_ONLINE_TAGS, true))
     val onlineTags: StateFlow<Boolean> = _onlineTags.asStateFlow()
 
+    private val _autoUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_UPDATES, true))
+    val autoUpdates: StateFlow<Boolean> = _autoUpdates.asStateFlow()
+
     private val _minDurationSec = MutableStateFlow(prefs.getInt(KEY_MIN_DURATION, 10))
     val minDurationSec: StateFlow<Int> = _minDurationSec.asStateFlow()
 
@@ -58,6 +61,11 @@ class SettingsStore(context: Context) {
         _onlineTags.value = enabled
     }
 
+    fun setAutoUpdates(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_AUTO_UPDATES, enabled) }
+        _autoUpdates.value = enabled
+    }
+
     fun setMinDurationSec(seconds: Int) {
         prefs.edit { putInt(KEY_MIN_DURATION, seconds) }
         _minDurationSec.value = seconds
@@ -75,5 +83,6 @@ class SettingsStore(context: Context) {
         const val KEY_ONLINE_LYRICS = "online_lyrics"
         const val KEY_MIN_DURATION = "min_duration_sec"
         const val KEY_ONLINE_TAGS = "online_tags"
+        const val KEY_AUTO_UPDATES = "auto_updates"
     }
 }

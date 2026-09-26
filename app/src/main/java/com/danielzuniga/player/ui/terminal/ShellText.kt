@@ -58,6 +58,9 @@ interface ShellText {
 
     val seekUsage: String
     val noHistory: String
+    val sharing: String
+    fun sharingLyric(line: String): String
+    val noLyricLine: String
     fun musicAndFavorites(duration: String, favorites: Int): String
 
     companion object {
@@ -81,6 +84,7 @@ interface ShellText {
             "speed" -> "velocidad de reproducción"
             "repeat" -> "cicla: off → todo → una"
             "random" -> "activa o apaga el modo aleatorio de la cola"
+            "share" -> "comparte la canción como imagen; `share lyric`, con la línea que suena"
             "top" -> "tus más escuchadas"
             "ls" -> "resumen de la biblioteca"
             "help" -> "esta lista"
@@ -128,6 +132,9 @@ interface ShellText {
         override fun speedSet(speed: String) = "velocidad $speed"
         override val seekUsage = "uso: seek 1:30 · seek +10 · seek -10"
         override val noHistory = "todavía no hay historial. dale play a algo."
+        override val sharing = "↗ compartiendo la canción…"
+        override fun sharingLyric(line: String) = "↗ compartiendo \"$line\"…"
+        override val noLyricLine = "no hay una línea de letra sonando ahora."
         override fun musicAndFavorites(duration: String, favorites: Int) = "$duration de música · $favorites favoritas"
     }
 
@@ -148,6 +155,7 @@ interface ShellText {
             "speed" -> "playback speed"
             "repeat" -> "cycles: off → all → one"
             "random" -> "turns queue shuffle on or off"
+            "share" -> "shares the song as an image; `share lyric`, with the line being sung"
             "top" -> "your most played"
             "ls" -> "library summary"
             "help" -> "this list"
@@ -191,6 +199,9 @@ interface ShellText {
         override fun speedSet(speed: String) = "speed $speed"
         override val seekUsage = "usage: seek 1:30 · seek +10 · seek -10"
         override val noHistory = "no history yet. play something."
+        override val sharing = "↗ sharing the song…"
+        override fun sharingLyric(line: String) = "↗ sharing \"$line\"…"
+        override val noLyricLine = "no lyric line is playing right now."
         override fun musicAndFavorites(duration: String, favorites: Int) = "$duration of music · $favorites favorites"
     }
 }

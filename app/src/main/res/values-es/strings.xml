@@ -46,6 +46,14 @@
     <string name="queued_next">Se reproducirá a continuación</string>
     <string name="queued">Añadido a la cola</string>
     <string name="restore_tags">Restaurar etiquetas originales</string>
+    <string name="share">Compartir</string>
+    <string name="share_song">Compartir canción</string>
+    <string name="share_lyrics_hint">Mantén presionada una línea para compartirla</string>
+    <plurals name="share_lines">
+        <item quantity="one">Compartir %1$d línea</item>
+        <item quantity="other">Compartir %1$d líneas</item>
+    </plurals>
+    <string name="share_lines_limit">Hasta %1$d líneas</string>
     <string name="added_to_playlist">Añadido a \"%1$s\"</string>
 
     <!-- Playlists -->
@@ -141,6 +149,17 @@
     <string name="language">Idioma</string>
     <string name="language_system">Según el sistema</string>
     <string name="about">Acerca de</string>
+    <string name="check_updates">Buscar actualizaciones</string>
+    <string name="auto_updates">Buscar actualizaciones automáticamente</string>
+    <string name="auto_updates_summary">Una vez al día pregunta a GitHub por la última versión de Player. No envía nada sobre ti ni tu música.</string>
+    <string name="update_checking">Buscando…</string>
+    <string name="update_up_to_date">Tienes la última versión</string>
+    <string name="update_failed">No se pudo consultar. ¿Hay conexión?</string>
+    <string name="update_available">Player %1$s disponible</string>
+    <string name="update_available_body">Tienes la %1$s. La nueva se descarga desde GitHub y se instala encima, sin perder favoritas, playlists ni ajustes.</string>
+    <string name="update_download">Descargar</string>
+    <string name="update_notes">Novedades</string>
+    <string name="update_later">Ahora no</string>
     <string name="version">Versión %1$s</string>
 
     <string name="widget_idle">Nada en reproducción</string>

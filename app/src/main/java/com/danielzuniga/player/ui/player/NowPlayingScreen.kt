@@ -74,6 +74,8 @@ class NowPlayingActions(
     val onAddToPlaylist: () -> Unit,
     val onGoToAlbum: () -> Unit,
     val onGoToArtist: () -> Unit,
+    val onShare: () -> Unit = {},
+    val onShareLines: (List<String>) -> Unit = {},
 )
 
 /**
@@ -109,7 +111,7 @@ fun NowPlayingScreen(
                     .padding(vertical = 24.dp),
             ) {
                 if (showLyrics) {
-                    LyricsView(lyrics, state.positionMs, actions.onSeek)
+                    LyricsView(lyrics, state.positionMs, actions.onSeek, onShareLines = actions.onShareLines)
                 } else {
                     SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
                 }
@@ -158,6 +160,7 @@ private fun TopRow(actions: NowPlayingActions) {
         Box {
             DzIconButton(DzIcons.More, stringResource(R.string.more_options), { menuOpen = true })
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                MenuItem(R.string.share, DzIcons.Share) { menuOpen = false; actions.onShare() }
                 MenuItem(R.string.add_to_playlist, DzIcons.PlaylistAdd) { menuOpen = false; actions.onAddToPlaylist() }
                 MenuItem(R.string.go_to_album, DzIcons.Album) { menuOpen = false; actions.onGoToAlbum() }
                 MenuItem(R.string.go_to_artist, DzIcons.Artist) { menuOpen = false; actions.onGoToArtist() }

@@ -29,6 +29,7 @@ import com.danielzuniga.player.R
 import com.danielzuniga.player.ui.components.Eyebrow
 import com.danielzuniga.player.ui.components.Hairline
 import com.danielzuniga.player.data.ThemeMode
+import com.danielzuniga.player.data.update.UpdateState
 import com.danielzuniga.player.ui.SettingsUiState
 import com.danielzuniga.player.ui.components.BackTopBar
 import com.danielzuniga.player.ui.theme.DzIcons
@@ -47,6 +48,10 @@ fun SettingsScreen(
     onOnlineLyrics: (Boolean) -> Unit,
     onMinDuration: (Int) -> Unit,
     onOnlineTags: (Boolean) -> Unit,
+    autoUpdates: Boolean,
+    onAutoUpdates: (Boolean) -> Unit,
+    updateState: UpdateState,
+    onCheckUpdates: () -> Unit,
     onRescan: () -> Unit,
     bottomPadding: PaddingValues,
 ) {
@@ -141,6 +146,27 @@ fun SettingsScreen(
 
             item { Section(stringResource(R.string.about)) }
             item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = updateState != UpdateState.Checking, onClick = onCheckUpdates)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Text(stringResource(R.string.check_updates), style = MaterialTheme.typography.bodyLarge)
+                    updateStatus(updateState)?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.auto_updates),
+                    summary = stringResource(R.string.auto_updates_summary),
+                    checked = autoUpdates,
+                    onChange = onAutoUpdates,
+                )
+            }
+            item {
                 Text(
                     text = stringResource(R.string.version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.bodyMedium,
@@ -157,6 +183,15 @@ private fun ThemeMode.label(): Int = when (this) {
     ThemeMode.LIGHT -> R.string.theme_light
     ThemeMode.DARK -> R.string.theme_dark
     ThemeMode.BLACK -> R.string.theme_black
+}
+
+@Composable
+private fun updateStatus(state: UpdateState): String? = when (state) {
+    UpdateState.Idle -> null
+    UpdateState.Checking -> stringResource(R.string.update_checking)
+    UpdateState.UpToDate -> stringResource(R.string.update_up_to_date)
+    UpdateState.Failed -> stringResource(R.string.update_failed)
+    is UpdateState.Available -> stringResource(R.string.update_available, state.release.version)
 }
 
 @Composable

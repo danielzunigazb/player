@@ -48,6 +48,14 @@
     <string name="queued_next">Playing next</string>
     <string name="queued">Added to queue</string>
     <string name="restore_tags">Restore original tags</string>
+    <string name="share">Share</string>
+    <string name="share_song">Share song</string>
+    <string name="share_lyrics_hint">Hold a line to share it</string>
+    <plurals name="share_lines">
+        <item quantity="one">Share %1$d line</item>
+        <item quantity="other">Share %1$d lines</item>
+    </plurals>
+    <string name="share_lines_limit">Up to %1$d lines</string>
     <string name="added_to_playlist">Added to \"%1$s\"</string>
 
     <!-- Playlists -->
@@ -146,6 +154,17 @@
     <string name="language_es" translatable="false">Español</string>
     <string name="language_en" translatable="false">English</string>
     <string name="about">About</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="auto_updates">Check for updates automatically</string>
+    <string name="auto_updates_summary">Once a day, asks GitHub for the latest version of Player. Nothing about you or your music is sent.</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_up_to_date">You have the latest version</string>
+    <string name="update_failed">Couldn\'t check. Is the phone online?</string>
+    <string name="update_available">Player %1$s is available</string>
+    <string name="update_available_body">You have %1$s. The new version downloads from GitHub and installs over this one, keeping your favorites, playlists and settings.</string>
+    <string name="update_download">Download</string>
+    <string name="update_notes">What\'s new</string>
+    <string name="update_later">Not now</string>
     <string name="version">Version %1$s</string>
 
     <string name="widget_idle">Nothing playing</string>

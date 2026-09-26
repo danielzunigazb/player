@@ -41,6 +41,7 @@ class ShellTest {
         override fun toggleFavorite(songId: Long) { calls += "fav:$songId" }
         override fun setSleep(minutes: Int) { calls += "sleep:$minutes" }
         override fun setSpeed(speed: Float) { calls += "speed:$speed" }
+        override fun share(lines: List<String>) { calls += "share:${lines.joinToString("|")}" }
     }
 
     private val host = FakeHost(LibraryIndex(songs))
@@ -122,7 +123,7 @@ class ShellTest {
     @Test
     fun suggestsCommandsThenLibraryMatches() {
         // Commands that take free text complete with a trailing space, ready for the query.
-        assertEquals(setOf("shuffle ", "seek", "sleep", "speed"), shell.suggest("s").toSet())
+        assertEquals(setOf("shuffle ", "seek", "sleep", "speed", "share"), shell.suggest("s").toSet())
         assertEquals(listOf("play soda stereo"), shell.suggest("play sod").take(1))
         assertTrue(shell.suggest("queue er").contains("queue eres"))
         assertTrue(shell.suggest("sleep 3").isEmpty())
@@ -137,6 +138,21 @@ class ShellTest {
         assertEquals(Shell.CLEAR, shell.uiAction("clear"))
         assertEquals(Shell.EXIT, shell.uiAction("quit"))
         assertEquals(null, shell.uiAction("play eres"))
+    }
+
+    @Test
+    fun sharesTheSongOrTheLyricBeingSung() {
+        assertEquals("nada sonando.", run("share").single().text)
+
+        host.player = PlayerUiState(nowPlaying = NowPlaying(1, "De Música Ligera", "Soda Stereo", null), isPlaying = true)
+        run("share")
+        assertEquals("share:", host.calls.last())
+
+        assertEquals("no hay una línea de letra sonando ahora.", run("share lyric").single().text)
+        host.currentLyric = "Ella durmió al calor de las masas"
+        run("share lyric")
+        assertEquals("share:Ella durmió al calor de las masas", host.calls.last())
+        assertEquals(LineKind.ERR, run("share todo").single().kind)
     }
 
     @Test

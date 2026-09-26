@@ -29,6 +29,10 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 - Pantalla "Reproduciendo" con el color de la carátula; desliza la carátula o el mini reproductor para cambiar de canción
 - Letras sincronizadas (resaltan la línea actual; toca una línea para saltar): desde un `.lrc` junto a la canción, incrustadas en MP3/FLAC o, si no trae, buscadas en [LRCLIB](https://lrclib.net) (gratis y sin cuenta). Solo se envían título, artista, álbum y duración; cada letra se guarda en el teléfono tras la primera descarga. Se desactiva en *Ajustes → Letras*.
 
+**Compartir**
+- Tarjetas 9:16 para historias (Instagram, Snapchat, WhatsApp…) con la carátula, o con hasta 4 líneas de la letra: mantén presionada una línea en la letra para elegirlas. En la terminal, `share` y `share lyric`
+- Aviso de versión nueva: una vez al día consulta el último release en GitHub (se puede apagar); también en *Ajustes → Acerca de*
+
 **Widget**
 - Widget de pantalla de inicio con carátula y controles; reproducir retoma la última cola aunque la app esté cerrada
 

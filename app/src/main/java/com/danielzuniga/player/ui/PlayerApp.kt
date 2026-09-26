@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -63,6 +64,7 @@ import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.data.LibraryIndex
 import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.playback.PlayerUiState
+import com.danielzuniga.player.ui.share.SongSharer
 import com.danielzuniga.player.ui.terminal.Shell
 import com.danielzuniga.player.ui.terminal.ShellHost
 import com.danielzuniga.player.ui.terminal.ShellLine
@@ -97,6 +99,7 @@ import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
 import com.danielzuniga.player.ui.settings.AppLanguage
 import com.danielzuniga.player.ui.settings.SettingsScreen
 import com.danielzuniga.player.ui.theme.DzIcons
+import kotlinx.coroutines.launch
 
 private val AUDIO_PERMISSION =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -128,6 +131,7 @@ fun PlayerApp(searchRequest: String? = null, onSearchHandled: () -> Unit = {}) {
     } else {
         MainContent(searchRequest, onSearchHandled)
     }
+    UpdateOffer()
 }
 
 @Composable
@@ -167,6 +171,11 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
         navController.navigate(route) { launchSingleTop = true }
     }
 
+    val shareScope = rememberCoroutineScope()
+    // Renders the card off the main thread, then opens the share sheet.
+    val shareSong: (Song, List<String>) -> Unit = { song, lines ->
+        shareScope.launch { SongSharer.share(context, song, lines) }
+    }
     val songActions = remember {
         SongActions(
             play = playerVm::play,
@@ -184,6 +193,7 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
             openAlbum = { id -> navigate(Routes.album(id)) },
             openArtist = { name -> navigate(Routes.artist(name)) },
             restoreTags = { song -> context.appContainer.musicRepository.restoreTags(song.id) },
+            share = { song -> shareSong(song, emptyList()) },
         )
     }
 
@@ -254,6 +264,8 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
                             onAddToPlaylist = { currentSong?.let { addToPlaylistSongs = listOf(it) } },
                             onGoToAlbum = { currentSong?.let { navigate(Routes.album(it.albumId)) } },
                             onGoToArtist = { currentSong?.let { navigate(Routes.artist(it.artists.first())) } },
+                            onShare = { currentSong?.let { shareSong(it, emptyList()) } },
+                            onShareLines = { lines -> currentSong?.let { shareSong(it, lines) } },
                         ),
                     )
                 }
@@ -290,6 +302,10 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
                     override fun toggleFavorite(songId: Long) = playerVm.toggleFavorite(songId)
                     override fun setSleep(minutes: Int) = playerVm.setSleepTimer(minutes)
                     override fun setSpeed(speed: Float) = playerVm.setSpeed(speed)
+                    override fun share(lines: List<String>) {
+                        val id = shellState.value.player.nowPlaying?.songId ?: return
+                        shellState.value.library.song(id)?.let { shareSong(it, lines) }
+                    }
                 },
                 ShellText.forLanguage(language),
             )
@@ -445,6 +461,9 @@ private fun AppNavHost(
             )
         }
         composable(Routes.SETTINGS) {
+            val container = LocalContext.current.appContainer
+            val autoUpdates by container.settings.autoUpdates.collectAsStateWithLifecycle()
+            val updateState by container.updates.state.collectAsStateWithLifecycle()
             val vm: SettingsViewModel = viewModel(factory = AppViewModels.Factory)
             val state by vm.state.collectAsStateWithLifecycle()
             SettingsScreen(
@@ -458,6 +477,10 @@ private fun AppNavHost(
                 onOnlineLyrics = vm::setOnlineLyrics,
                 onMinDuration = vm::setMinDuration,
                 onOnlineTags = vm::setOnlineTags,
+                autoUpdates = autoUpdates,
+                onAutoUpdates = container.settings::setAutoUpdates,
+                updateState = updateState,
+                onCheckUpdates = container.updates::checkNow,
                 onRescan = vm::rescan,
                 bottomPadding = bottomPadding,
             )
@@ -502,9 +525,9 @@ private fun Context.openAppSettings() {
     )
 }
 
-private fun Context.toast(message: Int) = toast(getString(message))
+internal fun Context.toast(message: Int) = toast(getString(message))
 
-private fun Context.toast(message: String) {
+internal fun Context.toast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 }
 

@@ -38,6 +38,8 @@ interface ShellHost {
     fun toggleFavorite(songId: Long)
     fun setSleep(minutes: Int)
     fun setSpeed(speed: Float)
+    /** Shares the current song as a story image; with [lines], as a lyrics card. */
+    fun share(lines: List<String>)
 }
 
 /**
@@ -94,6 +96,7 @@ class Shell(private val host: ShellHost, private val text: ShellText) {
             host.toggleShuffle()
             listOf(ok(text.shuffleState(on = !wasOn)))
         },
+        Command("share", "share [lyric]") { arg -> share(arg) },
         Command("top", "top") { _ -> top() },
         Command("ls", "ls", listOf("stats")) { _ -> ls() },
         Command("help", "help", listOf("?", "man")) { _ -> help() },
@@ -295,6 +298,16 @@ class Shell(private val host: ShellHost, private val text: ShellText) {
         }
         host.cycleRepeat()
         return listOf(ok(text.repeatState(next)))
+    }
+
+    private fun share(arg: String): List<ShellLine> {
+        if (host.player.nowPlaying == null) return listOf(dim(text.nothingPlaying))
+        val lyric = arg.trim().lowercase() in setOf("lyric", "lyrics", "letra")
+        if (!lyric && arg.isNotBlank()) return listOf(err(text.usage("share", "[lyric]")))
+        val line = host.currentLyric?.takeIf { it.isNotBlank() }
+        if (lyric && line == null) return listOf(dim(text.noLyricLine))
+        host.share(listOfNotNull(line.takeIf { lyric }))
+        return listOf(ok(if (lyric) text.sharingLyric(line!!) else text.sharing))
     }
 
     private fun top(): List<ShellLine> {
