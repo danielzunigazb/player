@@ -12,12 +12,17 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.data.Song
+import android.os.Looper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
@@ -90,26 +95,36 @@ class ShareCardTest {
     }
 
     @Test
-    fun aNewCardKeepsThePreviousOneForTheAppStillReadingIt() = runBlocking {
+    fun aNewCardKeepsThePreviousOneForTheAppStillReadingIt() {
         File(context.cacheDir, "share").deleteRecursively()
-        val first = SongSharer.createCard(context, song, emptyList())
+        val first = onMainLooper { SongSharer.createCard(context, song, emptyList()) }
         Thread.sleep(2)
-        val second = SongSharer.createCard(context, song, emptyList())
+        val second = onMainLooper { SongSharer.createCard(context, song, emptyList()) }
         Thread.sleep(2)
-        val third = SongSharer.createCard(context, song, emptyList())
+        val third = onMainLooper { SongSharer.createCard(context, song, emptyList()) }
         assertTrue(second.exists() && third.exists())
         assertFalse(first.exists())
     }
 
     @Test
-    fun aCardThatCantBeWrittenIsReportedInsteadOfCrashing() = runBlocking {
+    fun aCardThatCantBeWrittenIsReportedInsteadOfCrashing() {
         // A file where the share folder should be: the card has nowhere to go.
         val dir = File(context.cacheDir, "share").apply { deleteRecursively() }
         dir.writeBytes(byteArrayOf(1))
         try {
-            assertFalse(SongSharer.share(context, song))
+            assertFalse(onMainLooper { SongSharer.share(context, song) })
         } finally {
             dir.delete()
         }
+    }
+
+    /** Runs [block] off the test thread while the main looper keeps turning (Coil needs it). */
+    private fun <T> onMainLooper(block: suspend () -> T): T {
+        val result = CoroutineScope(Dispatchers.IO).async { block() }
+        while (!result.isCompleted) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(5)
+        }
+        return runBlocking { result.await() }
     }
 }
