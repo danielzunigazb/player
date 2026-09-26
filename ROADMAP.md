@@ -54,3 +54,7 @@ Cada fase se entrega compilando, con pruebas y lint en verde, en su propio commi
 
 ## Ideas futuras
 - Scrobbling a Last.fm (requiere tu API key)
+
+## v1.4.2 — primera versión estable ✅
+
+Llave de release propia, releases automáticos por tag (`release.yml`), revisión de seguridad del código completo sin hallazgos y video de presentación publicado por CI.

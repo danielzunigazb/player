@@ -35,7 +35,7 @@ jobs:
       - name: Test, lint and build
         env:
           PLAYER_KEYSTORE_PASSWORD: ${{ secrets.PLAYER_KEYSTORE_PASSWORD }}
-          PLAYER_KEY_ALIAS: ${{ secrets.PLAYER_KEY_ALIAS }}
+          PLAYER_KEY_ALIAS: player
           PLAYER_KEY_PASSWORD: ${{ secrets.PLAYER_KEY_PASSWORD }}
         run: ./gradlew testDebugUnitTest lintDebug assembleRelease --console=plain
 

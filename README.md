@@ -2,6 +2,8 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
+**Última versión estable: [v1.4.2](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior).
+
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
 <p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a> (45 s): hecho con Remotion en <code>player-showcase/</code> y publicado por CI como release. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
 
@@ -100,6 +102,14 @@ Desde la terminal, con el móvil conectado por USB (depuración USB activada):
 
 Cada push a GitHub compila, prueba y publica el APK como artefacto en la pestaña **Actions** (`player-apk`).
 
-El build `release` se firma con la clave de debug para poder instalarlo sin configurar un keystore. Está bien para uso personal, pero no sirve para publicarlo en Play Store.
+## Versiones
+
+Las versiones estables se publican en [Releases](https://github.com/danielzunigazb/player/releases). Para sacar una nueva:
+
+1. Sube `versionCode` y `versionName` en `app/build.gradle.kts`.
+2. Escribe las notas en `docs/releases/vX.Y.Z.md`; si no existen, GitHub las genera a partir de los commits.
+3. Crea y sube el tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+
+El workflow `release.yml` comprueba que el tag coincida con `versionName`, corre tests y lint, firma con la llave de release, verifica que el certificado sea el esperado y publica el APK con su `.sha256`. El video de presentación se vuelve a renderizar solo cada vez que cambia la versión.
 
 Android 8.0 (API 26) o superior.
