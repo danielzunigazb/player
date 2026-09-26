@@ -61,6 +61,7 @@ object DzIcons {
     val Refresh = icon("refresh", "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5")
     val History = icon("history", "M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5M12 8v4l3 2")
     val Trending = icon("trending", "M3 17l6-6 4 4 8-8M15 7h6v6")
+    val Share = icon("share", "M12 15V3M7 8l5-5 5 5M5 12v9h14v-9")
     val New = icon("new", "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z")
 
     private fun icon(name: String, path: String, filled: Boolean = false): ImageVector =

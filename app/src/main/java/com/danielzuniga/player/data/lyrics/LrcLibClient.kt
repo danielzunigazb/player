@@ -2,6 +2,7 @@ package com.danielzuniga.player.data.lyrics
 
 import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.data.TrackMatch
+import com.danielzuniga.player.data.tags.TitleSplit
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -42,7 +43,7 @@ class LrcLibClient(
             "$baseUrl/api/get?" + query(
                 "track_name" to song.title,
                 "artist_name" to song.artist,
-                "album_name" to song.album.takeUnless { it.isUnknown() },
+                "album_name" to song.album.takeIf { song.hasAlbumTag && !it.isUnknown() },
                 "duration" to durationSec.takeIf { it > 0 }?.toString(),
             ),
             userAgent,
@@ -72,9 +73,57 @@ class LrcLibClient(
         return lyricsFrom(best)?.let { Result.Found(it) } ?: Result.NotFound
     }
 
+    /** What [identify] learned about a song. */
+    sealed interface Identity {
+        /** LRCLIB has this recording: its title and artist, spelled as the catalogue does. */
+        data class Found(val title: String, val artist: String) : Identity
+        data object NotFound : Identity
+        /** Network or server trouble: worth asking again later. */
+        data object Failed : Identity
+    }
+
+    /**
+     * Which of [readings] (artist/title guesses from an untagged file's name) is a real recording
+     * of this length. A reading only counts when a catalogue entry matches its title, its artist
+     * and the duration within [IDENTIFY_DURATION_DIFF_SEC]; the first reading that does wins.
+     * Blocking; call from an IO dispatcher.
+     */
+    fun identify(readings: List<TitleSplit.Reading>, durationMs: Long): Identity {
+        if (durationMs <= 0) return Identity.NotFound
+        var failed = false
+        for (reading in readings) {
+            val response = fetch(
+                "$baseUrl/api/search?" + query("track_name" to reading.title, "artist_name" to reading.artist),
+                userAgent,
+            )
+            if (response.code != 200 || response.body == null) {
+                if (response.code !in 400..499) failed = true
+                continue
+            }
+            val results = runCatching { JSONArray(response.body) }.getOrNull() ?: continue
+            val best = (0 until results.length())
+                .map { results.getJSONObject(it) }
+                .filter { abs(it.optDouble("duration", 0.0) - durationMs / 1000.0) <= IDENTIFY_DURATION_DIFF_SEC }
+                .filter {
+                    TrackMatch.trackTitlesMatch(reading.title, it.optString("trackName")) &&
+                        TrackMatch.artistNamesMatch(reading.artist, it.optString("artistName"))
+                }
+                .minByOrNull { abs(it.optDouble("duration", 0.0) - durationMs / 1000.0) }
+            if (best != null) {
+                val title = best.optString("trackName").trim()
+                val artist = best.optString("artistName").trim()
+                if (title.isNotEmpty() && artist.isNotEmpty()) return Identity.Found(title, artist)
+            }
+        }
+        return if (failed) Identity.Failed else Identity.NotFound
+    }
+
     companion object {
         /** Results further than this from the song's length are probably another version. */
         private const val MAX_DURATION_DIFF_SEC = 5.0
+
+        /** Stricter than for lyrics: this renames a song, so the length must really agree. */
+        private const val IDENTIFY_DURATION_DIFF_SEC = 3.0
 
         internal fun lyricsFrom(json: JSONObject): String? {
             if (json.optBoolean("instrumental")) return null
@@ -110,7 +159,8 @@ class LrcLibClient(
             .trim()
             .ifEmpty { title }
 
-        private fun Song.hasSearchableTags() = title.isNotBlank() && !artist.isUnknown()
+        // Without an artist tag, [Song.artist] is only the "unknown artist" label: nothing to search by.
+        private fun Song.hasSearchableTags() = title.isNotBlank() && hasArtistTag && !artist.isUnknown()
 
         private fun String.isUnknown() = isBlank() || equals("<unknown>", ignoreCase = true)
 

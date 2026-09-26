@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import com.danielzuniga.player.R
+import com.danielzuniga.player.data.tags.TagFixRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,8 +23,13 @@ import kotlinx.coroutines.withContext
 class MusicRepository(
     private val context: Context,
     private val settings: SettingsStore,
+    private val tagFixes: TagFixRepository,
     private val scope: CoroutineScope,
 ) {
+    /** Songs exactly as the last scan read them; [library] shows them with [tagFixes] applied. */
+    private var scanned: List<Song> = emptyList()
+    private var identifyJob: Job? = null
+
     private val _library = MutableStateFlow(LibraryIndex.EMPTY)
     val library: StateFlow<LibraryIndex> = _library.asStateFlow()
 
@@ -49,6 +55,13 @@ class MusicRepository(
     }
 
     init {
+        // A song identified or restored: show it right away.
+        scope.launch {
+            tagFixes.entries.collect { if (_hasScanned.value) publish() }
+        }
+        scope.launch {
+            settings.onlineTags.collect { enabled -> if (enabled && _hasScanned.value) identifyUntagged() }
+        }
         scope.launch {
             var first = true
             settings.minDurationSec.collect {
@@ -57,6 +70,23 @@ class MusicRepository(
             }
         }
     }
+
+    /**
+     * "Unknown artist/album" in the language the UI is showing. The activity passes them in:
+     * with an in-app language on Android 12 and older only the activity follows it, not the app
+     * context. A different pair (the language changed) rescans so the library matches.
+     */
+    @Volatile private var labels: Pair<String, String>? = null
+    @Volatile private var scannedLabels: Pair<String, String>? = null
+
+    fun setUnknownLabels(artist: String, album: String) {
+        labels = artist to album
+        if (_hasScanned.value && scannedLabels != labels) scope.launch { scan() }
+    }
+
+    private fun unknownLabels(): Pair<String, String> =
+        (labels ?: (context.getString(R.string.unknown_artist) to context.getString(R.string.unknown_album)))
+            .also { scannedLabels = it }
 
     /** Scans once; later calls are no-ops unless [force] is set. */
     fun load(force: Boolean = false) {
@@ -75,14 +105,33 @@ class MusicRepository(
         _isScanning.value = true
         try {
             val songs = querySongs(settings.minDurationSec.first())
-            _library.value = LibraryIndex(songs)
+            tagFixes.awaitLoaded()
+            scanned = songs
+            publish()
             _hasScanned.value = true
+            identifyUntagged()
             registerObserver()
         } catch (_: SecurityException) {
             // Permission not granted yet; the UI asks for it and triggers another load.
         } finally {
             _isScanning.value = false
         }
+    }
+
+    private fun publish() {
+        _library.value = LibraryIndex(scanned.map(tagFixes::apply))
+    }
+
+    /** Looks up untagged songs in the background; the library updates as each one is found. */
+    private fun identifyUntagged() {
+        identifyJob?.cancel()
+        val songs = scanned
+        identifyJob = scope.launch { tagFixes.identifyUntagged(songs) }
+    }
+
+    /** Back to the file's own tags for [songId]. */
+    fun restoreTags(songId: Long) {
+        scope.launch { tagFixes.restore(songId) }
     }
 
     private fun registerObserver() {
@@ -96,8 +145,7 @@ class MusicRepository(
     }
 
     private suspend fun querySongs(minDurationSec: Int): List<Song> = withContext(Dispatchers.IO) {
-        val unknownArtist = context.getString(R.string.unknown_artist)
-        val unknownAlbum = context.getString(R.string.unknown_album)
+        val (unknownArtist, unknownAlbum) = unknownLabels()
 
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -137,31 +185,31 @@ class MusicRepository(
             buildList(cursor.count) {
                 while (cursor.moveToNext()) {
                     // Tags are messy ("A, ,, B", NUL-separated lists, ALL CAPS): clean them once here.
-                    val artists = cursor.getString(artistCol).takeUnless { it == MediaStore.UNKNOWN_STRING }
+                    val taggedArtists = cursor.getString(artistCol).takeUnless { it == MediaStore.UNKNOWN_STRING }
                         .let(TagText::artists)
-                        .ifEmpty { listOf(unknownArtist) }
+                    val artists = taggedArtists.ifEmpty { listOf(unknownArtist) }
+                    val album = TagText.title(cursor.getString(albumCol)).takeUnless { it.isBlank() || it == MediaStore.UNKNOWN_STRING }
                     add(
                         Song(
                             id = cursor.getLong(idCol),
                             title = TagText.title(cursor.getString(titleCol)),
                             artist = TagText.joinArtists(artists),
                             artists = artists,
-                            album = TagText.title(cursor.getString(albumCol)).orUnknown(unknownAlbum),
+                            album = album ?: unknownAlbum,
                             albumId = cursor.getLong(albumIdCol),
                             durationMs = cursor.getLong(durationCol),
                             track = cursor.getInt(trackCol),
                             year = cursor.getInt(yearCol),
                             dateAddedSec = cursor.getLong(dateAddedCol),
                             path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else "",
+                            hasArtistTag = taggedArtists.isNotEmpty(),
+                            hasAlbumTag = album != null,
                         )
                     )
                 }
             }
         } ?: emptyList()
     }
-
-    private fun String?.orUnknown(fallback: String): String =
-        if (isNullOrBlank() || this == MediaStore.UNKNOWN_STRING) fallback else this
 
     private companion object {
         const val RESCAN_DEBOUNCE_MS = 1_500L

@@ -148,12 +148,16 @@ fun SongMenu(
         MenuItem(R.string.play_next, DzIcons.PlayNext) { actions.playNext(listOf(song)); onDismiss() }
         MenuItem(R.string.add_to_queue, DzIcons.AddToQueue) { actions.addToQueue(listOf(song)); onDismiss() }
         MenuItem(R.string.add_to_playlist, DzIcons.PlaylistAdd) { actions.addToPlaylist(listOf(song)); onDismiss() }
+        MenuItem(R.string.share, DzIcons.Share) { actions.share(song); onDismiss() }
         MenuItem(
             if (isFavorite) R.string.remove_favorite else R.string.add_favorite,
             if (isFavorite) DzIcons.HeartFilled else DzIcons.Heart,
         ) { actions.toggleFavorite(song); onDismiss() }
         MenuItem(R.string.go_to_album, DzIcons.Album) { actions.openAlbum(song.albumId); onDismiss() }
         MenuItem(R.string.go_to_artist, DzIcons.Artist) { actions.openArtist(song.artists.first()); onDismiss() }
+        if (song.tagsFixed) {
+            MenuItem(R.string.restore_tags, DzIcons.Refresh) { actions.restoreTags(song); onDismiss() }
+        }
         extraItems(onDismiss)
     }
 }

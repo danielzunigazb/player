@@ -3,6 +3,7 @@ package com.danielzuniga.player.data.lyrics
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.data.Song
+import com.danielzuniga.player.data.tags.TitleSplit
 import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
@@ -131,6 +132,49 @@ class LrcLibClientTest {
         val result = client().find(song.copy(artist = "<unknown>"))
         assertEquals(LrcLibClient.Result.NotFound, result)
         assertTrue(requests.isEmpty())
+    }
+
+    @Test
+    fun missingTagsAreNotSentAsTheirLabels() {
+        // What the library scan produces for a file without an artist tag: the label, not "<unknown>".
+        val untagged = song.copy(artist = "Artista desconocido", artists = listOf("Artista desconocido"), hasArtistTag = false)
+        assertEquals(LrcLibClient.Result.NotFound, client().find(untagged))
+        assertTrue(requests.isEmpty())
+
+        // Without an album tag the lookup still runs, just without the "unknown album" label.
+        client(LrcLibClient.Response(404, null), LrcLibClient.Response(200, "[]"))
+            .find(song.copy(album = "Álbum desconocido", hasAlbumTag = false))
+        assertTrue(requests.none { "album_name" in it })
+    }
+
+    @Test
+    fun identifyKeepsTheReadingTheCatalogueConfirms() {
+        val readings = TitleSplit.readings("24K - T3R Elemento")
+        val result = client(
+            // "artist 24K, song T3R Elemento": nothing like it.
+            LrcLibClient.Response(200, "[]"),
+            // "artist T3R Elemento, song 24K": there it is, with the same length.
+            LrcLibClient.Response(200, JSONArray().put(track(193.0, name = "24K", artist = "T3R Elemento")).toString()),
+        ).identify(readings, durationMs = 192_400)
+
+        assertEquals(LrcLibClient.Identity.Found("24K", "T3R Elemento"), result)
+        assertTrue(requests[0].contains("artist_name=24K"))
+        assertTrue(requests[1].contains("artist_name=T3R+Elemento"))
+    }
+
+    @Test
+    fun identifyRejectsOtherLengthsAndReportsNetworkTrouble() {
+        val readings = TitleSplit.readings("24K - T3R Elemento")
+        val otherVersion = JSONArray().put(track(230.0, name = "24K", artist = "T3R Elemento")).toString()
+        assertEquals(
+            LrcLibClient.Identity.NotFound,
+            client(LrcLibClient.Response(200, "[]"), LrcLibClient.Response(200, otherVersion)).identify(readings, 192_000),
+        )
+        requests.clear()
+        assertEquals(
+            LrcLibClient.Identity.Failed,
+            client(LrcLibClient.Response(-1, null), LrcLibClient.Response(-1, null)).identify(readings, 192_000),
+        )
     }
 
     @Test

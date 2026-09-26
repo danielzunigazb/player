@@ -1,29 +1,25 @@
 package com.danielzuniga.player.ui.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.em
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -59,8 +55,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.Album
 import com.danielzuniga.player.data.Artist
@@ -70,16 +72,16 @@ import com.danielzuniga.player.ui.LibraryUiState
 import com.danielzuniga.player.ui.PlaylistsUiState
 import com.danielzuniga.player.ui.SmartPlaylist
 import com.danielzuniga.player.ui.components.Artwork
-import com.danielzuniga.player.ui.components.EmptyState
-import com.danielzuniga.player.ui.components.LocalSongActions
-import com.danielzuniga.player.ui.components.SongRow
-import com.danielzuniga.player.ui.playlists.PlaylistsTab
 import com.danielzuniga.player.ui.components.DzButton
 import com.danielzuniga.player.ui.components.DzIconButton
 import com.danielzuniga.player.ui.components.DzMark
 import com.danielzuniga.player.ui.components.DzTitle
+import com.danielzuniga.player.ui.components.EmptyState
 import com.danielzuniga.player.ui.components.Eyebrow
 import com.danielzuniga.player.ui.components.Hairline
+import com.danielzuniga.player.ui.components.LocalSongActions
+import com.danielzuniga.player.ui.components.SongRow
+import com.danielzuniga.player.ui.playlists.PlaylistsTab
 import com.danielzuniga.player.ui.theme.Dz
 import com.danielzuniga.player.ui.theme.DzIcons
 import com.danielzuniga.player.ui.theme.DzType
@@ -359,8 +361,19 @@ private fun SongSort.label(): Int = when (this) {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: () -> Unit) {
+internal fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
+    // The field owns its text and cursor. The query only comes back from the view model after
+    // the library is filtered on a background thread, so feeding that value to the field made it
+    // replay stale text while typing and leave the cursor behind the last character.
+    var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(query, TextRange(query.length)))
+    }
+    fun edit(value: TextFieldValue) {
+        val changed = value.text != field.text
+        field = value
+        if (changed) onQueryChange(value.text)
+    }
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = onClose) {
@@ -369,13 +382,13 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit, onClose: (
         },
         title = {
             TextField(
-                value = query,
-                onValueChange = onQueryChange,
+                value = field,
+                onValueChange = ::edit,
                 placeholder = { Text(stringResource(R.string.search_hint)) },
                 singleLine = true,
                 trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQueryChange("") }) {
+                    if (field.text.isNotEmpty()) {
+                        IconButton(onClick = { edit(TextFieldValue("")) }) {
                             Icon(DzIcons.Close, contentDescription = stringResource(R.string.clear_search))
                         }
                     }

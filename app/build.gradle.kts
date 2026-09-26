@@ -35,8 +35,8 @@ android {
         applicationId = "com.danielzuniga.player"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.4.2"
+        versionCode = 9
+        versionName = "1.5.0"
     }
 
     signingConfigs {
@@ -83,6 +83,12 @@ android {
         unitTests.all { it.maxHeapSize = "3g" }
     }
 
+    androidResources {
+        // Lists the app's languages (from res/values-*) so Android 13+ offers them under
+        // Settings → Apps → Player → Language.
+        generateLocaleConfig = true
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -92,6 +98,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 

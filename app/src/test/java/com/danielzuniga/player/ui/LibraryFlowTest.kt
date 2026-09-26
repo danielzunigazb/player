@@ -37,7 +37,7 @@ import org.robolectric.annotation.Config
 
 /** Full app on a fake device library: playing, favorites and browsing. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp")
+@Config(sdk = [34], qualifiers = "es-w411dp-h891dp")
 class LibraryFlowTest {
 
     @get:Rule
@@ -52,6 +52,8 @@ class LibraryFlowTest {
         shadowOf(app).grantPermissions(Manifest.permission.READ_MEDIA_AUDIO)
         // Keep UI tests off the network: no LRCLIB lookups.
         app.appContainer.settings.setOnlineLyrics(false)
+        app.appContainer.settings.setOnlineTags(false)
+        app.appContainer.settings.setAutoUpdates(false)
         FakeMediaProvider.install(
             listOf(
                 FakeSong(1, "De Música Ligera", "Soda Stereo", "Canción Animal", albumId = 10, track = 1),

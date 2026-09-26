@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,6 +74,8 @@ class NowPlayingActions(
     val onAddToPlaylist: () -> Unit,
     val onGoToAlbum: () -> Unit,
     val onGoToArtist: () -> Unit,
+    val onShare: () -> Unit = {},
+    val onShareLines: (List<String>) -> Unit = {},
 )
 
 /**
@@ -108,7 +111,7 @@ fun NowPlayingScreen(
                     .padding(vertical = 24.dp),
             ) {
                 if (showLyrics) {
-                    LyricsView(lyrics, state.positionMs, actions.onSeek)
+                    LyricsView(lyrics, state.positionMs, actions.onSeek, onShareLines = actions.onShareLines)
                 } else {
                     SwipeableArtwork(nowPlaying, onNext = actions.onNext, onPrevious = actions.onPrevious)
                 }
@@ -157,6 +160,7 @@ private fun TopRow(actions: NowPlayingActions) {
         Box {
             DzIconButton(DzIcons.More, stringResource(R.string.more_options), { menuOpen = true })
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                MenuItem(R.string.share, DzIcons.Share) { menuOpen = false; actions.onShare() }
                 MenuItem(R.string.add_to_playlist, DzIcons.PlaylistAdd) { menuOpen = false; actions.onAddToPlaylist() }
                 MenuItem(R.string.go_to_album, DzIcons.Album) { menuOpen = false; actions.onGoToAlbum() }
                 MenuItem(R.string.go_to_artist, DzIcons.Artist) { menuOpen = false; actions.onGoToArtist() }
@@ -170,6 +174,9 @@ private fun TopRow(actions: NowPlayingActions) {
 private fun SwipeableArtwork(nowPlaying: NowPlaying, onNext: () -> Unit, onPrevious: () -> Unit) {
     val threshold = with(LocalDensity.current) { 96.dp.toPx() }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    // The gesture outlives recompositions; read the latest callbacks when the swipe ends.
+    val latestNext by rememberUpdatedState(onNext)
+    val latestPrevious by rememberUpdatedState(onPrevious)
     // Fast and dry: a 180ms crossfade between covers, no bounce.
     Crossfade(targetState = nowPlaying.artworkUri, animationSpec = tween(180), label = "artwork") { uri ->
         Artwork(
@@ -182,7 +189,7 @@ private fun SwipeableArtwork(nowPlaying: NowPlaying, onNext: () -> Unit, onPrevi
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             if (abs(dragOffset) > threshold) {
-                                if (dragOffset < 0) onNext() else onPrevious()
+                                if (dragOffset < 0) latestNext() else latestPrevious()
                             }
                             dragOffset = 0f
                         },

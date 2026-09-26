@@ -38,6 +38,8 @@ interface ShellHost {
     fun toggleFavorite(songId: Long)
     fun setSleep(minutes: Int)
     fun setSpeed(speed: Float)
+    /** Shares the current song as a story image; with [lines], as a lyrics card. */
+    fun share(lines: List<String>)
 }
 
 /**
@@ -45,61 +47,66 @@ interface ShellHost {
  * text against the library (artist, album or song, accent-insensitive) and answer in short,
  * lower-case lines, the way a CLI would.
  */
-class Shell(private val host: ShellHost) {
+class Shell(private val host: ShellHost, private val text: ShellText) {
 
     private class Command(
         val name: String,
         val usage: String,
-        val help: String,
         val aliases: List<String> = emptyList(),
         val takesQuery: Boolean = false,
         val run: (String) -> List<ShellLine>,
     )
 
     private val commands: List<Command> = listOf(
-        Command("play", "play [artista|álbum|canción]", "reproduce lo que encuentre; sin nada, reanuda", listOf("p"), takesQuery = true) { q ->
+        Command("play", "play [${text.queryArg}]", listOf("p"), takesQuery = true) { q ->
             if (q.isBlank()) resume() else withMatch(q) { m -> host.play(m.songs); listOf(ok("▶ ${m.label}")) }
         },
-        Command("shuffle", "shuffle [algo]", "mezcla todo, o solo lo que encuentre", listOf("mix"), takesQuery = true) { q ->
+        Command("shuffle", "shuffle [${text.somethingArg}]", listOf("mix"), takesQuery = true) { q ->
             if (q.isBlank()) {
                 host.shuffle(host.library.songs)
-                listOf(ok("⤮ toda la biblioteca · ${count(host.library.songs.size)}"))
+                listOf(ok(text.shuffledLibrary(text.songs(host.library.songs.size))))
             } else {
                 withMatch(q) { m -> host.shuffle(m.songs); listOf(ok("⤮ ${m.label}")) }
             }
         },
-        Command("queue", "queue <algo>", "lo agrega al final de la cola", listOf("q", "add"), takesQuery = true) { q ->
-            requireQuery(q, "queue") { withMatch(q) { m -> host.addToQueue(m.songs); listOf(ok("+ en cola: ${m.label}")) } }
+        Command("queue", "queue <${text.somethingArg}>", listOf("q", "add"), takesQuery = true) { q ->
+            requireQuery(q, "queue") { withMatch(q) { m -> host.addToQueue(m.songs); listOf(ok(text.queued(m.label))) } }
         },
-        Command("next", "next [algo]", "sin nada salta; con algo, lo pone a continuación", listOf("n", "skip"), takesQuery = true) { q ->
+        Command("next", "next [${text.somethingArg}]", listOf("n", "skip"), takesQuery = true) { q ->
             if (q.isBlank()) {
                 host.skip()
-                listOf(ok("⏭ siguiente"))
+                listOf(ok(text.skipped))
             } else {
-                withMatch(q) { m -> host.playNext(m.songs); listOf(ok("↳ a continuación: ${m.label}")) }
+                withMatch(q) { m -> host.playNext(m.songs); listOf(ok(text.upNext(m.label))) }
             }
         },
-        Command("prev", "prev", "vuelve a la anterior", listOf("back")) { _ -> host.previous(); listOf(ok("⏮ anterior")) },
-        Command("pause", "pause", "pausa o reanuda", listOf("stop")) { _ ->
-            if (!host.player.isPlaying) listOf(dim("ya está en pausa.")) else { host.togglePlay(); listOf(ok("‖ pausa")) }
+        Command("prev", "prev", listOf("back")) { _ -> host.previous(); listOf(ok(text.previous)) },
+        Command("pause", "pause", listOf("stop")) { _ ->
+            if (!host.player.isPlaying) listOf(dim(text.alreadyPaused)) else { host.togglePlay(); listOf(ok(text.paused)) }
         },
-        Command("now", "now", "qué suena, con progreso y letra", listOf("np", "status")) { _ -> now() },
-        Command("seek", "seek <1:30|+10|-10>", "salta a un momento de la canción") { arg -> seek(arg) },
-        Command("fav", "fav", "marca o desmarca la actual como favorita", listOf("like")) { _ -> fav() },
-        Command("sleep", "sleep <30m|1h|end|off>", "temporizador para dormir") { arg -> sleep(arg) },
-        Command("speed", "speed <0.5–2>", "velocidad de reproducción") { arg -> speed(arg) },
-        Command("repeat", "repeat", "cicla: off → todo → una") { _ -> repeat() },
-        Command("random", "random", "activa o apaga el modo aleatorio de la cola") { _ ->
+        Command("now", "now", listOf("np", "status")) { _ -> now() },
+        Command("seek", "seek <1:30|+10|-10>") { arg -> seek(arg) },
+        Command("fav", "fav", listOf("like")) { _ -> fav() },
+        Command("sleep", "sleep <30m|1h|end|off>") { arg -> sleep(arg) },
+        Command("speed", "speed <0.5–2>") { arg -> speed(arg) },
+        Command("repeat", "repeat") { _ -> repeat() },
+        Command("random", "random") { _ ->
+            // The state is read before the toggle lands, so it still shows the old mode.
+            val wasOn = host.player.shuffleEnabled
             host.toggleShuffle()
-            listOf(ok(if (host.player.shuffleEnabled) "aleatorio: off" else "aleatorio: on"))
+            listOf(ok(text.shuffleState(on = !wasOn)))
         },
-        Command("top", "top", "tus más escuchadas") { _ -> top() },
-        Command("ls", "ls", "resumen de la biblioteca", listOf("stats")) { _ -> ls() },
-        Command("help", "help", "esta lista", listOf("?", "man")) { _ -> help() },
+        Command("share", "share [lyric]") { arg -> share(arg) },
+        Command("top", "top") { _ -> top() },
+        Command("ls", "ls", listOf("stats")) { _ -> ls() },
+        Command("help", "help", listOf("?", "man")) { _ -> help() },
         // Handled by the terminal UI itself; listed here for help and completion.
-        Command(CLEAR, CLEAR, "limpia la pantalla", listOf("cls")) { _ -> emptyList() },
-        Command(EXIT, EXIT, "cierra la terminal", listOf("quit")) { _ -> emptyList() },
+        Command(CLEAR, CLEAR, listOf("cls")) { _ -> emptyList() },
+        Command(EXIT, EXIT, listOf("quit")) { _ -> emptyList() },
     )
+
+    /** Every command name, for checking that each language describes them all. */
+    internal val commandNames: List<String> get() = commands.map { it.name }
 
     private val byName: Map<String, Command> =
         commands.flatMap { c -> (c.aliases + c.name).map { it to c } }.toMap()
@@ -108,8 +115,8 @@ class Shell(private val host: ShellHost) {
     fun banner(): List<ShellLine> {
         val lib = host.library
         return listOf(
-            ShellLine("player · ${count(lib.songs.size)} · ${lib.albums.size} álbumes · ${lib.artists.size} artistas", LineKind.DIM),
-            ShellLine("escribe `help` para ver los comandos.", LineKind.DIM),
+            ShellLine("player · " + text.librarySummary(lib.songs.size, lib.albums.size, lib.artists.size), LineKind.DIM),
+            ShellLine(text.bannerHint, LineKind.DIM),
         )
     }
 
@@ -121,14 +128,14 @@ class Shell(private val host: ShellHost) {
         var (word, rest) = split(input)
         val sudo = word == "sudo"
         if (sudo) {
-            if (rest.isBlank()) return listOf(echo, err("sudo: ¿qué comando?"))
+            if (rest.isBlank()) return listOf(echo, err(text.sudoWhichCommand))
             split(rest).let { word = it.first; rest = it.second }
         }
         if (word == "whoami") return listOf(echo, ShellLine("daniel zúñiga"))
         val command = byName[word]
-            ?: return listOf(echo, err("$word: comando no encontrado. prueba `help`."))
+            ?: return listOf(echo, err(text.notFound(word)))
         val output = command.run(rest)
-        return listOf(echo) + (if (sudo) listOf(dim("no hace falta root aquí, brother.")) else emptyList()) + output
+        return listOf(echo) + (if (sudo) listOf(dim(text.sudoNotNeeded)) else emptyList()) + output
     }
 
     /**
@@ -155,7 +162,7 @@ class Shell(private val host: ShellHost) {
 
     private fun withMatch(query: String, block: (Match) -> List<ShellLine>): List<ShellLine> {
         val match = candidates(query).firstOrNull()
-            ?: return listOf(err("nada coincide con \"$query\"."))
+            ?: return listOf(err(text.noMatch(query)))
         return block(match)
     }
 
@@ -195,10 +202,10 @@ class Shell(private val host: ShellHost) {
     }
 
     private fun artistMatch(a: Artist, score: Int) =
-        Match(a.songs, "${a.name} · ${count(a.songs.size)}", a.name.lowercase(), score + 3)
+        Match(a.songs, "${a.name} · ${text.songs(a.songs.size)}", a.name.lowercase(), score + 3)
 
     private fun albumMatch(al: Album, score: Int) =
-        Match(al.songs, "${al.title} — ${al.artist} · ${count(al.songs.size)}", al.title.lowercase(), score + 2)
+        Match(al.songs, "${al.title} — ${al.artist} · ${text.songs(al.songs.size)}", al.title.lowercase(), score + 2)
 
     private fun songMatch(s: Song, score: Int) =
         Match(listOf(s), "${s.title} — ${s.artist}", s.title.lowercase(), score + 1)
@@ -206,10 +213,10 @@ class Shell(private val host: ShellHost) {
     // ---------------------------------------------------------------- commands
 
     private fun resume(): List<ShellLine> {
-        if (host.player.nowPlaying == null) return listOf(dim("nada cargado. prueba `play <algo>` o `shuffle`."))
-        if (host.player.isPlaying) return listOf(dim("ya está sonando."))
+        if (host.player.nowPlaying == null) return listOf(dim(text.nothingLoaded))
+        if (host.player.isPlaying) return listOf(dim(text.alreadyPlaying))
         host.togglePlay()
-        return listOf(ok("▶ reanudado"))
+        return listOf(ok(text.resumed))
     }
 
     private fun now(): List<ShellLine> {
@@ -218,10 +225,10 @@ class Shell(private val host: ShellHost) {
         val bar = progressBar(state.progress())
         val flags = listOfNotNull(
             if (state.isPlaying) "▶" else "‖",
-            "aleatorio".takeIf { state.shuffleEnabled },
+            text.shuffleFlag.takeIf { state.shuffleEnabled },
             when (state.repeatMode) {
-                Player.REPEAT_MODE_ONE -> "repite una"
-                Player.REPEAT_MODE_ALL -> "repite todo"
+                Player.REPEAT_MODE_ONE -> text.repeatOneFlag
+                Player.REPEAT_MODE_ALL -> text.repeatAllFlag
                 else -> null
             },
             formatSpeed(state.playbackSpeed).takeIf { state.playbackSpeed != 1f },
@@ -240,7 +247,7 @@ class Shell(private val host: ShellHost) {
         val state = host.player
         if (state.nowPlaying == null || state.durationMs <= 0) return listOf(dim("nada sonando."))
         val target = parseSeek(arg.trim(), state.positionMs)
-            ?: return listOf(err("uso: seek 1:30 · seek +10 · seek -10"))
+            ?: return listOf(err(text.seekUsage))
         val clamped = target.coerceIn(0L, state.durationMs)
         host.seek(clamped)
         return listOf(ok("→ ${formatDuration(clamped)}"))
@@ -250,7 +257,7 @@ class Shell(private val host: ShellHost) {
         val id = host.player.nowPlaying?.songId ?: return listOf(dim("nada sonando."))
         val wasFav = id in host.favoriteIds
         host.toggleFavorite(id)
-        return listOf(ok(if (wasFav) "♡ quitada de favoritas" else "♥ añadida a favoritas"))
+        return listOf(ok(if (wasFav) text.favoriteRemoved else text.favoriteAdded))
     }
 
     private fun sleep(arg: String): List<ShellLine> {
@@ -262,14 +269,14 @@ class Shell(private val host: ShellHost) {
             a.endsWith("m") -> a.dropLast(1).toIntOrNull()
             else -> a.toIntOrNull()
         }?.takeIf { it >= SessionCommands.SLEEP_END_OF_TRACK && it <= 24 * 60 }
-            ?: return listOf(err("uso: sleep 30m · sleep 1h · sleep end · sleep off"))
+            ?: return listOf(err(text.sleepUsage))
         host.setSleep(minutes)
         return listOf(
             ok(
                 when (minutes) {
-                    SessionCommands.SLEEP_OFF -> "temporizador apagado"
-                    SessionCommands.SLEEP_END_OF_TRACK -> "☾ pausa al terminar esta canción"
-                    else -> "☾ pausa en ${formatMinutes(minutes)}"
+                    SessionCommands.SLEEP_OFF -> text.sleepOff
+                    SessionCommands.SLEEP_END_OF_TRACK -> text.sleepEndOfTrack
+                    else -> text.sleepIn(formatMinutes(minutes))
                 },
             ),
         )
@@ -278,24 +285,34 @@ class Shell(private val host: ShellHost) {
     private fun speed(arg: String): List<ShellLine> {
         val value = arg.trim().removeSuffix("x").replace(',', '.').toFloatOrNull()
             ?.takeIf { it in 0.5f..2f }
-            ?: return listOf(err("uso: speed 1.25 (entre 0.5 y 2)"))
+            ?: return listOf(err(text.speedUsage))
         host.setSpeed(value)
-        return listOf(ok("velocidad ${formatSpeed(value)}"))
+        return listOf(ok(text.speedSet(formatSpeed(value))))
     }
 
     private fun repeat(): List<ShellLine> {
         val next = when (host.player.repeatMode) {
-            Player.REPEAT_MODE_OFF -> "todo"
-            Player.REPEAT_MODE_ALL -> "una"
+            Player.REPEAT_MODE_OFF -> "all"
+            Player.REPEAT_MODE_ALL -> "one"
             else -> "off"
         }
         host.cycleRepeat()
-        return listOf(ok("repetir: $next"))
+        return listOf(ok(text.repeatState(next)))
+    }
+
+    private fun share(arg: String): List<ShellLine> {
+        if (host.player.nowPlaying == null) return listOf(dim(text.nothingPlaying))
+        val lyric = arg.trim().lowercase() in setOf("lyric", "lyrics", "letra")
+        if (!lyric && arg.isNotBlank()) return listOf(err(text.usage("share", "[lyric]")))
+        val line = host.currentLyric?.takeIf { it.isNotBlank() }
+        if (lyric && line == null) return listOf(dim(text.noLyricLine))
+        host.share(listOfNotNull(line.takeIf { lyric }))
+        return listOf(ok(if (lyric) text.sharingLyric(line!!) else text.sharing))
     }
 
     private fun top(): List<ShellLine> {
         val songs = host.mostPlayed.take(5)
-        if (songs.isEmpty()) return listOf(dim("todavía no hay historial. dale play a algo."))
+        if (songs.isEmpty()) return listOf(dim(text.noHistory))
         return songs.mapIndexed { i, s -> ShellLine("%02d  %s — %s".format(i + 1, s.title, s.artist)) }
     }
 
@@ -303,19 +320,19 @@ class Shell(private val host: ShellHost) {
         val lib = host.library
         val total = lib.songs.sumOf { it.durationMs }
         return listOf(
-            ShellLine("${count(lib.songs.size)} · ${lib.albums.size} álbumes · ${lib.artists.size} artistas"),
-            ShellLine("${formatHours(total)} de música · ${host.favoriteIds.size} favoritas", LineKind.DIM),
+            ShellLine(text.librarySummary(lib.songs.size, lib.albums.size, lib.artists.size)),
+            ShellLine(text.musicAndFavorites(formatHours(total), host.favoriteIds.size), LineKind.DIM),
         )
     }
 
     private fun help(): List<ShellLine> {
         // Two lines per command: a phone is too narrow for an aligned second column.
-        return commands.flatMap { c -> listOf(ShellLine(c.usage), ShellLine("  " + c.help, LineKind.DIM)) } +
-            ShellLine("tip: `play album signos` o `play artist soda` para ser específico.", LineKind.DIM)
+        return commands.flatMap { c -> listOf(ShellLine(c.usage), ShellLine("  " + text.help(c.name), LineKind.DIM)) } +
+            ShellLine(text.helpTip, LineKind.DIM)
     }
 
     private inline fun requireQuery(q: String, name: String, block: () -> List<ShellLine>): List<ShellLine> =
-        if (q.isBlank()) listOf(err("uso: $name <artista|álbum|canción>")) else block()
+        if (q.isBlank()) listOf(err(text.usage(name, "<${text.queryArg}>"))) else block()
 
     // ---------------------------------------------------------------- helpers
 
@@ -359,8 +376,6 @@ class Shell(private val host: ShellHost) {
             }
             return arg.toLongOrNull()?.times(1000)
         }
-
-        private fun count(n: Int) = if (n == 1) "1 canción" else "$n canciones"
 
         private fun formatMinutes(minutes: Int) =
             if (minutes >= 60 && minutes % 60 == 0) "${minutes / 60} h" else "$minutes min"

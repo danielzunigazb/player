@@ -14,6 +14,10 @@ class SongActions(
     val toggleFavorite: (song: Song) -> Unit,
     val openAlbum: (albumId: Long) -> Unit,
     val openArtist: (name: String) -> Unit,
+    /** Undo the app's own artist/title fix for a song (see Song.tagsFixed). */
+    val restoreTags: (song: Song) -> Unit = {},
+    /** Share as a story image; with lines, as a lyrics card. */
+    val share: (song: Song) -> Unit = {},
 )
 
 val LocalSongActions = staticCompositionLocalOf<SongActions> {

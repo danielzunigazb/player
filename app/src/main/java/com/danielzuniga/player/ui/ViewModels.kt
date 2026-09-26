@@ -311,6 +311,7 @@ data class SettingsUiState(
     val dynamicColor: Boolean = false,
     val onlineLyrics: Boolean = true,
     val minDurationSec: Int = 10,
+    val onlineTags: Boolean = true,
 )
 
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
@@ -321,7 +322,8 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         settings.dynamicColor,
         settings.onlineLyrics,
         settings.minDurationSec,
-    ) { theme, dynamic, online, minDuration -> SettingsUiState(theme, dynamic, online, minDuration) }
+        settings.onlineTags,
+    ) { theme, dynamic, online, minDuration, tags -> SettingsUiState(theme, dynamic, online, minDuration, tags) }
         .stateIn(
             this,
             SettingsUiState(
@@ -329,6 +331,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 settings.dynamicColor.value,
                 settings.onlineLyrics.value,
                 settings.minDurationSec.value,
+                settings.onlineTags.value,
             ),
         )
 
@@ -336,6 +339,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun setDynamicColor(enabled: Boolean) = settings.setDynamicColor(enabled)
     fun setOnlineLyrics(enabled: Boolean) = settings.setOnlineLyrics(enabled)
     fun setMinDuration(seconds: Int) = settings.setMinDurationSec(seconds)
+    fun setOnlineTags(enabled: Boolean) = settings.setOnlineTags(enabled)
     fun rescan() = container.musicRepository.load(force = true)
 }
 

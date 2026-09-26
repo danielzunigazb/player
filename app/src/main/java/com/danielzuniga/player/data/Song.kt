@@ -19,6 +19,12 @@ data class Song(
     val path: String = "",
     /** Each credited artist on its own; [artist] is these joined for display. */
     val artists: List<String> = listOf(artist),
+    /** False when the file has no artist tag and [artist] is the "unknown artist" label. */
+    val hasArtistTag: Boolean = true,
+    /** False when the file has no album tag and [album] is the "unknown album" label. */
+    val hasAlbumTag: Boolean = true,
+    /** Artist or title here differ from the file's tags (see TagFixRepository); can be restored. */
+    val tagsFixed: Boolean = false,
 ) {
     val folder: String get() = path.substringBeforeLast('/', missingDelimiterValue = "")
 

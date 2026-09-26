@@ -58,3 +58,13 @@ Cada fase se entrega compilando, con pruebas y lint en verde, en su propio commi
 ## v1.4.2 — primera versión estable ✅
 
 Llave de release propia, releases automáticos por tag (`release.yml`), revisión de seguridad del código completo sin hallazgos y video de presentación publicado por CI.
+
+## v1.5.0 — idiomas y correcciones ✅
+- [x] Inglés y español completos, incluida la terminal; selector en Ajustes → Idioma
+- [x] Compartir canciones y letras como imagen 9:16 para historias (menú, Reproduciendo, selección de líneas, `share` en la terminal)
+- [x] Aviso de actualizaciones desde los releases de GitHub
+- [x] Canciones sin etiquetas: artista y título confirmados en LRCLIB por nombre de archivo y duración, sin tocar los archivos y reversibles
+- [x] Búsqueda: el cursor ya no se queda atrás al escribir rápido
+- [x] Aleatorio: la cola mezclada empieza por la canción actual y se reproduce completa
+- [x] Aleatorio: "Reproducir a continuación" suena a continuación y "Añadir a la cola" va al final
+- [x] Letras: las canciones sin etiqueta de artista no se buscan en LRCLIB con "Artista desconocido"
