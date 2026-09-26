@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 
 /** Boots the real activity and playback service (empty device library) and walks the main flows. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp")
+@Config(sdk = [34], qualifiers = "es-w411dp-h891dp")
 class AppSmokeTest {
 
     @get:Rule
@@ -66,6 +66,14 @@ class AppSmokeTest {
         compose.onNodeWithText("Canciones", ignoreCase = true).assertIsDisplayed()
         compose.onNodeWithText("Álbumes", ignoreCase = true).assertIsDisplayed()
         compose.waitUntil(5_000) { exists("No se encontró música en el dispositivo.") }
+    }
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp")
+    fun speaksEnglishOnAnEnglishPhone() {
+        compose.onNodeWithText("Songs", ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithText("Albums", ignoreCase = true).assertIsDisplayed()
+        compose.waitUntil(5_000) { exists("No music found on this device.") }
     }
 
     // The new-playlist dialog is tested in isolation (ScreensTest): in an edge-to-edge activity

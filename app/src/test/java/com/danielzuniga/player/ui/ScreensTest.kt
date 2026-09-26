@@ -37,7 +37,7 @@ class ScreensTest {
 
     private companion object {
         /** A typical phone; the home header needs more room than Robolectric's default screen. */
-        const val PHONE = "w400dp-h860dp"
+        const val PHONE = "es-w400dp-h860dp"
     }
 
     @get:Rule

@@ -108,7 +108,7 @@ fun TerminalScreen(
             ) {
                 DzMark(size = 20.dp)
                 Text(
-                    text = "daniel@player:~/música",
+                    text = stringResource(R.string.terminal_prompt),
                     style = DzType.small,
                     color = Dz.colors.inkMuted,
                     modifier = Modifier

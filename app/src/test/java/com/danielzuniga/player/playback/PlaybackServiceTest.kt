@@ -82,6 +82,26 @@ class PlaybackServiceTest {
     }
 
     @Test
+    fun playNextWhileShufflingIsReallyNext() {
+        val many = (1L..20L).map { Song(it, "Song $it", "Artist", "Album", 1, 180_000) }
+        connection.play(many, startIndex = 7, shuffle = true)
+        awaitUntil { connection.queue.value.items.size == 20 && connection.queue.value.shuffled }
+        // A shuffled queue starts with the song that plays first, so none are left behind it.
+        awaitUntil { connection.queue.value.items.first().songId == 8L }
+
+        connection.playNext(listOf(Song(99, "Song 99", "Artist", "Album", 1, 1_000)))
+        awaitUntil { connection.queue.value.items.size == 21 }
+        connection.addToQueue(listOf(Song(98, "Song 98", "Artist", "Album", 1, 1_000)))
+        awaitUntil { connection.queue.value.items.size == 22 }
+
+        // The queue is listed in play order: "play next" follows the current song, "add" goes last.
+        val queue = connection.queue.value
+        val current = queue.items.indexOfFirst { it.index == queue.currentIndex }
+        assertEquals(99L, queue.items[current + 1].songId)
+        assertEquals(98L, queue.items.last().songId)
+    }
+
+    @Test
     fun sleepTimerRoundTripsThroughSessionExtras() {
         connection.play(songs, startIndex = 0)
         awaitUntil { connection.queue.value.items.isNotEmpty() }

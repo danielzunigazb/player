@@ -81,6 +81,7 @@ class PlaybackService : MediaLibraryService() {
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
+        player.setShuffleOrder(QueueShuffleOrder(0))
         player.addListener(PlayerEvents())
         container.audioEffects.attach(player.audioSessionId)
 
@@ -220,6 +221,11 @@ class PlaybackService : MediaLibraryService() {
         )
     }
 
+    private fun shuffleFromCurrent() {
+        if (player.mediaItemCount == 0) return
+        player.setShuffleOrder(QueueShuffleOrder.startingWith(player.currentMediaItemIndex, player.mediaItemCount))
+    }
+
     private inner class PlayerEvents : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) currentPlayCounted = false
@@ -245,6 +251,18 @@ class PlaybackService : MediaLibraryService() {
                 )
             ) {
                 updateWidget()
+            }
+        }
+
+        // A shuffled queue plays the current song first and everything else after it; otherwise
+        // the songs placed before it in the shuffled order would never play.
+        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+            if (shuffleModeEnabled) shuffleFromCurrent()
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED && player.shuffleModeEnabled) {
+                shuffleFromCurrent()
             }
         }
 

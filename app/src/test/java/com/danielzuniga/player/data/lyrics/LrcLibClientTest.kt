@@ -134,6 +134,19 @@ class LrcLibClientTest {
     }
 
     @Test
+    fun missingTagsAreNotSentAsTheirLabels() {
+        // What the library scan produces for a file without an artist tag: the label, not "<unknown>".
+        val untagged = song.copy(artist = "Artista desconocido", artists = listOf("Artista desconocido"), hasArtistTag = false)
+        assertEquals(LrcLibClient.Result.NotFound, client().find(untagged))
+        assertTrue(requests.isEmpty())
+
+        // Without an album tag the lookup still runs, just without the "unknown album" label.
+        client(LrcLibClient.Response(404, null), LrcLibClient.Response(200, "[]"))
+            .find(song.copy(album = "Álbum desconocido", hasAlbumTag = false))
+        assertTrue(requests.none { "album_name" in it })
+    }
+
+    @Test
     fun cleansDecoratedTitles() {
         assertEquals("Persiana Americana", LrcLibClient.cleanTitle("Persiana Americana (Remastered 2007)"))
         assertEquals("Eres", LrcLibClient.cleanTitle("Eres - En Vivo"))

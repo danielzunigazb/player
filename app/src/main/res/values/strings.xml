@@ -1,146 +1,153 @@
 <resources>
-    <string name="app_name">Player</string>
+    <!-- English is the fallback for every language without its own translation; Spanish lives in values-es. -->
+    <string name="app_name" translatable="false">Player</string>
 
     <!-- Home -->
-    <string name="tab_songs">Canciones</string>
-    <string name="tab_albums">Álbumes</string>
-    <string name="tab_artists">Artistas</string>
+    <string name="tab_songs">Songs</string>
+    <string name="tab_albums">Albums</string>
+    <string name="tab_artists">Artists</string>
     <string name="tab_playlists">Playlists</string>
-    <string name="tab_folders">Carpetas</string>
-    <string name="search">Buscar</string>
-    <string name="search_hint">Buscar en tu música</string>
-    <string name="close_search">Cerrar búsqueda</string>
-    <string name="clear_search">Borrar búsqueda</string>
-    <string name="settings">Ajustes</string>
-    <string name="sort">Ordenar</string>
-    <string name="sort_title">Título</string>
-    <string name="sort_artist">Artista</string>
-    <string name="sort_album">Álbum</string>
-    <string name="sort_recent">Añadidas recientemente</string>
-    <string name="sort_duration">Duración</string>
-    <string name="play_all">Reproducir</string>
-    <string name="shuffle_all">Aleatorio</string>
-    <string name="empty_library">No se encontró música en el dispositivo.</string>
-    <string name="empty_search">Sin resultados para \"%1$s\"</string>
-    <string name="empty_list">Aquí no hay canciones todavía.</string>
-    <string name="back">Volver</string>
-    <string name="more_options">Más opciones</string>
+    <string name="tab_folders">Folders</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Search your music</string>
+    <string name="close_search">Close search</string>
+    <string name="clear_search">Clear search</string>
+    <string name="settings">Settings</string>
+    <string name="sort">Sort</string>
+    <string name="sort_title">Title</string>
+    <string name="sort_artist">Artist</string>
+    <string name="sort_album">Album</string>
+    <string name="sort_recent">Recently added</string>
+    <string name="sort_duration">Duration</string>
+    <string name="play_all">Play</string>
+    <string name="shuffle_all">Shuffle</string>
+    <string name="empty_library">No music found on this device.</string>
+    <string name="empty_search">No results for \"%1$s\"</string>
+    <string name="empty_list">No songs here yet.</string>
+    <string name="back">Back</string>
+    <string name="more_options">More options</string>
 
     <plurals name="song_count">
-        <item quantity="one">%1$d canción</item>
-        <item quantity="other">%1$d canciones</item>
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
     </plurals>
     <plurals name="album_count">
-        <item quantity="one">%1$d álbum</item>
-        <item quantity="other">%1$d álbumes</item>
+        <item quantity="one">%1$d album</item>
+        <item quantity="other">%1$d albums</item>
     </plurals>
 
     <!-- Song menu -->
-    <string name="play_next">Reproducir a continuación</string>
-    <string name="add_to_queue">Añadir a la cola</string>
-    <string name="add_to_playlist">Añadir a playlist…</string>
-    <string name="add_favorite">Añadir a favoritas</string>
-    <string name="remove_favorite">Quitar de favoritas</string>
-    <string name="go_to_album">Ir al álbum</string>
-    <string name="go_to_artist">Ir al artista</string>
-    <string name="remove_from_playlist">Quitar de la playlist</string>
-    <string name="queued_next">Se reproducirá a continuación</string>
-    <string name="queued">Añadido a la cola</string>
-    <string name="added_to_playlist">Añadido a \"%1$s\"</string>
+    <string name="play_next">Play next</string>
+    <string name="add_to_queue">Add to queue</string>
+    <string name="add_to_playlist">Add to playlist…</string>
+    <string name="add_favorite">Add to favorites</string>
+    <string name="remove_favorite">Remove from favorites</string>
+    <string name="go_to_album">Go to album</string>
+    <string name="go_to_artist">Go to artist</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="queued_next">Playing next</string>
+    <string name="queued">Added to queue</string>
+    <string name="added_to_playlist">Added to \"%1$s\"</string>
 
     <!-- Playlists -->
-    <string name="favorites">Favoritas</string>
-    <string name="most_played">Más escuchadas</string>
-    <string name="recently_played">Escuchadas recientemente</string>
-    <string name="recently_added">Añadidas recientemente</string>
-    <string name="new_playlist">Nueva playlist</string>
-    <string name="playlist_name">Nombre</string>
-    <string name="create">Crear</string>
-    <string name="cancel">Cancelar</string>
-    <string name="save">Guardar</string>
-    <string name="rename">Renombrar</string>
-    <string name="delete">Borrar</string>
-    <string name="rename_playlist">Renombrar playlist</string>
-    <string name="delete_playlist">Borrar playlist</string>
-    <string name="delete_playlist_confirm">¿Borrar \"%1$s\"? Las canciones no se borran del dispositivo.</string>
-    <string name="my_playlists">Mis playlists</string>
-    <string name="smart_playlists">Automáticas</string>
-    <string name="reorder">Reordenar</string>
-    <string name="save_as_playlist">Guardar como playlist</string>
+    <string name="favorites">Favorites</string>
+    <string name="most_played">Most played</string>
+    <string name="recently_played">Recently played</string>
+    <string name="recently_added">Recently added</string>
+    <string name="new_playlist">New playlist</string>
+    <string name="playlist_name">Name</string>
+    <string name="create">Create</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="rename_playlist">Rename playlist</string>
+    <string name="delete_playlist">Delete playlist</string>
+    <string name="delete_playlist_confirm">Delete \"%1$s\"? The songs stay on your device.</string>
+    <string name="my_playlists">My playlists</string>
+    <string name="smart_playlists">Automatic</string>
+    <string name="reorder">Reorder</string>
+    <string name="save_as_playlist">Save as playlist</string>
 
     <!-- Permission -->
-    <string name="permission_title">Acceso a tu música</string>
-    <string name="permission_body">Para mostrar y reproducir tus canciones, Player necesita permiso para leer los archivos de audio del dispositivo.</string>
-    <string name="permission_grant">Conceder permiso</string>
-    <string name="permission_settings">Abrir ajustes</string>
+    <string name="permission_title">Access to your music</string>
+    <string name="permission_body">To show and play your songs, Player needs permission to read the audio files on this device.</string>
+    <string name="permission_grant">Grant permission</string>
+    <string name="permission_settings">Open settings</string>
 
     <!-- Player -->
-    <string name="play">Reproducir</string>
-    <string name="pause">Pausar</string>
-    <string name="next">Siguiente</string>
-    <string name="previous">Anterior</string>
-    <string name="shuffle">Aleatorio</string>
-    <string name="repeat">Repetir</string>
-    <string name="close_now_playing">Cerrar reproductor</string>
-    <string name="now_playing">Reproduciendo</string>
-    <string name="queue">Cola</string>
-    <string name="queue_shuffled_hint">Desactiva el aleatorio para reordenar la cola</string>
-    <string name="remove">Quitar</string>
-    <string name="speed">Velocidad</string>
-    <string name="sleep_timer">Temporizador</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="repeat">Repeat</string>
+    <string name="close_now_playing">Close player</string>
+    <string name="now_playing">Now playing</string>
+    <string name="queue">Queue</string>
+    <string name="queue_shuffled_hint">Turn off shuffle to reorder the queue</string>
+    <string name="remove">Remove</string>
+    <string name="speed">Speed</string>
+    <string name="sleep_timer">Sleep timer</string>
     <string name="sleep_minutes">%1$d min</string>
-    <string name="sleep_end_of_track">Al terminar la canción</string>
-    <string name="sleep_off">Desactivar temporizador</string>
-    <string name="sleep_remaining">La música se pausará en %1$s</string>
-    <string name="sleep_remaining_end_of_track">La música se pausará al terminar esta canción</string>
+    <string name="sleep_end_of_track">When the song ends</string>
+    <string name="sleep_off">Turn off timer</string>
+    <string name="sleep_remaining">Music will pause in %1$s</string>
+    <string name="sleep_remaining_end_of_track">Music will pause when this song ends</string>
 
-    <string name="lyrics">Letra</string>
-    <string name="lyrics_none">No se encontró letra para esta canción.</string>
-    <string name="lyrics_hint">Pon un archivo .lrc con el mismo nombre junto a la canción, incrusta la letra en sus etiquetas o activa la búsqueda en internet en Ajustes.</string>
-    <string name="online_lyrics">Buscar letras en internet</string>
-    <string name="online_lyrics_summary">Si la canción no trae letra, la busca en LRCLIB (gratis, sin cuenta). Solo se envían título, artista, álbum y duración, y cada letra se descarga una vez.</string>
-    <string name="lyrics_source_online">letra · lrclib.net</string>
+    <string name="lyrics">Lyrics</string>
+    <string name="lyrics_none">No lyrics found for this song.</string>
+    <string name="lyrics_hint">Put an .lrc file with the same name next to the song, embed the lyrics in its tags, or turn on online search in Settings.</string>
+    <string name="online_lyrics">Search lyrics online</string>
+    <string name="online_lyrics_summary">If a song has no lyrics, looks them up on LRCLIB (free, no account). Only the title, artist, album and duration are sent, and each song\'s lyrics are downloaded once.</string>
+    <string name="lyrics_source_online">lyrics · lrclib.net</string>
 
     <!-- Equalizer -->
-    <string name="equalizer">Ecualizador</string>
-    <string name="equalizer_enabled">Activar ecualizador</string>
+    <string name="equalizer">Equalizer</string>
+    <string name="equalizer_enabled">Enable equalizer</string>
     <string name="equalizer_presets">Presets</string>
-    <string name="equalizer_custom">Personalizado</string>
-    <string name="equalizer_bands">Bandas</string>
-    <string name="bass_boost">Refuerzo de graves</string>
-    <string name="equalizer_unavailable">Este dispositivo no ofrece ecualizador para la app.</string>
+    <string name="equalizer_custom">Custom</string>
+    <string name="equalizer_bands">Bands</string>
+    <string name="bass_boost">Bass boost</string>
+    <string name="equalizer_unavailable">This device doesn\'t offer an equalizer to apps.</string>
     <string name="frequency_hz">%1$d Hz</string>
     <string name="frequency_khz">%1$.1f kHz</string>
     <string name="decibels">%1$+.1f dB</string>
 
     <!-- Settings -->
-    <string name="theme">Tema</string>
-    <string name="theme_system">Según el sistema</string>
-    <string name="theme_light">Claro</string>
-    <string name="theme_dark">Oscuro</string>
-    <string name="theme_black">Negro puro (AMOLED)</string>
-    <string name="greeting_morning">Buenos días</string>
-    <string name="greeting_afternoon">Buenas tardes</string>
-    <string name="greeting_night">Buenas noches</string>
-    <string name="album">álbum</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_black">Pure black (AMOLED)</string>
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_night">Good evening</string>
+    <string name="album">album</string>
     <string name="terminal">Terminal</string>
-    <string name="terminal_close">Cerrar terminal</string>
-    <string name="terminal_run">Ejecutar</string>
-    <string name="home_title">Tu</string>
-    <string name="home_title_whisper">música</string>
-    <string name="dynamic_color">Colores del fondo de pantalla</string>
-    <string name="dynamic_color_summary">Usa la paleta de Material You (Android 12+)</string>
-    <string name="library">Biblioteca</string>
-    <string name="min_duration">Ignorar audios más cortos de</string>
-    <string name="min_duration_none">Ninguno</string>
+    <string name="terminal_close">Close terminal</string>
+    <string name="terminal_run">Run</string>
+    <string name="terminal_prompt">daniel@player:~/music</string>
+    <string name="home_title">Your</string>
+    <string name="home_title_whisper">music</string>
+    <string name="dynamic_color">Wallpaper colors</string>
+    <string name="dynamic_color_summary">Use the Material You palette (Android 12+)</string>
+    <string name="library">Library</string>
+    <string name="min_duration">Skip audio shorter than</string>
+    <string name="min_duration_none">None</string>
     <string name="seconds">%1$d s</string>
-    <string name="rescan">Volver a escanear la música</string>
-    <string name="about">Acerca de</string>
-    <string name="version">Versión %1$s</string>
+    <string name="rescan">Rescan music</string>
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+    <!-- Each language is named in itself, so it can be found whatever the current language is. -->
+    <string name="language_es" translatable="false">Español</string>
+    <string name="language_en" translatable="false">English</string>
+    <string name="about">About</string>
+    <string name="version">Version %1$s</string>
 
-    <string name="widget_idle">Nada en reproducción</string>
-    <string name="widget_description">Lo que suena ahora, con controles</string>
+    <string name="widget_idle">Nothing playing</string>
+    <string name="widget_description">What\'s playing now, with controls</string>
 
-    <string name="unknown_artist">Artista desconocido</string>
-    <string name="unknown_album">Álbum desconocido</string>
+    <string name="unknown_artist">Unknown artist</string>
+    <string name="unknown_album">Unknown album</string>
 </resources>

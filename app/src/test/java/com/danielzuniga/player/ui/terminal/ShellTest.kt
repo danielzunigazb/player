@@ -44,7 +44,7 @@ class ShellTest {
     }
 
     private val host = FakeHost(LibraryIndex(songs))
-    private val shell = Shell(host)
+    private val shell = Shell(host, ShellText.Spanish)
 
     private fun run(input: String) = shell.run(input).drop(1) // drop the echoed input
 
@@ -137,6 +137,29 @@ class ShellTest {
         assertEquals(Shell.CLEAR, shell.uiAction("clear"))
         assertEquals(Shell.EXIT, shell.uiAction("quit"))
         assertEquals(null, shell.uiAction("play eres"))
+    }
+
+    @Test
+    fun everyCommandIsDescribedInEveryLanguage() {
+        listOf(ShellText.Spanish, ShellText.English).forEach { text ->
+            shell.commandNames.forEach { name ->
+                assertTrue("$name has no description in ${text::class.simpleName}", text.help(name).isNotBlank())
+            }
+        }
+    }
+
+    @Test
+    fun speaksEnglish() {
+        val english = Shell(host, ShellText.English)
+        val drop = { input: String -> english.run(input).drop(1) }
+        assertEquals("▶ Soda Stereo · 4 songs", drop("play soda stereo").single().text)
+        assertEquals("+ queued: Eres — Café Tacvba", drop("queue eres").single().text)
+        assertEquals("dance: command not found. try `help`.", drop("dance").single().text)
+        assertEquals("usage: queue <artist|album|song>", drop("queue").single().text)
+        assertEquals("player · 5 songs · 3 albums · 2 artists", english.banner().first().text)
+        assertEquals(ShellText.English, ShellText.forLanguage("en"))
+        assertEquals(ShellText.English, ShellText.forLanguage("fr"))
+        assertEquals(ShellText.Spanish, ShellText.forLanguage("es"))
     }
 
     @Test

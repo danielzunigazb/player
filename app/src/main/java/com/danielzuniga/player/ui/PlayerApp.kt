@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -64,6 +65,7 @@ import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.ui.terminal.Shell
 import com.danielzuniga.player.ui.terminal.ShellHost
 import com.danielzuniga.player.ui.terminal.ShellLine
+import com.danielzuniga.player.ui.terminal.ShellText
 import com.danielzuniga.player.ui.terminal.TerminalScreen
 import com.danielzuniga.player.ui.components.DzButton
 import com.danielzuniga.player.ui.components.DzButtonVariant
@@ -91,6 +93,7 @@ import com.danielzuniga.player.ui.player.SpeedSheet
 import com.danielzuniga.player.ui.playlists.AddToPlaylistDialog
 import com.danielzuniga.player.ui.playlists.PlaylistDetailScreen
 import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
+import com.danielzuniga.player.ui.settings.AppLanguage
 import com.danielzuniga.player.ui.settings.SettingsScreen
 import com.danielzuniga.player.ui.theme.DzIcons
 
@@ -257,7 +260,9 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
 
         // The shell reads the latest state on every command, so it's built once.
         val shellState = rememberUpdatedState(ShellSnapshot(player, libraryIndex, favoriteIds, mostPlayedIds, lyrics))
-        val shell = remember {
+        // Keyed on the language: switching it in Settings rebuilds the shell in the new one.
+        val language = LocalConfiguration.current.locales[0].language
+        val shell = remember(language) {
             Shell(
                 object : ShellHost {
                     override val library get() = shellState.value.library
@@ -284,6 +289,7 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
                     override fun setSleep(minutes: Int) = playerVm.setSleepTimer(minutes)
                     override fun setSpeed(speed: Float) = playerVm.setSpeed(speed)
                 },
+                ShellText.forLanguage(language),
             )
         }
         AnimatedVisibility(
@@ -443,6 +449,9 @@ private fun AppNavHost(
                 state = state,
                 onBack = navController::popBackStack,
                 onThemeMode = vm::setThemeMode,
+                // Read once: picking another language recreates the activity with the new value.
+                language = remember { AppLanguage.current() },
+                onLanguage = AppLanguage::apply,
                 onDynamicColor = vm::setDynamicColor,
                 onOnlineLyrics = vm::setOnlineLyrics,
                 onMinDuration = vm::setMinDuration,

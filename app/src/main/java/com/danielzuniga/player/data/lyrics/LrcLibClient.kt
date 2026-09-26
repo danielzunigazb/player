@@ -42,7 +42,7 @@ class LrcLibClient(
             "$baseUrl/api/get?" + query(
                 "track_name" to song.title,
                 "artist_name" to song.artist,
-                "album_name" to song.album.takeUnless { it.isUnknown() },
+                "album_name" to song.album.takeIf { song.hasAlbumTag && !it.isUnknown() },
                 "duration" to durationSec.takeIf { it > 0 }?.toString(),
             ),
             userAgent,
@@ -110,7 +110,8 @@ class LrcLibClient(
             .trim()
             .ifEmpty { title }
 
-        private fun Song.hasSearchableTags() = title.isNotBlank() && !artist.isUnknown()
+        // Without an artist tag, [Song.artist] is only the "unknown artist" label: nothing to search by.
+        private fun Song.hasSearchableTags() = title.isNotBlank() && hasArtistTag && !artist.isUnknown()
 
         private fun String.isUnknown() = isBlank() || equals("<unknown>", ignoreCase = true)
 

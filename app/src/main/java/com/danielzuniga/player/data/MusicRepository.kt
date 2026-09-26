@@ -58,6 +58,23 @@ class MusicRepository(
         }
     }
 
+    /**
+     * "Unknown artist/album" in the language the UI is showing. The activity passes them in:
+     * with an in-app language on Android 12 and older only the activity follows it, not the app
+     * context. A different pair (the language changed) rescans so the library matches.
+     */
+    @Volatile private var labels: Pair<String, String>? = null
+    @Volatile private var scannedLabels: Pair<String, String>? = null
+
+    fun setUnknownLabels(artist: String, album: String) {
+        labels = artist to album
+        if (_hasScanned.value && scannedLabels != labels) scope.launch { scan() }
+    }
+
+    private fun unknownLabels(): Pair<String, String> =
+        (labels ?: (context.getString(R.string.unknown_artist) to context.getString(R.string.unknown_album)))
+            .also { scannedLabels = it }
+
     /** Scans once; later calls are no-ops unless [force] is set. */
     fun load(force: Boolean = false) {
         if (_hasScanned.value && !force) return
@@ -96,8 +113,7 @@ class MusicRepository(
     }
 
     private suspend fun querySongs(minDurationSec: Int): List<Song> = withContext(Dispatchers.IO) {
-        val unknownArtist = context.getString(R.string.unknown_artist)
-        val unknownAlbum = context.getString(R.string.unknown_album)
+        val (unknownArtist, unknownAlbum) = unknownLabels()
 
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -137,31 +153,31 @@ class MusicRepository(
             buildList(cursor.count) {
                 while (cursor.moveToNext()) {
                     // Tags are messy ("A, ,, B", NUL-separated lists, ALL CAPS): clean them once here.
-                    val artists = cursor.getString(artistCol).takeUnless { it == MediaStore.UNKNOWN_STRING }
+                    val taggedArtists = cursor.getString(artistCol).takeUnless { it == MediaStore.UNKNOWN_STRING }
                         .let(TagText::artists)
-                        .ifEmpty { listOf(unknownArtist) }
+                    val artists = taggedArtists.ifEmpty { listOf(unknownArtist) }
+                    val album = TagText.title(cursor.getString(albumCol)).takeUnless { it.isBlank() || it == MediaStore.UNKNOWN_STRING }
                     add(
                         Song(
                             id = cursor.getLong(idCol),
                             title = TagText.title(cursor.getString(titleCol)),
                             artist = TagText.joinArtists(artists),
                             artists = artists,
-                            album = TagText.title(cursor.getString(albumCol)).orUnknown(unknownAlbum),
+                            album = album ?: unknownAlbum,
                             albumId = cursor.getLong(albumIdCol),
                             durationMs = cursor.getLong(durationCol),
                             track = cursor.getInt(trackCol),
                             year = cursor.getInt(yearCol),
                             dateAddedSec = cursor.getLong(dateAddedCol),
                             path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else "",
+                            hasArtistTag = taggedArtists.isNotEmpty(),
+                            hasAlbumTag = album != null,
                         )
                     )
                 }
             }
         } ?: emptyList()
     }
-
-    private fun String?.orUnknown(fallback: String): String =
-        if (isNullOrBlank() || this == MediaStore.UNKNOWN_STRING) fallback else this
 
     private companion object {
         const val RESCAN_DEBOUNCE_MS = 1_500L

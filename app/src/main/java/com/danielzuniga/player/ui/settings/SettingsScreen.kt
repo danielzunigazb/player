@@ -41,6 +41,8 @@ fun SettingsScreen(
     state: SettingsUiState,
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
+    language: AppLanguage,
+    onLanguage: (AppLanguage) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
     onOnlineLyrics: (Boolean) -> Unit,
     onMinDuration: (Int) -> Unit,
@@ -59,18 +61,7 @@ fun SettingsScreen(
         ) {
             item { Section(stringResource(R.string.theme)) }
             ThemeMode.entries.forEach { mode ->
-                item {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onThemeMode(mode) }
-                            .padding(horizontal = 8.dp),
-                    ) {
-                        RadioButton(selected = state.themeMode == mode, onClick = { onThemeMode(mode) })
-                        Text(stringResource(mode.label()), style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
+                item { RadioRow(stringResource(mode.label()), state.themeMode == mode) { onThemeMode(mode) } }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 item {
@@ -81,6 +72,11 @@ fun SettingsScreen(
                         onChange = onDynamicColor,
                     )
                 }
+            }
+
+            item { Section(stringResource(R.string.language)) }
+            AppLanguage.entries.forEach { option ->
+                item { RadioRow(stringResource(option.label), language == option) { onLanguage(option) } }
             }
 
             item { Section(stringResource(R.string.library)) }
@@ -158,6 +154,20 @@ private fun Section(text: String) {
     Column {
         Hairline(Modifier.padding(top = 16.dp))
         Eyebrow(text = text, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
+    }
+}
+
+@Composable
+private fun RadioRow(label: String, selected: Boolean, onSelect: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(horizontal = 8.dp),
+    ) {
+        RadioButton(selected = selected, onClick = onSelect)
+        Text(label, style = MaterialTheme.typography.bodyLarge)
     }
 }
 

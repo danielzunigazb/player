@@ -37,7 +37,7 @@ import org.robolectric.annotation.Config
 
 /** Full app on a fake device library: playing, favorites and browsing. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp")
+@Config(sdk = [34], qualifiers = "es-w411dp-h891dp")
 class LibraryFlowTest {
 
     @get:Rule

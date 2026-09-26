@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -170,6 +171,9 @@ private fun TopRow(actions: NowPlayingActions) {
 private fun SwipeableArtwork(nowPlaying: NowPlaying, onNext: () -> Unit, onPrevious: () -> Unit) {
     val threshold = with(LocalDensity.current) { 96.dp.toPx() }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    // The gesture outlives recompositions; read the latest callbacks when the swipe ends.
+    val latestNext by rememberUpdatedState(onNext)
+    val latestPrevious by rememberUpdatedState(onPrevious)
     // Fast and dry: a 180ms crossfade between covers, no bounce.
     Crossfade(targetState = nowPlaying.artworkUri, animationSpec = tween(180), label = "artwork") { uri ->
         Artwork(
@@ -182,7 +186,7 @@ private fun SwipeableArtwork(nowPlaying: NowPlaying, onNext: () -> Unit, onPrevi
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             if (abs(dragOffset) > threshold) {
-                                if (dragOffset < 0) onNext() else onPrevious()
+                                if (dragOffset < 0) latestNext() else latestPrevious()
                             }
                             dragOffset = 0f
                         },

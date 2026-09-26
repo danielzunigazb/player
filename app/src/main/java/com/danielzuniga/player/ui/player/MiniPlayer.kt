@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +52,9 @@ fun MiniPlayer(
 ) {
     val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    // The gesture outlives recompositions; read the latest callbacks when the swipe ends.
+    val latestNext by rememberUpdatedState(onNext)
+    val latestPrevious by rememberUpdatedState(onPrevious)
     val c = Dz.colors
 
     // A docked `surface` panel: its top edge is the progress line (gold over `line`).
@@ -90,7 +94,7 @@ fun MiniPlayer(
                             detectHorizontalDragGestures(
                                 onDragEnd = {
                                     if (abs(dragOffset) > swipeThreshold) {
-                                        if (dragOffset < 0) onNext() else onPrevious()
+                                        if (dragOffset < 0) latestNext() else latestPrevious()
                                     }
                                     dragOffset = 0f
                                 },

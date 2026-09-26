@@ -2,7 +2,7 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
-**Última versión estable: [v1.4.2](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
+**Última versión estable: [v1.5.0](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
 
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
 <p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a> (45 s): hecho con Remotion en <code>player-showcase/</code> y publicado por CI como release. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
@@ -38,6 +38,7 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 
 **Ajustes**
 - Tema del sistema, claro, oscuro o negro puro (AMOLED), colores Material You
+- Idioma: español o inglés, según el teléfono o elegido en *Ajustes → Idioma* (en Android 13+ también en los ajustes del sistema para la app)
 - Ignorar audios cortos (notas de voz, tonos)
 
 ## Terminal
@@ -52,6 +53,14 @@ $ shuffle                 # toda la biblioteca
 $ now                     # progreso [████░░░░] y la línea de la letra que suena
 $ sleep 30m · speed 1.25 · seek 1:30 · repeat · fav · top · ls · help
 ```
+
+## Idiomas
+
+Inglés es el idioma base (`res/values/strings.xml`) y el español está completo en `res/values-es/`. Cualquier otro idioma del teléfono cae al inglés. La terminal traduce sus respuestas en `ui/terminal/ShellText.kt`, pero los comandos (`play`, `queue`…) son iguales en todos los idiomas. Para agregar un idioma:
+
+1. Crea `res/values-xx/strings.xml` con todas las cadenas. Lint falla si falta alguna.
+2. Agrega una implementación de `ShellText`. El compilador exige todas las respuestas y `ShellTest` revisa las descripciones.
+3. Súmalo a `AppLanguage` para que aparezca en Ajustes.
 
 ## Diseño
 
