@@ -2,8 +2,12 @@ package com.danielzuniga.player.playback
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
 import com.danielzuniga.player.AppContainer
 import com.danielzuniga.player.R
 import com.danielzuniga.player.data.LibraryIndex
@@ -58,15 +62,17 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
 
     /**
      * Turns what a browser asked to play into the queue the player gets. A single song picked
-     * from a list expands into that whole list, starting at the chosen song. Throws when nothing
-     * in the request can play.
+     * from a list expands into that whole list, starting at the chosen song. [startPositionMs]
+     * stays with the chosen item; if that can't play, the next one starts from its beginning.
+     * Throws [NothingToPlayException] when nothing in the request can play.
      */
-    suspend fun resolveQueue(items: List<MediaItem>, startIndex: Int): Pair<List<MediaItem>, Int> {
+    @OptIn(UnstableApi::class)
+    suspend fun resolveQueue(items: List<MediaItem>, startIndex: Int, startPositionMs: Long): MediaItemsWithStartPosition {
         val library = container.musicRepository.awaitLibrary()
         // Voice requests ("play X") arrive as an item carrying only a search query.
         items.singleOrNull()?.requestMetadata?.searchQuery?.let { query ->
             val results = searchResults(query, library)
-            if (results.isNotEmpty()) return results.map { it.toMediaItem() } to 0
+            if (results.isNotEmpty()) return MediaItemsWithStartPosition(results.map { it.toMediaItem() }, 0, C.TIME_UNSET)
         }
         if (items.size == 1) {
             val id = items.single().mediaId
@@ -74,17 +80,26 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
             val parent = id.substringBeforeLast('|', missingDelimiterValue = "")
             val siblings = if (songId != null && parent.isNotEmpty()) songsOf(parent, library) else null
             val index = siblings?.indexOfFirst { it.id == songId } ?: -1
-            if (siblings != null && index >= 0) return siblings.map { it.toMediaItem() } to index
+            if (siblings != null && index >= 0) {
+                return MediaItemsWithStartPosition(siblings.map { it.toMediaItem() }, index, startPositionMs)
+            }
         }
         val resolved = items.map { resolveItem(it, library) }
-        // Items without a URI (a voice request that matched nothing, a folder) would make the
-        // player throw where nobody hears it; failing the request tells the controller instead.
-        val playable = resolved.filter { it.localConfiguration != null }
-        if (playable.isEmpty()) throw NoSuchElementException("Nothing to play")
-        if (playable.size == resolved.size || startIndex < 0) return playable to startIndex
+        val playable = playable(resolved)
+        if (startIndex < 0 || playable.size == resolved.size) return MediaItemsWithStartPosition(playable, startIndex, startPositionMs)
         // The chosen item moves up by the ones dropped before it; if it was dropped, the next one plays.
-        return playable to resolved.take(startIndex).count { it.localConfiguration != null }.coerceAtMost(playable.lastIndex)
+        val index = resolved.take(startIndex).count { it.localConfiguration != null }.coerceAtMost(playable.lastIndex)
+        val chosenPlays = resolved.getOrNull(startIndex)?.localConfiguration != null
+        return MediaItemsWithStartPosition(playable, index, if (chosenPlays) startPositionMs else C.TIME_UNSET)
     }
+
+    /**
+     * [items] without the ones that have nothing to play (no URI: a voice request that matched
+     * nothing, a folder); the player would throw on those where nobody hears it. Throws
+     * [NothingToPlayException] when none are left, so the request fails and the caller is told.
+     */
+    fun playable(items: List<MediaItem>): List<MediaItem> =
+        items.filter { it.localConfiguration != null }.ifEmpty { throw NothingToPlayException() }
 
     /** Fills in URI and metadata for items that arrive with only an id. */
     fun resolveItem(item: MediaItem, library: LibraryIndex = container.musicRepository.library.value): MediaItem {
@@ -163,3 +178,6 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
         fun songIdOf(mediaId: String): Long? = mediaId.substringAfterLast('|').toLongOrNull()
     }
 }
+
+/** Nothing in a request to the session can play. */
+class NothingToPlayException : Exception("Nothing to play")

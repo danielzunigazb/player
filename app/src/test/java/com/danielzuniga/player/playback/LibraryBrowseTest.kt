@@ -4,10 +4,12 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Looper
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
 import androidx.media3.session.SessionToken
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -147,9 +149,27 @@ class LibraryBrowseTest {
     @Test
     fun itemsThatCantPlayAreDropped() {
         val items = listOf("1", LibraryBrowser.ALBUMS, "3").map { MediaItem.Builder().setMediaId(it).build() }
-        val (queue, index) = resolveQueue(items, 2).getOrThrow()
-        assertEquals(listOf("1", "3"), queue.map { it.mediaId })
-        assertEquals(1, index)
+        val queue = resolveQueue(items, 2).getOrThrow()
+        assertEquals(listOf("1", "3"), queue.mediaItems.map { it.mediaId })
+        assertEquals(1, queue.startIndex)
+    }
+
+    @Test
+    fun theStartPositionStaysWithTheChosenSong() {
+        val song = { id: String -> MediaItem.Builder().setMediaId(id).build() }
+        val folder = MediaItem.Builder().setMediaId(LibraryBrowser.ALBUMS).build()
+
+        // The chosen item can't play: the next song starts from its beginning.
+        browser.setMediaItems(listOf(song("1"), folder, song("3")), 1, 5_000)
+        awaitUntil { browser.mediaItemCount == 2 }
+        assertEquals("3", browser.currentMediaItem?.mediaId)
+        assertEquals(0L, browser.currentPosition)
+
+        // The chosen song moves up a place and keeps its position.
+        browser.setMediaItems(listOf(folder, song("1")), 1, 5_000)
+        awaitUntil { browser.mediaItemCount == 1 }
+        assertEquals("1", browser.currentMediaItem?.mediaId)
+        assertEquals(5_000L, browser.currentPosition)
     }
 
     @Test
@@ -158,10 +178,10 @@ class LibraryBrowseTest {
         assertFalse(result.resultCode == LibraryResult.RESULT_SUCCESS)
     }
 
-    private fun resolveQueue(items: List<MediaItem>, startIndex: Int): Result<Pair<List<MediaItem>, Int>> {
+    private fun resolveQueue(items: List<MediaItem>, startIndex: Int): Result<MediaItemsWithStartPosition> {
         val container = app.appContainer
-        var result: Result<Pair<List<MediaItem>, Int>>? = null
-        container.appScope.launch { result = runCatching { LibraryBrowser(app, container).resolveQueue(items, startIndex) } }
+        var result: Result<MediaItemsWithStartPosition>? = null
+        container.appScope.launch { result = runCatching { LibraryBrowser(app, container).resolveQueue(items, startIndex, C.TIME_UNSET) } }
         awaitUntil { result != null }
         return result!!
     }

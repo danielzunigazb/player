@@ -348,9 +348,7 @@ class PlaybackService : MediaLibraryService() {
             startIndex: Int,
             startPositionMs: Long,
         ): ListenableFuture<MediaItemsWithStartPosition> = future {
-            val (items, index) = browser.resolveQueue(mediaItems, startIndex)
-            val position = if (index == startIndex) startPositionMs else C.TIME_UNSET
-            MediaItemsWithStartPosition(items, index, position)
+            browser.resolveQueue(mediaItems, startIndex, startPositionMs)
         }
 
         override fun onGetLibraryRoot(
