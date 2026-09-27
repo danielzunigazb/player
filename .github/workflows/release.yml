@@ -71,6 +71,10 @@ jobs:
             SUFFIX="-dev.$GITHUB_RUN_NUMBER"
           else
             SUFFIX=""
+            # The notes are the release page, the video's news and the changelog: no notes, no
+            # release, and better to know before building.
+            NOTES="docs/releases/v$VERSION.md"
+            if [ ! -s "$NOTES" ]; then echo "::error::Missing release notes $NOTES"; exit 1; fi
           fi
           echo "channel: $CHANNEL · version: $VERSION$SUFFIX"
           {
@@ -118,8 +122,6 @@ jobs:
         run: |
           TAG="v$VERSION"
           NOTES="docs/releases/$TAG.md"
-          # The notes are the release page, the video's news and the changelog: no notes, no release.
-          if [ ! -s "$NOTES" ]; then echo "::error::Missing release notes $NOTES"; exit 1; fi
           # The changelog (all release notes) travels with each version.
           python3 scripts/changelog.py CHANGELOG.md
           gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" CHANGELOG.md \
