@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.danielzuniga.player",
+      "sha256_cert_fingerprints": [
+        "8D:74:49:CE:05:13:E7:54:68:CF:03:B8:84:54:20:EA:7C:C6:F7:67:DA:D0:64:93:4C:1E:61:B4:F2:3C:F3:6C"
+      ]
+    }
+  }
+]
