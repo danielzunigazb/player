@@ -265,14 +265,21 @@ class PlayerConnection(context: Context) {
     )
 }
 
+/**
+ * Goes back to the first song in play order: while shuffling, list index 0 can be anywhere in it.
+ * An empty queue has no first song to go to.
+ */
+internal fun Player.restartFromFirst() {
+    if (!currentTimeline.isEmpty) seekToDefaultPosition(currentTimeline.getFirstWindowIndex(shuffleModeEnabled))
+}
+
 /** Play or pause; a queue that already ended starts over from its first song. */
 internal fun Player.playOrPause() {
     if (isPlaying) {
         pause()
     } else {
         if (playbackState == Player.STATE_IDLE) prepare()
-        // First in play order: while shuffling, list index 0 can be anywhere in it.
-        if (playbackState == Player.STATE_ENDED) seekToDefaultPosition(currentTimeline.getFirstWindowIndex(shuffleModeEnabled))
+        if (playbackState == Player.STATE_ENDED) restartFromFirst()
         play()
     }
 }

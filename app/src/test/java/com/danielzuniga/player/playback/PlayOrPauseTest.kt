@@ -21,9 +21,17 @@ class PlayOrPauseTest {
 
     private val exo = ExoPlayer.Builder(ApplicationProvider.getApplicationContext<Application>()).build()
 
-    /** Robolectric can't play the songs to their end, so this one says they did. */
+    /**
+     * Robolectric can't play the songs to their end, so this one says they did. It refuses a
+     * negative index as MediaController does (ExoPlayer lets it pass).
+     */
     private val ended = object : ForwardingPlayer(exo) {
         override fun getPlaybackState(): Int = Player.STATE_ENDED
+
+        override fun seekToDefaultPosition(mediaItemIndex: Int) {
+            require(mediaItemIndex >= 0) { "MediaController throws on index $mediaItemIndex" }
+            super.seekToDefaultPosition(mediaItemIndex)
+        }
     }
 
     @After
@@ -40,6 +48,14 @@ class PlayOrPauseTest {
         ended.playOrPause()
 
         assertEquals(3, exo.currentMediaItemIndex)
+        assertTrue(exo.playWhenReady)
+    }
+
+    @Test
+    fun anEndedEmptyQueueDoesNotCrash() {
+        ended.playOrPause()
+
+        assertTrue(exo.currentTimeline.isEmpty)
         assertTrue(exo.playWhenReady)
     }
 }
