@@ -10,3 +10,7 @@ class_name = "Room"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+# Cloudflare builds a preview of each non-main branch with `wrangler preview`, which needs this
+# block, even empty. Production (main) uses `wrangler deploy`.
+[previews]
