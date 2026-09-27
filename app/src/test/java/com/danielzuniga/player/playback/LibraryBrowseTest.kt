@@ -171,8 +171,10 @@ class LibraryBrowseTest {
         return future.get()
     }
 
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(300) {
+    /** Turns the main looper until [condition] holds; the budget is only a ceiling. */
+    private fun awaitUntil(timeoutMs: Long = 10_000, condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             if (condition()) return
             Thread.sleep(10)

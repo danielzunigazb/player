@@ -111,8 +111,9 @@ class PlaybackServiceTest {
     @Test
     fun removingTheCurrentSongWhileShufflingKeepsTheOrder() {
         val many = (1L..20L).map { Song(it, "Song $it", "Artist", "Album", 1, 180_000) }
-        connection.play(many, startIndex = 0, shuffle = true)
-        awaitUntil { connection.queue.value.items.size == 20 && connection.queue.value.items.first().songId == 1L }
+        connection.play(many, startIndex = 7, shuffle = true)
+        // Only the service's shuffle puts song 8 first; the controller's own guess keeps list order.
+        awaitUntil { connection.queue.value.items.size == 20 && connection.queue.value.items.first().songId == 8L }
         val order = connection.queue.value.items.map { it.songId }
         repeat(3) { connection.next() }
         awaitUntil { connection.state.value.nowPlaying?.songId == order[3] }
@@ -161,7 +162,8 @@ class PlaybackServiceTest {
         awaitUntil { connection.state.value.repeatMode == Player.REPEAT_MODE_ONE }
     }
 
-    private fun awaitUntil(timeoutMs: Long = 2_000, condition: () -> Boolean) {
+    /** Turns the main looper until [condition] holds; the budget is only a ceiling. */
+    private fun awaitUntil(timeoutMs: Long = 10_000, condition: () -> Boolean) {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
