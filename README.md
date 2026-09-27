@@ -149,3 +149,7 @@ cd player-showcase && npm ci && npm run render   # o npm run dev para Remotion S
 ## Web
 
 [player.danzuniga.xyz](https://player.danzuniga.xyz) sale de `site/` y la publica el workflow **Site** en GitHub Pages. Se vuelve a publicar cuando cambian el sitio, las capturas o `versionName`, y después de cada release o video nuevo, así que el enlace de descarga y el video no se quedan viejos. `site/build.sh` arma la página en `_site/` para verla en local (`python3 -m http.server -d _site`); el video solo lo agrega CI. El monitor vive en `/monitor/`, y `.well-known/assetlinks.json` hace que Android abra en Player los enlaces de vinculación.
+
+## Licencia
+
+[MIT](LICENSE). Las fuentes JetBrains Mono e Instrument Serif (`res/font`) tienen su propia licencia, SIL OFL.
