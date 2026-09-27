@@ -5,8 +5,9 @@ name: Showcase video
 #   (docs/releases/v<version>.md), fresh screens drawn from the app itself (ShowcaseShotsTest)
 #   and the current test count, then attached to that release and to showcase-v1, which the
 #   README and the website link. The Site workflow redeploys when this one finishes.
-# - dev builds don't re-render; editing player-showcase/ on main does, to showcase-v1 only.
-# - on other branches, player-showcase/ changes just render as a check (the MP4 is an artifact).
+# - dev builds don't re-render, and nothing else writes to a release: the video only shows
+#   what has been released.
+# - pushes (main included) and manual runs just render as a check; the MP4 is an artifact.
 on:
   workflow_run:
     workflows: ["Release"]
@@ -21,11 +22,11 @@ on:
 permissions:
   contents: write
 
-# One queue per trigger: a newer push replaces an older push render, but the run after a release
-# (often a no-op) must never cancel a push that has real work, or the other way round.
+# A newer push replaces an older push render. Runs after a release are never cancelled, and each
+# has its own group: a dev build right after a stable one must not stop the stable video.
 concurrency:
-  group: showcase-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: showcase-${{ github.event_name }}-${{ github.event.workflow_run.head_sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_run' }}
 
 jobs:
   render:
@@ -35,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # After a release, render exactly the commit that was released.
+          # After a release, the commit Release ran on: only to read its version.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Decide what to publish
@@ -43,7 +44,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
-          TARGET=""; PUBLISH=showcase
+          TARGET=""; PUBLISH=artifact
           if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
             # Only a stable release without its video yet; dev builds leave the video alone.
             ASSETS=$(gh release view "v$VERSION" --json assets --jq '.assets[].name' 2>/dev/null || echo "__none__")
@@ -52,13 +53,18 @@ jobs:
             elif echo "$ASSETS" | grep -qx "PlayerShowcase.mp4"; then
               echo "v$VERSION already has its video."; PUBLISH=none
             else
-              TARGET="v$VERSION"
+              TARGET="v$VERSION"; PUBLISH=showcase
             fi
-          elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
-            PUBLISH=artifact
           fi
           echo "version $VERSION · publish: $PUBLISH ${TARGET:+(and $TARGET)}"
           { echo "VERSION=$VERSION"; echo "TARGET=$TARGET"; echo "PUBLISH=$PUBLISH"; } >> "$GITHUB_ENV"
+
+      # A dev build of a later commit also lands here while the stable video is missing: render
+      # what the release tag points to, never the commit that happened to trigger this run.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: env.TARGET != ''
+        with:
+          ref: refs/tags/${{ env.TARGET }}
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         if: env.PUBLISH != 'none'
@@ -98,7 +104,7 @@ jobs:
             gh release upload showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg --clobber
           else
             gh release create showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg \
-              --target "$GITHUB_SHA" --title "Video de presentación" \
+              --target "$(git rev-parse HEAD)" --title "Video de presentación" \
               --notes "Renderizado automáticamente desde player-showcase/ con Remotion."
           fi
           if [ -n "$TARGET" ]; then
