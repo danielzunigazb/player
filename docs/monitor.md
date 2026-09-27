@@ -36,7 +36,11 @@ quedan hablando solos.
 - Pasa cada mensaje del teléfono a todos los navegadores, y de cada navegador al teléfono.
 - Mensajes de hasta 64 KB y 30 por segundo por conexión; lo que pase de ahí se descarta.
 - Él mismo solo dice quién está: `{"relay":"peers","phone":true,"webs":2}`, en claro, a todos,
-  cada vez que alguien entra o sale.
+  cada vez que alguien entra o sale. Como solo él habla en JSON en claro, descarta el texto de
+  un cliente que empiece con `{`: así nadie con la sala pero sin la clave se hace pasar por él
+  (por ejemplo, diciéndole al teléfono que no hay navegadores para que deje de mandar).
+- Esas decisiones (quién entra, qué pasa) son funciones puras en `relay/src/room.js`, con
+  pruebas en `relay/test/`.
 - No guarda nada. Con las conexiones quietas, el Durable Object hiberna y no cuesta.
 
 ## Cifrado
