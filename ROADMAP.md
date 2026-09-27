@@ -87,15 +87,27 @@ Nada de funciones nuevas: todo lo que ya existe tiene que ser sólido, y el proy
 - [x] Cada release estable adjunta `CHANGELOG.md`, generado desde las notas por `scripts/`
 - [x] Dependabot semanal para Gradle, npm y Actions
 
-## v1.5.2: mantenimiento de la cadena de herramientas
+## v1.5.2: mantenimiento de la cadena de herramientas ✅
 
 Los PR de Dependabot dependían unos de otros: van juntos en uno propio.
 - [x] AGP 8.9 → 8.13 y compileSdk 36 (targetSdk sigue en 35)
 - [x] Kotlin 2.1 → 2.4 con su plugin de Compose y KSP 2.3 (#15)
 - [x] AndroidX: Media3 1.11, Room 2.8, AppCompat 1.8, androidx.test (#16), con las APIs nuevas de Media3
 - [x] reorderable 2.4 → 3.1 (#18)
-- [ ] Probar a mano en el teléfono: reproducir, arrastrar en playlists y en la cola, Android Auto
+- [x] Probado a mano en el teléfono: reproducir y arrastrar en playlists y en la cola
 - [ ] AGP 9, Compose BOM 2026 y ESLint 10: saltos mayores en pausa en Dependabot hasta hacerlos a propósito
+
+## v1.6.0: monitor web
+
+Diseño en `docs/monitor.md`.
+- [x] Relay en Cloudflare (`relay/`): salas, límites, presencia; desplegado por Workers Builds desde `main`
+- [x] Cifrado de punta a punta, el mismo vector comprobado en la app y en el monitor
+- [x] App: vinculación por QR (App Link verificado por `assetlinks.json`), conexión al relay mientras suena, comandos y estado
+- [x] Monitor (`site/monitor/`): vincular, qué suena, controles, volumen, cola y búsqueda
+- [x] `/pair` con botón "Abrir en Player" cuando el QR cae en el navegador
+- [x] Probado en el teléfono: vincular, controlar desde la PC
+- [x] Escena del video y notas de la versión
+- [ ] Más adelante: reordenar la cola arrastrando desde el navegador (el protocolo ya lo tiene)
 
 ## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
 

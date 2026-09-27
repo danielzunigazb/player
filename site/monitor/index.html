@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor · Player</title>
+<meta name="description" content="Controla Player desde el navegador: qué suena, la cola y tu biblioteca, con el teléfono lejos.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e0c0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%230e0c0a'/%3E%3Ctext x='20' y='30' text-anchor='middle' font-family='monospace' font-weight='800' font-size='34' fill='%23d6a23e'%3E%C3%B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles/tokens.css">
+<link rel="stylesheet" href="/styles/base.css">
+<style>
+  body { min-height: 100vh; }
+  header.bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: var(--space-2); color: var(--ink); }
+  .brand .mark { display: inline-grid; place-items: center; width: 32px; height: 32px; background: var(--gold); color: var(--bg); font-weight: 600; }
+  main { padding: var(--space-8) 0 var(--space-16); }
+  [hidden] { display: none !important; }
+
+  /* Pairing */
+  .pair { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: var(--space-8); align-items: center; }
+  @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
+  #qr { background: #efe6d6; padding: var(--space-2); border: 1px solid var(--line); aspect-ratio: 1; }
+  #qr svg { display: block; width: 100%; height: auto; }
+  .pair ol { color: var(--ink-muted); padding-left: var(--space-4); }
+  .pair li + li { margin-top: var(--space-2); }
+  .status { color: var(--gold); margin-top: var(--space-4); }
+
+  /* Player */
+  .player { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-8); }
+  @media (max-width: 860px) { .player { grid-template-columns: 1fr; } }
+  .now { display: grid; grid-template-columns: 160px 1fr; gap: var(--space-4); align-items: end; }
+  .cover { width: 160px; aspect-ratio: 1; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; overflow: hidden; }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover .empty { color: var(--gold); font-size: 64px; font-weight: 600; }
+  #title { font-size: var(--text-h2-size); line-height: var(--text-h2-line); font-weight: 600; overflow-wrap: anywhere; }
+  #artist { font-family: var(--font-serif); font-style: italic; color: var(--gold); font-size: 1.6rem; }
+  #album { color: var(--ink-muted); font-size: var(--text-small-size); }
+  .progress { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-2); align-items: center; margin-top: var(--space-4); color: var(--ink-muted); font-size: var(--text-small-size); }
+  input[type="range"] { width: 100%; accent-color: var(--gold); }
+  .transport { display: flex; gap: var(--space-2); align-items: center; margin-top: var(--space-4); flex-wrap: wrap; }
+  .transport .btn { min-width: 48px; justify-content: center; font-size: 1.1rem; }
+  .transport [data-on="true"] { color: var(--gold); border-color: var(--gold); }
+  .volume { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-muted); margin-left: auto; min-width: 160px; }
+  [inert] { opacity: 0.45; }
+
+  .presence { color: var(--ink-muted); font-size: var(--text-small-size); }
+  .presence b { font-weight: 400; }
+  #presence[data-on="true"] { color: var(--verdigris); }
+
+  h2.eyebrow { margin: var(--space-8) 0 var(--space-2); display: flex; justify-content: space-between; }
+  .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); max-height: 60vh; overflow-y: auto; }
+  .list li { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+  .list li[data-current="true"] { background: var(--surface); }
+  .list li[data-current="true"] .t { color: var(--gold); }
+  .list .empty { padding: var(--space-2); color: var(--ink-muted); }
+  .queue-song { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: var(--ink); font: inherit; padding: var(--space-2); cursor: pointer; display: grid; }
+  .queue-song:hover .t { color: var(--gold); }
+  .queue-song .t, .queue-song .a { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .queue-song .a { color: var(--ink-muted); font-size: var(--text-small-size); }
+  #search { width: 100%; background: var(--surface); border: 1px solid var(--line); color: var(--ink); font: inherit; padding: var(--space-2); }
+  #search:focus { outline: none; border-color: var(--gold); }
+  footer { margin-top: var(--space-16); color: var(--ink-muted); font-size: var(--text-small-size); border-top: 1px solid var(--line); padding: var(--space-4) 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="bar">
+    <a class="brand" href="/"><span class="mark">ñ</span><span class="eyebrow">Player · monitor</span></a>
+  </header>
+
+  <main>
+    <section id="pair-view" class="pair" hidden>
+      <div id="qr" role="img" aria-label="Código para vincular el teléfono"></div>
+      <div>
+        <p class="eyebrow">Vincular</p>
+        <h1 class="whisper-lg">Tu música, desde aquí.</h1>
+        <ol>
+          <li>En el teléfono, abre la cámara y apunta a este código.</li>
+          <li>Ábrelo con Player. Queda vinculado y este navegador se acuerda.</li>
+          <li>Mientras Player esté abierto o sonando, lo manejas desde aquí.</li>
+        </ol>
+        <p class="status" id="pair-status"></p>
+        <p class="presence">Cifrado de punta a punta: el relay que los une no puede ver lo que escuchas.</p>
+      </div>
+    </section>
+
+    <section id="player-view" hidden>
+      <p class="presence"><b id="phone-name"></b> · <span id="presence">desconectado</span></p>
+      <div class="player">
+        <div id="controls">
+          <div class="now" style="margin-top: var(--space-4)">
+            <div class="cover"><img id="art" alt="" hidden><span class="empty" id="art-empty">ñ</span></div>
+            <div>
+              <div id="title">Nada sonando</div>
+              <div id="artist"></div>
+              <div id="album"></div>
+            </div>
+          </div>
+          <div class="progress">
+            <span id="position">0:00</span>
+            <input id="seek" type="range" min="0" max="1" value="0" aria-label="Posición">
+            <span id="duration">0:00</span>
+          </div>
+          <div class="transport">
+            <button class="btn btn-secondary" id="shuffle" aria-label="Aleatorio">⤮</button>
+            <button class="btn btn-secondary" id="previous" aria-label="Anterior">⏮</button>
+            <button class="btn btn-primary" id="play" aria-label="Reproducir">▶</button>
+            <button class="btn btn-secondary" id="next" aria-label="Siguiente">⏭</button>
+            <button class="btn btn-secondary" id="repeat" aria-label="Repetir">↻</button>
+            <label class="volume">vol <input id="volume" type="range" min="0" max="100" value="0" aria-label="Volumen del teléfono"></label>
+          </div>
+
+          <h2 class="eyebrow">Buscar en tu biblioteca</h2>
+          <input id="search" type="search" placeholder="artista, álbum o canción" autocomplete="off">
+          <ul class="list" id="results"></ul>
+        </div>
+        <div>
+          <h2 class="eyebrow"><span>Cola</span><span id="queue-count"></span></h2>
+          <ul class="list" id="queue"></ul>
+        </div>
+      </div>
+      <footer>
+        <span>espacio: pausa · shift + ← →: anterior / siguiente</span>
+        · <button class="btn btn-ghost" id="unpair">desvincular este navegador</button>
+      </footer>
+    </section>
+  </main>
+
+</div>
+<script src="vendor/qrcode.js"></script>
+<script type="module" src="monitor.js"></script>
+</body>
+</html>

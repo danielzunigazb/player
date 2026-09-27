@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- Only used to fetch lyrics from LRCLIB when the setting is on. -->
+    <!-- Lyrics and tags from LRCLIB, update checks, and the web monitor's relay, each when on. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -30,6 +30,13 @@
             <intent-filter>
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- The web monitor's pairing QR (docs/monitor.md); verified by the site's assetlinks.json. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="player.danzuniga.xyz" android:path="/pair" />
             </intent-filter>
         </activity>
 

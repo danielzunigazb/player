@@ -24,6 +24,7 @@ import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
+import com.danielzuniga.player.remote.RemoteSession
 import com.danielzuniga.player.MainActivity
 import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.widget.NowPlayingWidget
@@ -54,6 +55,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var player: ExoPlayer
     private var mediaSession: MediaLibrarySession? = null
     private val browser by lazy { LibraryBrowser(this, container) }
+    private lateinit var remote: RemoteSession
 
     private var currentPlayCounted = false
     private var sleepAtMs = 0L
@@ -83,6 +85,17 @@ class PlaybackService : MediaLibraryService() {
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
         player.setShuffleOrder(QueueShuffleOrder(0))
+        // Before the listener, which tells it about every change.
+        remote = RemoteSession(
+            context = this,
+            player = player,
+            store = container.remote,
+            client = container.relayClient,
+            relayUrl = container.relayUrl,
+            library = { container.musicRepository.library.value },
+            scope = scope,
+        )
+        remote.start()
         player.addListener(PlayerEvents())
         container.audioEffects.attach(player.audioSessionId)
 
@@ -111,6 +124,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        remote.stop()
         saveQueue()
         handler.removeCallbacksAndMessages(null)
         scope.cancel()
@@ -234,6 +248,7 @@ class PlaybackService : MediaLibraryService() {
 
     private inner class PlayerEvents : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
+            remote.changed()
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) currentPlayCounted = false
             if (player.isPlaying && !currentPlayCounted) {
                 currentPlayCounted = true

@@ -1,0 +1,11 @@
+{
+  "name": "player-relay",
+  "private": true,
+  "type": "module",
+  "description": "Relay for Player's web monitor (Cloudflare Worker)",
+  "scripts": {
+    "test": "node --test",
+    "dev": "npx -y wrangler@4 dev",
+    "deploy": "npx -y wrangler@4 deploy"
+  }
+}

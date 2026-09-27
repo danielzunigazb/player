@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vincular · Player</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e0c0a">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles/tokens.css">
+<link rel="stylesheet" href="/styles/base.css">
+</head>
+<body>
+<style>main p + p, main h1 + p { margin-top: var(--space-4); }</style>
+<main class="container" style="padding: var(--space-16) var(--space-4)">
+  <p class="eyebrow">Monitor web</p>
+  <h1 class="whisper-lg">Abre este enlace con Player.</h1>
+  <p id="open-row" hidden><a class="btn btn-primary" id="open">Abrir en Player</a></p>
+  <p style="color: var(--ink-muted); max-width: 36rem" id="help">
+    Si no tienes Player, descárgalo e instálalo; después vuelve a escanear el código.
+  </p>
+  <p><a class="btn btn-secondary" href="/#install">Descargar Player</a></p>
+</main>
+<script>
+// Normally Android opens this link straight in Player. When it lands in the browser instead
+// (the camera app chose it, or the link isn't verified yet), this button hands it to Player: an
+// intent link with the room and key as extras. They stay on the phone; the fragment is never
+// sent to a server.
+(function () {
+  var params = new URLSearchParams(location.hash.slice(1));
+  var room = params.get("r"), key = params.get("k");
+  if (!/^[A-Za-z0-9_-]{22}$/.test(room || "") || !/^[A-Za-z0-9_-]{43}$/.test(key || "")) return;
+  if (!/Android/i.test(navigator.userAgent)) {
+    document.getElementById("help").textContent = "Escanea el código con la cámara del teléfono donde tienes Player.";
+    return;
+  }
+  var fallback = encodeURIComponent(location.origin + "/#install");
+  document.getElementById("open").href = "intent://player.danzuniga.xyz/pair#Intent;scheme=https;action=android.intent.action.VIEW;"
+    + "package=com.danielzuniga.player;S.r=" + room + ";S.k=" + key + ";S.browser_fallback_url=" + fallback + ";end";
+  document.getElementById("open-row").hidden = false;
+})();
+</script>
+</body>
+</html>

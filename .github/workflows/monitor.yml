@@ -1,0 +1,28 @@
+name: Monitor
+
+# The web monitor's relay (relay/) and page (site/monitor/): their tests, including the
+# encryption vector the app checks too (RemoteCryptoTest).
+on:
+  push:
+    paths: ["relay/**", "site/**", ".github/workflows/monitor.yml"]
+  pull_request:
+    paths: ["relay/**", "site/**", ".github/workflows/monitor.yml"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Relay
+        working-directory: relay
+        run: node --test
+      - name: Monitor page
+        working-directory: site/monitor
+        run: node --test
+      - name: Site builds with the monitor
+        run: site/build.sh "$RUNNER_TEMP/_site" && test -f "$RUNNER_TEMP/_site/monitor/index.html" && test -f "$RUNNER_TEMP/_site/.well-known/assetlinks.json"

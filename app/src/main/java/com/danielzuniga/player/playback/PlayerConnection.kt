@@ -9,7 +9,6 @@ import androidx.core.os.bundleOf
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
@@ -247,7 +246,7 @@ class PlayerConnection(context: Context) {
         val timeline = player.currentTimeline
         val shuffled = player.shuffleModeEnabled
         _queue.value = QueueState(
-            items = playbackOrder(timeline, shuffled).map { index ->
+            items = timeline.playbackOrder(shuffled).map { index ->
                 player.getMediaItemAt(index).toQueueItem(index)
             },
             currentIndex = player.currentMediaItemIndex,
@@ -262,17 +261,6 @@ class PlayerConnection(context: Context) {
                 sleepAtEndOfTrack = extras.getBoolean(SessionCommands.EXTRA_SLEEP_END_OF_TRACK, false),
             )
         }
-    }
-
-    private fun playbackOrder(timeline: Timeline, shuffled: Boolean): List<Int> {
-        if (timeline.isEmpty) return emptyList()
-        val order = ArrayList<Int>(timeline.windowCount)
-        var index = timeline.getFirstWindowIndex(shuffled)
-        while (index != C.INDEX_UNSET) {
-            order += index
-            index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffled)
-        }
-        return order
     }
 
     private fun MediaItem.toQueueItem(index: Int) = QueueItem(
