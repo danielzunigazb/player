@@ -97,6 +97,8 @@ function startMonitor(pairing) {
       if (arrived) send("hello");
     },
     onMessage: (message) => {
+      // The first message tells where commands go: the controls turn on.
+      renderPresence();
       if (message.type === "state") {
         state = message;
         receivedAt = Date.now();
@@ -117,9 +119,12 @@ function startMonitor(pairing) {
 }
 
 function renderPresence() {
-  $("presence").textContent = phoneHere ? "conectado" : "desconectado · abre Player en el teléfono";
-  $("presence").dataset.on = String(phoneHere);
-  $("controls").toggleAttribute("inert", !phoneHere);
+  // Commands need the phone's id (link.phone), known once it has said something; until then the
+  // phone would drop them, so the controls stay off.
+  const ready = phoneHere && !!link?.phone;
+  $("presence").textContent = ready ? "conectado" : phoneHere ? "conectando…" : "desconectado · abre Player en el teléfono";
+  $("presence").dataset.on = String(ready);
+  $("controls").toggleAttribute("inert", !ready);
 }
 
 function render() {
@@ -254,6 +259,7 @@ $("unpair").onclick = () => {
 
 document.addEventListener("keydown", (event) => {
   if (event.target.closest("input") || event.metaKey || event.ctrlKey) return;
+  if ($("controls").hasAttribute("inert")) return;
   if (event.code === "Space") {
     event.preventDefault();
     $("play").click();

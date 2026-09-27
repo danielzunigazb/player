@@ -97,7 +97,28 @@ export function address(message, phone) {
   return message.type === "cmd" && phone ? { ...message, to: phone } : message;
 }
 
-const BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+/**
+ * The phone a web's commands go to: the sender of the last message heard from it, forgotten when
+ * the relay says the phone left (it comes back under a new id). While [id] is null, commands
+ * would go without `to` and the phone would drop them: the monitor keeps its controls off.
+ */
+export class PhoneTarget {
+  constructor() {
+    this.id = null;
+  }
+
+  /** A message from the phone was accepted. */
+  heard(message) {
+    this.id = message.from;
+  }
+
+  /** The relay's presence note, or `{ phone: false }` when the connection drops. */
+  peers(note) {
+    if (!note.phone) this.id = null;
+  }
+}
+
+const BASE32 ="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 /**
  * The code the monitor shows under the QR and the phone shows before pairing, so the person can
