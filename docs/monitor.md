@@ -20,15 +20,26 @@ navegador ──wss──▶ relay (Cloudflare) ◀──wss── Player (solo 
    `https://player.danzuniga.xyz/pair#r=P&k=kP`. El fragmento (`#…`) nunca sale del navegador
    ni del teléfono: el relay no lo ve.
 2. La cámara del teléfono abre el enlace en Player (App Link; o el botón "Abrir en Player" de
-   `/pair`, que pasa `P` y `kP` como extras del intent). Antes de nada, Player pregunta
-   "¿Vincular este navegador?" con un **código de vinculación** que el monitor también muestra
-   bajo el QR: los 6 primeros caracteres base32 (`A–Z2–7`) del SHA-256 de los 32 bytes de `kP`
-   (`RemoteCrypto.pairingCode` y `pairingCode` en `protocol.js`, con el mismo vector de prueba).
-   Solo si la persona acepta, Player entra a `P` y manda, cifrado con `kP`, la sala `R` y la
-   clave `K` del teléfono y su nombre. Cancelar no hace nada: sin la pregunta, cualquier enlace
-   de vinculación que alguien le hiciera abrir le entregaría la sala del teléfono. Otro enlace
-   que llegue mientras la pregunta está abierta se ignora: no cambia el código a medio mirar.
-3. El monitor guarda `R` y `K`, deja `P` y se conecta a `R`. Desde entonces conecta solo.
+   `/pair`, que pasa `P` y `kP` como extras del intent). Player muestra "Vincular un navegador"
+   con un **código** de 6 caracteres que genera él mismo al azar (`SecureRandom`, alfabeto sin
+   parecidos: `A–Z` y `2–9` sin `0/O/1/I/L`), para escribirlo en el monitor. Entra a `P` y le
+   pide el código (`askCode`); el monitor muestra un campo para escribirlo y lo manda (`code`,
+   en mayúsculas y sin espacios).
+3. Player compara el código en tiempo constante. Si es el suyo, manda, cifrado con `kP`, la sala
+   `R` y la clave `K` del teléfono y su nombre (`welcome`), y espera que el monitor confirme
+   (`paired`). Si no, contesta `wrongCode` con los intentos que quedan; al tercero equivocado
+   manda `pairFailed` y deja `P`. Nada de `R` ni `K` sale antes del código correcto.
+4. El monitor guarda `R` y `K`, deja `P` y se conecta a `R`. Desde entonces conecta solo.
+
+Por qué el teléfono muestra el código y la persona lo escribe en la computadora (y no al revés):
+quien fabrique un enlace de vinculación y se lo haga abrir a alguien tiene `P` y `kP`, pero nunca
+ve la pantalla del teléfono. Con 31⁶ códigos posibles y 3 intentos, adivinar no sirve.
+
+Del lado del teléfono (`BrowserPairing`, a nivel de app): el diálogo sigue abierto mientras
+espera, y sobrevive a una rotación con el mismo código. Se cierra al vincular (aviso "Navegador
+vinculado"), con Cancelar (deja `P` sin decir nada más), a los 2 minutos o tras 3 códigos
+equivocados (con un aviso). Otro enlace de vinculación que llegue mientras hay uno pendiente se
+ignora: no cambia el navegador detrás del código en pantalla.
 
 Cada teléfono tiene una sola sala `R` con su clave `K`; todos los navegadores vinculados la
 comparten. "Desvincular todo" en Player genera `R` y `K` nuevas: los navegadores viejos se
@@ -83,9 +94,15 @@ Del teléfono:
 | `state` | Estado completo, en cada cambio y cada 30 s mientras suena: `song` (id, title, artist, album, durationMs), `playing`, `positionMs` medido en `ts`, `shuffle`, `repeat` (`off`/`all`/`one`), `index`, `queue` (id, title, artist), `volume` (0–1). |
 | `art` | Portada de la canción actual: `songId`, `jpeg` (base64, 300 px). Solo cuando cambia. |
 | `results` | Respuesta a `search`: `query`, `songs` (hasta 50: id, title, artist, album, durationMs). |
-| `welcome` | Solo en la sala temporal: `room`, `key`, `name`. |
+| `askCode` | Solo en la sala temporal: pide el código que muestra el teléfono. Otra vez si el navegador reconecta. |
+| `wrongCode` | Solo en la sala temporal: el código no era; `attemptsLeft`. |
+| `pairFailed` | Solo en la sala temporal: 3 códigos equivocados; el teléfono se va de la sala. |
+| `welcome` | Solo en la sala temporal, tras el código correcto: `room`, `key`, `name`. |
 
-Del navegador (`cmd`, con `op`):
+Del navegador en la sala temporal: `code` (`code`: los 6 caracteres, en mayúsculas y sin
+espacios) y `paired` (ya guardó la sala del teléfono).
+
+Del navegador en la sala del teléfono (`cmd`, con `op`):
 
 `play`, `pause`, `next`, `previous`, `seek` (`positionMs`), `shuffle` (`on`),
 `repeat` (`mode`), `volume` (`value`), `skipTo` (`index`), `remove` (`index`; nunca la
