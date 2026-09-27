@@ -2,6 +2,7 @@ package com.danielzuniga.player
 
 import android.app.Application
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.danielzuniga.player.data.MusicRepository
 import com.danielzuniga.player.data.SettingsStore
 import com.danielzuniga.player.data.UserDataRepository
@@ -46,7 +47,9 @@ class AppContainer(context: Context) {
         scope = appScope,
     )
     val remote = RemoteStore(context)
-    val relayUrl = BuildConfig.RELAY_URL
+    var relayUrl = BuildConfig.RELAY_URL
+        // Tests point it at a stand-in relay.
+        @VisibleForTesting internal set
     /** WebSockets to the web monitor's relay; the ping notices a dead connection within a minute. */
     val relayClient: OkHttpClient by lazy { OkHttpClient.Builder().pingInterval(25, TimeUnit.SECONDS).build() }
     val lyrics = LyricsRepository(

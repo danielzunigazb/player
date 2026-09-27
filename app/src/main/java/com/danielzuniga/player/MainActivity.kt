@@ -88,9 +88,11 @@ class MainActivity : AppCompatActivity() {
         }
         if (intent?.action == Intent.ACTION_VIEW) {
             // Asked first (PairBrowserDialog): any page or message can hand the phone such a
-            // link, and the browser behind it would get this phone's room.
+            // link, and the browser behind it would get this phone's room. A link that arrives
+            // while another is being asked about is ignored: swapping them would change the
+            // browser behind the question under the person's eyes.
             RemotePairing.parse(intent.data, intent.getStringExtra("r"), intent.getStringExtra("k"))
-                ?.let { pairRequest.value = it }
+                ?.let { if (pairRequest.value == null) pairRequest.value = it }
         }
     }
 
