@@ -64,6 +64,8 @@
     <string name="most_played">Most played</string>
     <string name="recently_played">Recently played</string>
     <string name="recently_added">Recently added</string>
+    <!-- Android Auto or the Assistant asked for something nothing in the library matches. -->
+    <string name="nothing_to_play">No matching songs</string>
     <string name="new_playlist">New playlist</string>
     <string name="playlist_name">Name</string>
     <string name="create">Create</string>

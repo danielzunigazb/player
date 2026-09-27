@@ -8,13 +8,16 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaBrowser
+import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionToken
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.FakeMediaProvider
 import com.danielzuniga.player.FakeSong
+import com.danielzuniga.player.R
 import com.danielzuniga.player.appContainer
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
@@ -38,6 +41,8 @@ class LibraryBrowseTest {
     private val app = ApplicationProvider.getApplicationContext<Application>()
     private lateinit var service: ServiceController<PlaybackService>
     private lateinit var browser: MediaBrowser
+    /** Errors the session sent to [browser]. */
+    private val errors = mutableListOf<SessionError>()
 
     @Before
     fun setUp() {
@@ -57,7 +62,12 @@ class LibraryBrowseTest {
             component,
             service.get().onBind(Intent(MediaLibraryService.SERVICE_INTERFACE)),
         )
-        browser = await(MediaBrowser.Builder(app, SessionToken(app, component)).buildAsync())
+        val listener = object : MediaBrowser.Listener {
+            override fun onError(controller: MediaController, sessionError: SessionError) {
+                errors += sessionError
+            }
+        }
+        browser = await(MediaBrowser.Builder(app, SessionToken(app, component)).setListener(listener).buildAsync())
     }
 
     @After
@@ -144,6 +154,37 @@ class LibraryBrowseTest {
         // Nothing to play: the request fails instead of reaching the player without a URI.
         assertTrue(resolveQueue(listOf(request), 0).isFailure)
         assertTrue(resolveQueue(listOf(MediaItem.Builder().setMediaId(LibraryBrowser.ALBUMS).build()), 0).isFailure)
+    }
+
+    @Test
+    fun aVoiceRequestWithNoMatchIsReported() {
+        browser.setMediaItem(
+            MediaItem.Builder()
+                .setRequestMetadata(MediaItem.RequestMetadata.Builder().setSearchQuery("zzz").build())
+                .build()
+        )
+        // Android Auto shows the message; without it the request just did nothing.
+        awaitUntil { errors.isNotEmpty() }
+        assertEquals(SessionError.ERROR_BAD_VALUE, errors.single().code)
+        assertEquals(app.getString(R.string.nothing_to_play), errors.single().message)
+    }
+
+    @Test
+    fun addingItemsThatCantPlay() {
+        val song = { id: String -> MediaItem.Builder().setMediaId(id).build() }
+        val folder = MediaItem.Builder().setMediaId(LibraryBrowser.ALBUMS).build()
+        browser.setMediaItem(song("1"))
+        awaitUntil { browser.mediaItemCount == 1 && browser.currentMediaItem?.localConfiguration != null }
+
+        // The folder is dropped; the song is added.
+        browser.addMediaItems(listOf(folder, song("3")))
+        awaitUntil { browser.mediaItemCount == 2 }
+        assertEquals(listOf("1", "3"), (0 until 2).map { browser.getMediaItemAt(it).mediaId })
+
+        // Only the folder: nothing is added and the caller hears why.
+        browser.addMediaItem(folder)
+        awaitUntil { errors.isNotEmpty() }
+        assertEquals(SessionError.ERROR_BAD_VALUE, errors.single().code)
     }
 
     @Test

@@ -27,6 +27,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.danielzuniga.player.remote.RemoteSession
 import com.danielzuniga.player.MainActivity
+import com.danielzuniga.player.R
 import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.widget.NowPlayingWidget
 import com.danielzuniga.player.widget.WidgetState
@@ -337,8 +338,12 @@ class PlaybackService : MediaLibraryService() {
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
-        ): ListenableFuture<MutableList<MediaItem>> =
-            Futures.immediateFuture(mediaItems.mapTo(mutableListOf()) { browser.resolveItem(it) })
+        ): ListenableFuture<MutableList<MediaItem>> = try {
+            Futures.immediateFuture(browser.playable(mediaItems.map { browser.resolveItem(it) }).toMutableList())
+        } catch (e: NothingToPlayException) {
+            sendNothingToPlay(mediaSession, controller)
+            Futures.immediateFailedFuture(e)
+        }
 
         // A song picked in Android Auto queues the rest of its album or playlist too.
         override fun onSetMediaItems(
@@ -348,7 +353,17 @@ class PlaybackService : MediaLibraryService() {
             startIndex: Int,
             startPositionMs: Long,
         ): ListenableFuture<MediaItemsWithStartPosition> = future {
-            browser.resolveQueue(mediaItems, startIndex, startPositionMs)
+            try {
+                browser.resolveQueue(mediaItems, startIndex, startPositionMs)
+            } catch (e: NothingToPlayException) {
+                sendNothingToPlay(mediaSession, controller)
+                throw e
+            }
+        }
+
+        // A failed request alone leaves Android Auto or the Assistant silent; this they can show.
+        private fun sendNothingToPlay(session: MediaSession, controller: MediaSession.ControllerInfo) {
+            session.sendError(controller, SessionError(SessionError.ERROR_BAD_VALUE, getString(R.string.nothing_to_play)))
         }
 
         override fun onGetLibraryRoot(
