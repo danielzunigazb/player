@@ -81,9 +81,9 @@ Del navegador (`cmd`, con `op`):
 
 ## Desplegar el relay
 
-Lo despliega Cloudflare (Workers Builds) desde este repo: el Worker `player` de la cuenta
-`danielclaude412`, con *Root directory* `relay`, sin comando de build y con `npx wrangler deploy`
-como comando de despliegue. Queda en `wss://player.danielclaude412.workers.dev`, la dirección que
+Lo despliega Cloudflare (Workers Builds) desde este repo: el Worker `player` del subdominio
+`danzuniga`, con *Root directory* `relay`, sin comando de build y con `npx wrangler deploy`
+como comando de despliegue. Queda en `wss://player.danzuniga.workers.dev`, la dirección que
 usan `RELAY_URL` en `app/build.gradle.kts` y `site/monitor/protocol.js`; el nombre del Worker
 tiene que coincidir con `name` en `relay/wrangler.toml`.
 

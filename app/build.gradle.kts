@@ -40,7 +40,7 @@ android {
         // Dev builds from main are "1.5.0-dev.<run>" (set by the Release workflow).
         System.getenv("PLAYER_VERSION_SUFFIX")?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = it }
         // The web monitor's relay (relay/, a Cloudflare Worker); same address as site/monitor/protocol.js.
-        buildConfigField("String", "RELAY_URL", "\"wss://player.danielclaude412.workers.dev\"")
+        buildConfigField("String", "RELAY_URL", "\"wss://player.danzuniga.workers.dev\"")
     }
 
     signingConfigs {
