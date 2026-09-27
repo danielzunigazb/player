@@ -58,7 +58,8 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
 
     /**
      * Turns what a browser asked to play into the queue the player gets. A single song picked
-     * from a list expands into that whole list, starting at the chosen song.
+     * from a list expands into that whole list, starting at the chosen song. Throws when nothing
+     * in the request can play.
      */
     suspend fun resolveQueue(items: List<MediaItem>, startIndex: Int): Pair<List<MediaItem>, Int> {
         val library = container.musicRepository.awaitLibrary()
@@ -75,7 +76,14 @@ class LibraryBrowser(private val context: Context, private val container: AppCon
             val index = siblings?.indexOfFirst { it.id == songId } ?: -1
             if (siblings != null && index >= 0) return siblings.map { it.toMediaItem() } to index
         }
-        return items.map { resolveItem(it, library) } to startIndex
+        val resolved = items.map { resolveItem(it, library) }
+        // Items without a URI (a voice request that matched nothing, a folder) would make the
+        // player throw where nobody hears it; failing the request tells the controller instead.
+        val playable = resolved.filter { it.localConfiguration != null }
+        if (playable.isEmpty()) throw NoSuchElementException("Nothing to play")
+        if (playable.size == resolved.size || startIndex < 0) return playable to startIndex
+        // The chosen item moves up by the ones dropped before it; if it was dropped, the next one plays.
+        return playable to resolved.take(startIndex).count { it.localConfiguration != null }.coerceAtMost(playable.lastIndex)
     }
 
     /** Fills in URI and metadata for items that arrive with only an id. */

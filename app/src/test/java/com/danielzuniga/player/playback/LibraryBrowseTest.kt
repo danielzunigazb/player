@@ -13,7 +13,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.FakeMediaProvider
 import com.danielzuniga.player.FakeSong
+import com.danielzuniga.player.appContainer
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -133,9 +135,35 @@ class LibraryBrowseTest {
     }
 
     @Test
+    fun voiceRequestWithNoMatchFails() {
+        val request = MediaItem.Builder()
+            .setRequestMetadata(MediaItem.RequestMetadata.Builder().setSearchQuery("zzz").build())
+            .build()
+        // Nothing to play: the request fails instead of reaching the player without a URI.
+        assertTrue(resolveQueue(listOf(request), 0).isFailure)
+        assertTrue(resolveQueue(listOf(MediaItem.Builder().setMediaId(LibraryBrowser.ALBUMS).build()), 0).isFailure)
+    }
+
+    @Test
+    fun itemsThatCantPlayAreDropped() {
+        val items = listOf("1", LibraryBrowser.ALBUMS, "3").map { MediaItem.Builder().setMediaId(it).build() }
+        val (queue, index) = resolveQueue(items, 2).getOrThrow()
+        assertEquals(listOf("1", "3"), queue.map { it.mediaId })
+        assertEquals(1, index)
+    }
+
+    @Test
     fun unknownParentIsAnError() {
         val result = await(browser.getChildren("nope", 0, 10, null))
         assertFalse(result.resultCode == LibraryResult.RESULT_SUCCESS)
+    }
+
+    private fun resolveQueue(items: List<MediaItem>, startIndex: Int): Result<Pair<List<MediaItem>, Int>> {
+        val container = app.appContainer
+        var result: Result<Pair<List<MediaItem>, Int>>? = null
+        container.appScope.launch { result = runCatching { LibraryBrowser(app, container).resolveQueue(items, startIndex) } }
+        awaitUntil { result != null }
+        return result!!
     }
 
     private fun <T> await(future: ListenableFuture<T>): T {
