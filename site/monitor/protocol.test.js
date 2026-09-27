@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Inbox, Outbox, fromBase64Url, importKey, newKey, newRoom, open, seal, toBase64Url } from "./protocol.js";
+import { Inbox, MAX_SKEW_MS, Outbox, address, fromBase64Url, importKey, newKey, newRoom, open, seal, toBase64Url } from "./protocol.js";
 
 // The same vector is checked by the app's RemoteCryptoTest: both sides must agree byte for byte.
 const VECTOR = {
@@ -56,6 +56,27 @@ test("drops replays, old seqs and stale messages, per sender", () => {
   assert.equal(inbox.accept(new Outbox("web-2").stamp({}, now), now), true);
   assert.equal(inbox.accept(new Outbox("web-3").stamp({}, now - 3 * 60 * 1000), now), false);
   assert.equal(inbox.accept({ type: "cmd" }, now), false);
+});
+
+test("drops messages from more than 2 minutes in the future", () => {
+  const now = 1_790_000_000_000;
+  const inbox = new Inbox();
+  assert.equal(inbox.accept(new Outbox("phone-a").stamp({}, now + MAX_SKEW_MS + 1), now), false);
+  assert.equal(inbox.accept(new Outbox("phone-b").stamp({}, now + MAX_SKEW_MS), now), true);
+});
+
+test("a phone that restarted under a new id is heard again from seq 1", () => {
+  const now = 1_790_000_000_000;
+  const inbox = new Inbox();
+  const before = new Outbox("phone-aaaaaaaa");
+  for (let i = 0; i < 50; i++) inbox.accept(before.stamp({ type: "state" }, now), now);
+  assert.equal(inbox.accept(new Outbox("phone-bbbbbbbb").stamp({ type: "state" }, now), now), true);
+});
+
+test("commands go to the phone's current id; other messages aren't addressed", () => {
+  assert.deepEqual(address({ type: "cmd", op: "next" }, "phone-bbbbbbbb"), { type: "cmd", op: "next", to: "phone-bbbbbbbb" });
+  assert.deepEqual(address({ type: "cmd", op: "hello" }, null), { type: "cmd", op: "hello" });
+  assert.deepEqual(address({ type: "paired" }, "phone-bbbbbbbb"), { type: "paired" });
 });
 
 const VECTOR_SEALED = "oKGio6SlpqeoqaqrnToIVDWuIIVABuq3JVbisQCOYzL80joYviIE4A3EGCPoVDCazQ9iH3O-d614WLnIazkyO0DqK0l4bjtulEC1gISMtRKaCxcv0Ky-OrHIXDAjrcnA";

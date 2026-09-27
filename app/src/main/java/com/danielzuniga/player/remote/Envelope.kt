@@ -29,3 +29,12 @@ class Inbox {
         const val MAX_SKEW_MS = 2 * 60 * 1000L
     }
 }
+
+/**
+ * Whether [message] is meant for the sender [id]. A browser's commands name the phone's current
+ * id in `to`, so commands captured before the phone's link restarted (a new id, a new [Inbox])
+ * can't be replayed to it. `hello` only asks for the state, and comes before the browser has
+ * heard the phone's id; anything that isn't a command has no addressee.
+ */
+fun isAddressedTo(message: JSONObject, id: String): Boolean =
+    message.optString("type") != "cmd" || message.optString("op") == "hello" || message.optString("to") == id

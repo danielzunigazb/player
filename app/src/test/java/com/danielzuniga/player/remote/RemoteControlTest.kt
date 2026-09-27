@@ -1,8 +1,10 @@
 package com.danielzuniga.player.remote
 
 import android.content.Context
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.danielzuniga.player.data.LibraryIndex
@@ -93,11 +95,62 @@ class RemoteControlTest {
     fun editsTheQueueAndIgnoresIndexesOutsideIt() {
         control.handle(cmd("remove", "index" to 2))
         assertEquals(2, player.mediaItemCount)
-        control.handle(cmd("move", "from" to 0, "to" to 1))
+        control.handle(cmd("move", "fromIndex" to 0, "toIndex" to 1))
         assertEquals("2", player.getMediaItemAt(0).mediaId)
         control.handle(cmd("remove", "index" to 9))
         control.handle(cmd("skipTo", "index" to -1))
         assertEquals(2, player.mediaItemCount)
+    }
+
+    @Test
+    fun doesNotRemoveTheCurrentSong() {
+        control.handle(cmd("remove", "index" to 1))
+        assertEquals(3, player.mediaItemCount)
+        assertEquals("2", player.currentMediaItem?.mediaId)
+    }
+
+    @Test
+    fun seeksWithinTheSongAndGoesBack() {
+        control.handle(cmd("seek", "positionMs" to 5_000))
+        assertEquals(5_000L, player.currentPosition)
+        control.handle(cmd("seek", "positionMs" to -5_000))
+        assertEquals(0L, player.currentPosition)
+        control.handle(cmd("previous"))
+        assertEquals(0, player.currentMediaItemIndex)
+    }
+
+    @Test
+    fun theShuffledQueueIsSentInPlayOrderAroundTheCurrentSong() {
+        val many = (1L..400L).map { Song(it, "Song $it", "A", "B", 1, 1000) }
+        player.setMediaItems(many.map { it.toMediaItem() }, 100, 0L)
+        // Play order backwards: the song at index 100 plays 300th.
+        player.setShuffleOrder(DefaultShuffleOrder(IntArray(400) { 399 - it }, 0))
+        player.shuffleModeEnabled = true
+        val state = control.state()
+        assertEquals(299, state.getInt("index"))
+        assertEquals(279, state.getInt("queueStart"))
+        val queue = state.getJSONArray("queue")
+        val current = queue.getJSONObject(state.getInt("index") - state.getInt("queueStart"))
+        assertEquals("101", current.getString("id"))
+        assertEquals(100, current.getInt("i"))
+        assertEquals(listOf("121", "120"), (0..1).map { queue.getJSONObject(it).getString("id") })
+    }
+
+    @Test
+    fun playAfterAShuffledQueueEndedStartsFromTheFirstSongInPlayOrder() {
+        player.seekToDefaultPosition(0)
+        player.setShuffleOrder(DefaultShuffleOrder(intArrayOf(2, 0, 1), 0))
+        player.shuffleModeEnabled = true
+        // Unprepared songs never reach the end under Robolectric: say they did.
+        val ended = object : ForwardingPlayer(player) {
+            override fun getPlaybackState() = Player.STATE_ENDED
+        }
+        RemoteControl(ended, { library }, object : RemoteControl.Volume {
+            override fun get() = volume
+            override fun set(value: Float) = Unit
+        }).handle(cmd("play"))
+        assertEquals(2, player.currentMediaItemIndex)
+        assertTrue(player.playWhenReady)
     }
 
     @Test

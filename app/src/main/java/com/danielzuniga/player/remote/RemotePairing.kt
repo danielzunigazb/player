@@ -7,14 +7,32 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 
 /**
  * Pairs a browser from the link its QR carries (docs/monitor.md): joins the browser's temporary
- * room, hands it this phone's room and key sealed with the temporary key, and waits for the
- * browser to confirm.
+ * room, asks it for the code the phone shows, and only when the person has typed it right hands
+ * the browser this phone's room and key, sealed with the temporary key, and waits for it to
+ * confirm. Whoever crafted the link doesn't see the phone's screen; what's left is someone who
+ * gets the person to type or tell them the code (docs/monitor.md, "Riesgo que queda").
  */
 object RemotePairing {
+
+    /** How a pairing ended, when nobody cancelled it before the right code. */
+    enum class Result {
+        /**
+         * The right code was typed and the browser got the phone's room, whether or not it
+         * confirmed: `paired` adds nothing, and a page that never confirms has the room anyway.
+         */
+        PAIRED,
+
+        /** [MAX_TRIES] wrong codes: the browser was told and the phone left its room. */
+        WRONG_CODE,
+
+        /** Nobody typed the right code in time. */
+        TIMED_OUT,
+    }
 
     /**
      * The temporary room and key a pairing link carries, or null when it isn't one. The camera
@@ -32,41 +50,82 @@ object RemotePairing {
         return Pairing(r, k).takeIf { RemoteCrypto.isRoom(r) && RemoteCrypto.isKey(k) }
     }
 
-    /** True once the browser confirms it has this phone's room. */
+    /**
+     * Pairs the browser waiting in [temporary] once it sends [code]. [phone] gives this phone's
+     * room, asked for only after the right code; [onHandedOver] runs, on the main thread, once it
+     * has been sent. From then on the pairing is done: a timeout still returns [Result.PAIRED],
+     * and whoever cancels must count it the same (BrowserPairing). Cancelling before leaves the
+     * room without another word.
+     */
     suspend fun pair(
         client: OkHttpClient,
         relayUrl: String,
         temporary: Pairing,
-        phone: Pairing,
+        code: String,
+        phone: () -> Pairing,
         name: String,
-        timeoutMs: Long = 20_000,
-    ): Boolean = withTimeoutOrNull(timeoutMs) {
-        suspendCancellableCoroutine { continuation ->
-            lateinit var link: RemoteLink
-            val welcome = JSONObject()
-                .put("type", "welcome")
-                .put("room", phone.room)
-                .put("key", phone.key)
-                .put("name", name)
-            link = RemoteLink(client, relayUrl, temporary, object : RemoteLink.Listener {
-                override fun onMessage(message: JSONObject) {
-                    if (message.optString("type") == "paired" && continuation.isActive) {
-                        link.stop()
-                        continuation.resume(true)
-                    }
+        onHandedOver: () -> Unit = {},
+        timeoutMs: Long = TIMEOUT_MS,
+    ): Result {
+        val handedOver = AtomicBoolean(false)
+        return withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine { continuation ->
+                lateinit var link: RemoteLink
+                var webs = 0
+                // Across reconnections: coming back doesn't buy more tries.
+                var wrong = 0
+                // Set once the code is right; nothing about the phone's room goes out before.
+                var welcome: JSONObject? = null
+
+                fun finish(result: Result) {
+                    link.stop()
+                    if (continuation.isActive) continuation.resume(result)
                 }
 
-                // The browser is waiting in the room: hand it the phone's room. Sent again if it
-                // reconnects before confirming.
-                override fun onWebs(count: Int) {
-                    if (count > 0) link.send(JSONObject(welcome.toString()))
-                }
-            })
-            link.start()
-            // Cancellation (the timeout) can come from any thread; the link lives on the main one.
-            continuation.invokeOnCancellation { Handler(Looper.getMainLooper()).post { link.stop() } }
-        }
-    } ?: false
+                link = RemoteLink(client, relayUrl, temporary, object : RemoteLink.Listener {
+                    override fun onMessage(message: JSONObject) {
+                        if (!continuation.isActive) return
+                        when (message.optString("type")) {
+                            "code" -> {
+                                if (welcome != null) return
+                                if (RemoteCrypto.codeMatches(code, message.optString("code"))) {
+                                    val room = phone()
+                                    welcome = JSONObject()
+                                        .put("type", "welcome")
+                                        .put("room", room.room)
+                                        .put("key", room.key)
+                                        .put("name", name)
+                                    link.send(JSONObject(welcome.toString()))
+                                    handedOver.set(true)
+                                    onHandedOver()
+                                } else if (++wrong >= MAX_TRIES) {
+                                    link.send(JSONObject().put("type", "pairFailed"))
+                                    finish(Result.WRONG_CODE)
+                                } else {
+                                    link.send(JSONObject().put("type", "wrongCode").put("attemptsLeft", MAX_TRIES - wrong))
+                                }
+                            }
+                            "paired" -> if (welcome != null) finish(Result.PAIRED)
+                        }
+                    }
+
+                    // The browser is in the room: ask for the code, or hand the room again if it
+                    // reconnected after the right one.
+                    override fun onWebs(count: Int) {
+                        val arrived = count > 0 && webs == 0
+                        webs = count
+                        if (!arrived) return
+                        link.send(welcome?.let { JSONObject(it.toString()) } ?: JSONObject().put("type", "askCode"))
+                    }
+                })
+                link.start()
+                // Cancellation (Cancel, the timeout) can come from any thread; the link lives on the main one.
+                continuation.invokeOnCancellation { Handler(Looper.getMainLooper()).post { link.stop() } }
+            }
+        } ?: if (handedOver.get()) Result.PAIRED else Result.TIMED_OUT
+    }
 
     const val HOST = "player.danzuniga.xyz"
+    const val MAX_TRIES = 3
+    const val TIMEOUT_MS = 2 * 60 * 1000L
 }

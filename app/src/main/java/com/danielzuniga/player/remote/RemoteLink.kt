@@ -22,15 +22,24 @@ class RemoteLink(
     private val listener: Listener,
 ) {
     interface Listener {
-        /** A message from a browser that opened with the room's key and isn't a replay. */
+        /**
+         * A message from a browser that opened with the room's key, isn't a replay and, if a
+         * command, is addressed to this link's [id].
+         */
         fun onMessage(message: JSONObject)
 
         /** How many browsers are in the room, whenever someone comes or goes. */
         fun onWebs(count: Int) {}
     }
 
+    /**
+     * This link's sender id, new with each link: browsers keep the last seq they saw per sender,
+     * so a restarted phone that numbered from 1 again under the same id would go unheard.
+     */
+    val id = "$PHONE-${RemoteCrypto.newRoom().take(8)}"
+
     private val main = Handler(Looper.getMainLooper())
-    private val outbox = Outbox(PHONE)
+    private val outbox = Outbox(id)
     private val inbox = Inbox()
     private var socket: WebSocket? = null
     private var stopped = false
@@ -87,7 +96,7 @@ class RemoteLink(
         } catch (e: JSONException) {
             return
         }
-        if (inbox.accept(message)) listener.onMessage(message)
+        if (inbox.accept(message) && isAddressedTo(message, id)) listener.onMessage(message)
     }
 
     private inner class Callbacks : WebSocketListener() {

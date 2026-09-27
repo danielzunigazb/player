@@ -1,5 +1,6 @@
 package com.danielzuniga.player.remote
 
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.AEADBadTagException
@@ -28,6 +29,20 @@ object RemoteCrypto {
 
     fun isRoom(text: String) = ROOM.matches(text)
     fun isKey(text: String) = KEY.matches(text)
+
+    /**
+     * A new pairing code: what the phone shows and the person types in the monitor. 6 characters
+     * from an alphabet without look-alikes (no 0/O, 1/I/L): about 30 bits, with 3 tries.
+     */
+    fun newPairingCode(): String =
+        (1..PAIRING_CODE_LENGTH).map { PAIRING_ALPHABET[random.nextInt(PAIRING_ALPHABET.length)] }.joinToString("")
+
+    /** The same code however it was typed: uppercase, without spaces or dashes. */
+    fun normalizeCode(text: String): String = text.uppercase().filterNot { it.isWhitespace() || it == '-' }
+
+    /** Whether [typed] is [code], in time that doesn't depend on where they differ. */
+    fun codeMatches(code: String, typed: String): Boolean =
+        MessageDigest.isEqual(code.toByteArray(), normalizeCode(typed).toByteArray())
 
     fun seal(key: String, plaintext: String, iv: ByteArray = randomBytes(IV_BYTES)): String {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -62,4 +77,6 @@ object RemoteCrypto {
 
     private val ROOM = Regex("[A-Za-z0-9_-]{22}")
     private val KEY = Regex("[A-Za-z0-9_-]{43}")
+    const val PAIRING_CODE_LENGTH = 6
+    const val PAIRING_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 }

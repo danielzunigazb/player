@@ -80,10 +80,12 @@ class RemoteControl(
                 player.seekToDefaultPosition(it)
                 play()
             }
-            "remove" -> command.queueIndex("index")?.let(player::removeMediaItem)
+            // Not the current song, like the app's own queue: removing it would jump to another.
+            "remove" -> command.queueIndex("index")?.takeIf { it != player.currentMediaItemIndex }?.let(player::removeMediaItem)
             "move" -> {
-                val from = command.queueIndex("from") ?: return null
-                val to = command.queueIndex("to") ?: return null
+                // Not "from" and "to": those name the sender and the addressee (docs/monitor.md).
+                val from = command.queueIndex("fromIndex") ?: return null
+                val to = command.queueIndex("toIndex") ?: return null
                 player.moveMediaItem(from, to)
             }
             "search" -> {
@@ -109,7 +111,10 @@ class RemoteControl(
 
     private fun play() {
         if (player.playbackState == Player.STATE_IDLE) player.prepare()
-        if (player.playbackState == Player.STATE_ENDED) player.seekToDefaultPosition(player.currentMediaItemIndex)
+        if (player.playbackState == Player.STATE_ENDED) {
+            // A queue that ran out starts over from the first song in play order, shuffled or not.
+            player.seekToDefaultPosition(player.currentTimeline.getFirstWindowIndex(player.shuffleModeEnabled))
+        }
         player.play()
     }
 
