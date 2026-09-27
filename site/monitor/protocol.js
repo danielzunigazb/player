@@ -4,7 +4,7 @@
 
 // Same address as RELAY_URL in app/build.gradle.kts. A page served from localhost may point at a
 // local relay (wrangler dev) with ?relay=ws://localhost:8787.
-export const RELAY = localRelay() ?? "wss://player-relay.danzuniga.workers.dev";
+export const RELAY = localRelay() ?? "wss://player.danielclaude412.workers.dev";
 
 function localRelay() {
   if (typeof location === "undefined" || location.hostname !== "localhost") return null;
