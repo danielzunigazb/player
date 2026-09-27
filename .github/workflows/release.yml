@@ -111,19 +111,6 @@ jobs:
           sha256sum "$NAME" > "$NAME.sha256"
           echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
 
-      # The commit log was attached to releases by mistake: take it off wherever it is and put
-      # back the 1.5.1 notes without it. Idempotent, safe to remove once it has run.
-      - name: Remove the commit log from published releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for tag in $(gh release list --limit 100 --json tagName --jq '.[].tagName'); do
-            if gh release view "$tag" --json assets --jq '.assets[].name' | grep -qx "HISTORIAL-COMMITS.md"; then
-              gh release delete-asset "$tag" HISTORIAL-COMMITS.md --yes && echo "removed from $tag"
-            fi
-          done
-          gh release edit v1.5.1 --notes-file docs/releases/v1.5.1.md
-
       - name: Publish stable release
         if: env.CHANNEL == 'stable'
         env:
