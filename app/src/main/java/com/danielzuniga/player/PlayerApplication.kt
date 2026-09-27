@@ -60,7 +60,9 @@ class AppContainer(context: Context) {
     val browserPairing = BrowserPairing(
         scope = appScope,
         store = remote,
-        pair = { temporary, code, phone -> RemotePairing.pair(relayClient, relayUrl, temporary, code, phone, Build.MODEL) },
+        pair = { temporary, code, phone, onHandedOver ->
+            RemotePairing.pair(relayClient, relayUrl, temporary, code, phone, Build.MODEL, onHandedOver)
+        },
         onResult = { result ->
             appContext.toast(
                 when (result) {

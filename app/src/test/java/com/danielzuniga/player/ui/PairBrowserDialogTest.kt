@@ -27,7 +27,7 @@ class PairBrowserDialogTest {
         compose.setContent { PairBrowserDialog(code = "AB3K9Z", onCancel = { cancelled++ }) }
 
         compose.onNodeWithText("Vincular un navegador").assertIsDisplayed()
-        compose.onNodeWithText("Escribe este código en el monitor de tu computadora").assertIsDisplayed()
+        compose.onNodeWithText("Escríbelo solo en player.danzuniga.xyz/monitor, en tu computadora. No se lo digas a nadie.").assertIsDisplayed()
         compose.onNodeWithText("AB3K9Z").assertIsDisplayed()
         assertFalse(compose.onAllNodes(hasText("Aceptar")).fetchSemanticsNodes().isNotEmpty())
         compose.onNodeWithText("Cancelar").performClick()

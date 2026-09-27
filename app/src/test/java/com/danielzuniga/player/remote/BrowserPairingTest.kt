@@ -149,7 +149,7 @@ class BrowserPairingTest {
         open()
 
         compose.onNodeWithText("Pair a browser").assertIsDisplayed()
-        compose.onNodeWithText("Type this code in the monitor on your computer").assertIsDisplayed()
+        compose.onNodeWithText("Type it only at player.danzuniga.xyz/monitor on your computer. Don't tell it to anyone.").assertIsDisplayed()
         compose.onNodeWithText(shownCode()).assertIsDisplayed()
         turnUntil { received.isNotEmpty() }
         compose.onNodeWithText("Cancel").performClick()
@@ -226,7 +226,24 @@ class BrowserPairingTest {
         assertEquals("/room/${temporary.room}?role=phone", server.takeRequest(1, TimeUnit.SECONDS)!!.path)
         assertNull(pairing.pending.value)
         assertFalse(exists("Pair a browser"))
-        assertEquals("Browser paired", ShadowToast.getTextOfLatestToast())
+        assertEquals("Browser paired. If it wasn't you, use Unpair all browsers in Settings.", ShadowToast.getTextOfLatestToast())
+    }
+
+    @Test
+    fun cancelAfterTheRightCodeStillPairsAndSaysSo() {
+        // A page that got the code and never confirms: Cancel can't take the room back.
+        browser { message -> if (message.getString("type") == "askCode") listOf(typed(shownCode())) else emptyList() }
+        open()
+        turnUntil { "welcome" in types() }
+        shadowOf(Looper.getMainLooper()).idle()
+
+        compose.onNodeWithText("Cancel").performClick()
+        compose.waitForIdle()
+
+        assertTrue(store.enabled.value)
+        assertEquals(store.pairing.value!!.room, received[1].getString("room"))
+        assertFalse(exists("Pair a browser"))
+        assertEquals("Browser paired. If it wasn't you, use Unpair all browsers in Settings.", ShadowToast.getTextOfLatestToast())
     }
 
     @Test
