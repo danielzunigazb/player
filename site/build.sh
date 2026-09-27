@@ -12,7 +12,7 @@ tests=$(grep -rhoE '@Test\b' "$root/app/src/test" | wc -l | tr -d ' ')
 
 rm -rf "$out"
 mkdir -p "$out/img" "$out/media"
-cp -r "$root/site/styles" "$root/site/icons.svg" "$root/site/monitor" "$root/site/pair" "$root/site/.well-known" "$out/"
+cp -r "$root/site/styles" "$root/site/badges" "$root/site/icons.svg" "$root/site/monitor" "$root/site/pair" "$root/site/.well-known" "$out/"
 rm -f "$out"/monitor/*.test.js
 cp "$root"/player-showcase/public/img/*.png "$out/img/"
 # Local previews get the committed thumbnail; CI replaces it with the release's.

@@ -2,7 +2,13 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
-**Última versión estable: [v1.5.0](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
+[![Última versión estable](https://img.shields.io/github/v/release/danielzunigazb/player?label=estable&color=d6a23e)](https://github.com/danielzunigazb/player/releases/latest)
+
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.danielzuniga.player%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fdanielzunigazb%2Fplayer%22%2C%22author%22%3A%22danielzunigazb%22%2C%22name%22%3A%22Player%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5EPlayer-%5C%5C%5C%5Cd.%2A%5C%5C%5C%5C.apk%24%5C%22%7D%22%7D"><img src="site/badges/obtainium.png" alt="Obtenlo con Obtainium" height="54"></a>
+
+Con [Obtainium](https://obtainium.imranr.dev) se instala desde los releases de GitHub y avisa de cada versión estable nueva.
+
+Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior); lo último de `main`, sin ser versión todavía, está en el [build dev](https://github.com/danielzunigazb/player/releases/tag/dev). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
 
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
 <p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a>: se regenera solo con cada versión estable (Remotion en <code>player-showcase/</code>), con las novedades de sus notas y pantallas dibujadas desde la app. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
@@ -32,6 +38,11 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 **Compartir**
 - Tarjetas 9:16 para historias (Instagram, Snapchat, WhatsApp…) con la carátula, o con hasta 4 líneas de la letra: mantén presionada una línea en la letra para elegirlas. En la terminal, `share` y `share lyric`
 - Aviso de versión nueva: una vez al día consulta el último release en GitHub (se puede apagar); también en *Ajustes → Acerca de*
+
+**Monitor web**
+- Maneja Player desde el navegador de la PC con el teléfono lejos: abre [player.danzuniga.xyz/monitor](https://player.danzuniga.xyz/monitor/), escanea el QR con la cámara y queda vinculado
+- Qué suena con su portada, controles, volumen del teléfono, la cola y búsqueda en tu biblioteca
+- Cifrado de punta a punta: el relay (un Worker de Cloudflare en `relay/`) une las dos conexiones y no puede leer nada ni guarda nada. Apagado hasta que vinculas; se desvincula todo en *Ajustes → Monitor web*. Detalles en [docs/monitor.md](docs/monitor.md)
 
 **Widget**
 - Widget de pantalla de inicio con carátula y controles; reproducir retoma la última cola aunque la app esté cerrada
@@ -96,14 +107,19 @@ app/src/main/java/com/danielzuniga/player/
 │                          letras (lyrics/: LRC, ID3 USLT, FLAC Vorbis, cliente LRCLIB)
 ├── playback/              PlaybackService (ExoPlayer + MediaSession), PlayerConnection,
 │                          ecualizador, guardado de la cola
+├── remote/                Monitor web: vinculación, cifrado, conexión al relay, comandos
 ├── widget/                Widget de pantalla de inicio
 └── ui/                    ViewModels, navegación, pantallas (library, detail, playlists,
                            player, equalizer, settings)
+
+relay/                     Relay del monitor web (Cloudflare Worker + Durable Objects)
+site/                      La web; site/monitor/ es el monitor
+player-showcase/           Video de presentación (Remotion)
 ```
 
 ## Compilar e instalar
 
-Requisitos: JDK 17+ y el Android SDK (API 35). Lo más fácil es abrir el proyecto en Android Studio y pulsar Run.
+Requisitos: JDK 17+ y el Android SDK (API 36). Lo más fácil es abrir el proyecto en Android Studio y pulsar Run.
 
 Desde la terminal, con el móvil conectado por USB (depuración USB activada):
 
@@ -136,4 +152,8 @@ cd player-showcase && npm ci && npm run render   # o npm run dev para Remotion S
 
 ## Web
 
-[player.danzuniga.xyz](https://player.danzuniga.xyz) sale de `site/` y la publica el workflow **Site** en GitHub Pages. Se vuelve a publicar cuando cambian el sitio, las capturas o `versionName`, y después de cada release o video nuevo, así que el enlace de descarga y el video no se quedan viejos. `site/build.sh` arma la página en `_site/` para verla en local (`python3 -m http.server -d _site`); el video solo lo agrega CI.
+[player.danzuniga.xyz](https://player.danzuniga.xyz) sale de `site/` y la publica el workflow **Site** en GitHub Pages. Se vuelve a publicar cuando cambian el sitio, las capturas o `versionName`, y después de cada release o video nuevo, así que el enlace de descarga y el video no se quedan viejos. `site/build.sh` arma la página en `_site/` para verla en local (`python3 -m http.server -d _site`); el video solo lo agrega CI. El monitor vive en `/monitor/`, y `.well-known/assetlinks.json` hace que Android abra en Player los enlaces de vinculación.
+
+## Licencia
+
+[MIT](LICENSE). Las fuentes JetBrains Mono e Instrument Serif (`res/font`) tienen su propia licencia, SIL OFL.

@@ -1,6 +1,7 @@
 {
   "name": "player-relay",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Relay for Player's web monitor (Cloudflare Worker)",
   "scripts": {
