@@ -93,7 +93,7 @@ class RemoteControlTest {
     fun editsTheQueueAndIgnoresIndexesOutsideIt() {
         control.handle(cmd("remove", "index" to 2))
         assertEquals(2, player.mediaItemCount)
-        control.handle(cmd("move", "from" to 0, "to" to 1))
+        control.handle(cmd("move", "fromIndex" to 0, "toIndex" to 1))
         assertEquals("2", player.getMediaItemAt(0).mediaId)
         control.handle(cmd("remove", "index" to 9))
         control.handle(cmd("skipTo", "index" to -1))

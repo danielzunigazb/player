@@ -1,7 +1,7 @@
 // The browser's connection to a room on the relay: seals what it sends, opens and checks what
 // arrives, and reconnects by itself (1 s, 2 s, 4 s… up to 30 s) until stop().
 
-import { Inbox, Outbox, importKey, newRoom, open, seal } from "./protocol.js";
+import { Inbox, Outbox, address, importKey, newRoom, open, seal } from "./protocol.js";
 
 export class Link {
   /**
@@ -16,6 +16,7 @@ export class Link {
     this.events = events;
     this.outbox = new Outbox(`web-${newRoom().slice(0, 8)}`);
     this.inbox = new Inbox();
+    this.phone = null;
     this.attempt = 0;
     this.stopped = false;
     this.socket = null;
@@ -61,14 +62,17 @@ export class Link {
       return;
     }
     const message = await open(this.key, data);
-    if (message && this.inbox.accept(message)) this.events.onMessage?.(message);
+    if (!message || !this.inbox.accept(message)) return;
+    // Only the phone's messages reach a web: its sender id is the one commands go to.
+    this.phone = message.from;
+    this.events.onMessage?.(message);
   }
 
   /** Sends [message] sealed; false when not connected. */
   async send(message) {
     const socket = this.socket;
     if (!socket || socket.readyState !== WebSocket.OPEN) return false;
-    socket.send(await seal(this.key, this.outbox.stamp(message)));
+    socket.send(await seal(this.key, this.outbox.stamp(address(message, this.phone))));
     return true;
   }
 

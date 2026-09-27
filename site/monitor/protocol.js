@@ -88,5 +88,14 @@ export class Inbox {
   }
 }
 
+/**
+ * [message] as sent to the phone: a command names the phone's current sender id ([phone], the
+ * last one heard) in `to`, so a phone that restarted ignores commands captured before. Until the
+ * phone has been heard there's no id: commands go without, and the phone only takes `hello`.
+ */
+export function address(message, phone) {
+  return message.type === "cmd" && phone ? { ...message, to: phone } : message;
+}
+
 /** The link a pairing QR carries; the room and key ride in the fragment, which no server sees. */
 export const pairLink = (room, key) => `https://player.danzuniga.xyz/pair#r=${room}&k=${key}`;

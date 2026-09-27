@@ -82,8 +82,9 @@ class RemoteControl(
             }
             "remove" -> command.queueIndex("index")?.let(player::removeMediaItem)
             "move" -> {
-                val from = command.queueIndex("from") ?: return null
-                val to = command.queueIndex("to") ?: return null
+                // Not "from" and "to": those name the sender and the addressee (docs/monitor.md).
+                val from = command.queueIndex("fromIndex") ?: return null
+                val to = command.queueIndex("toIndex") ?: return null
                 player.moveMediaItem(from, to)
             }
             "search" -> {
