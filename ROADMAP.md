@@ -95,6 +95,17 @@ Dependabot ya abrió los PR. No pasan el CI tal como vienen porque dependen unos
 - [ ] reorderable 2.4 → 3.1 (#18): pasa los tests, pero hay que probar a mano el arrastre en playlists y en la cola
 - [ ] AGP 8.9 → 9, Compose BOM 2026 y ESLint 10: saltos mayores en pausa en Dependabot hasta hacerlos a propósito
 
+## v1.6.0: monitor web (en curso)
+
+El dueño decidió empezarlo antes de cerrar la 1.5.2. Diseño en `docs/monitor.md`.
+- [x] Relay en Cloudflare (`relay/`): salas, límites, presencia; probado en local
+- [x] Cifrado de punta a punta, el mismo vector comprobado en la app y en el monitor
+- [x] App: vinculación por QR (App Link), conexión al relay mientras suena, comandos y estado
+- [x] Monitor (`site/monitor/`): vincular, qué suena, controles, volumen, cola y búsqueda
+- [ ] Desplegar el relay en la cuenta de Cloudflare del dueño
+- [ ] Probar en el teléfono: vincular con la cámara, controlar desde la PC, reconexión en datos móviles
+- [ ] Escena del video y notas de la versión
+
 ## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
 
 Ideas para cuando 1.5.x esté cerrada; no son compromisos:

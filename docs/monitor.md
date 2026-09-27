@@ -75,6 +75,22 @@ Del navegador (`cmd`, con `op`):
 
 - Solo se conecta mientras el servicio de reproducción vive (sonando o pausado con la
   notificación) y si el monitor está activado. Sin nada vinculado, no se conecta.
-- Reconecta sola, con espera creciente, y al volver la red.
+- Reconecta sola, con espera creciente (1 s, 2 s, 4 s… hasta 30 s).
 - Los comandos entran por el mismo reproductor que usan la notificación, el widget y Android
   Auto; la búsqueda usa la misma que la app. La biblioteca nunca sale entera del teléfono.
+
+## Desplegar el relay
+
+Una sola vez, con una cuenta gratis de Cloudflare cuyo subdominio de Workers sea `danzuniga`
+(la dirección queda `wss://player-relay.danzuniga.workers.dev`, la misma que usan
+`RELAY_URL` en `app/build.gradle.kts` y `site/monitor/protocol.js`; si el subdominio es otro,
+se cambia en esos dos lugares):
+
+```sh
+cd relay
+npx wrangler login
+npm run deploy
+```
+
+Para probar todo en local: `npm run dev` en `relay/`, y el monitor servido desde localhost con
+`?relay=ws://localhost:8787`.
