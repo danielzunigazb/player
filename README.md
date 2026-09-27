@@ -2,7 +2,9 @@
 
 Reproductor de música personal, nativo para Android. El plan completo y su avance están en [ROADMAP.md](ROADMAP.md).
 
-**Última versión estable: [v1.5.0](https://github.com/danielzunigazb/player/releases/latest)**. Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
+[![Última versión estable](https://img.shields.io/github/v/release/danielzunigazb/player?label=estable&color=d6a23e)](https://github.com/danielzunigazb/player/releases/latest)
+
+Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior); lo último de `main`, sin ser versión todavía, está en el [build dev](https://github.com/danielzunigazb/player/releases/tag/dev). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
 
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
 <p><sub>▶ <a href="https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4">Video de presentación</a>: se regenera solo con cada versión estable (Remotion en <code>player-showcase/</code>), con las novedades de sus notas y pantallas dibujadas desde la app. GitHub no reproduce en el README un mp4 de un release, así que el enlace abre o descarga el video.</sub></p>
@@ -32,6 +34,11 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 **Compartir**
 - Tarjetas 9:16 para historias (Instagram, Snapchat, WhatsApp…) con la carátula, o con hasta 4 líneas de la letra: mantén presionada una línea en la letra para elegirlas. En la terminal, `share` y `share lyric`
 - Aviso de versión nueva: una vez al día consulta el último release en GitHub (se puede apagar); también en *Ajustes → Acerca de*
+
+**Monitor web**
+- Maneja Player desde el navegador de la PC con el teléfono lejos: abre [player.danzuniga.xyz/monitor](https://player.danzuniga.xyz/monitor/), escanea el QR con la cámara y queda vinculado
+- Qué suena con su portada, controles, volumen del teléfono, la cola y búsqueda en tu biblioteca
+- Cifrado de punta a punta: el relay (un Worker de Cloudflare en `relay/`) une las dos conexiones y no puede leer nada ni guarda nada. Apagado hasta que vinculas; se desvincula todo en *Ajustes → Monitor web*. Detalles en [docs/monitor.md](docs/monitor.md)
 
 **Widget**
 - Widget de pantalla de inicio con carátula y controles; reproducir retoma la última cola aunque la app esté cerrada
@@ -96,14 +103,19 @@ app/src/main/java/com/danielzuniga/player/
 │                          letras (lyrics/: LRC, ID3 USLT, FLAC Vorbis, cliente LRCLIB)
 ├── playback/              PlaybackService (ExoPlayer + MediaSession), PlayerConnection,
 │                          ecualizador, guardado de la cola
+├── remote/                Monitor web: vinculación, cifrado, conexión al relay, comandos
 ├── widget/                Widget de pantalla de inicio
 └── ui/                    ViewModels, navegación, pantallas (library, detail, playlists,
                            player, equalizer, settings)
+
+relay/                     Relay del monitor web (Cloudflare Worker + Durable Objects)
+site/                      La web; site/monitor/ es el monitor
+player-showcase/           Video de presentación (Remotion)
 ```
 
 ## Compilar e instalar
 
-Requisitos: JDK 17+ y el Android SDK (API 35). Lo más fácil es abrir el proyecto en Android Studio y pulsar Run.
+Requisitos: JDK 17+ y el Android SDK (API 36). Lo más fácil es abrir el proyecto en Android Studio y pulsar Run.
 
 Desde la terminal, con el móvil conectado por USB (depuración USB activada):
 
@@ -136,4 +148,4 @@ cd player-showcase && npm ci && npm run render   # o npm run dev para Remotion S
 
 ## Web
 
-[player.danzuniga.xyz](https://player.danzuniga.xyz) sale de `site/` y la publica el workflow **Site** en GitHub Pages. Se vuelve a publicar cuando cambian el sitio, las capturas o `versionName`, y después de cada release o video nuevo, así que el enlace de descarga y el video no se quedan viejos. `site/build.sh` arma la página en `_site/` para verla en local (`python3 -m http.server -d _site`); el video solo lo agrega CI.
+[player.danzuniga.xyz](https://player.danzuniga.xyz) sale de `site/` y la publica el workflow **Site** en GitHub Pages. Se vuelve a publicar cuando cambian el sitio, las capturas o `versionName`, y después de cada release o video nuevo, así que el enlace de descarga y el video no se quedan viejos. `site/build.sh` arma la página en `_site/` para verla en local (`python3 -m http.server -d _site`); el video solo lo agrega CI. El monitor vive en `/monitor/`, y `.well-known/assetlinks.json` hace que Android abra en Player los enlaces de vinculación.

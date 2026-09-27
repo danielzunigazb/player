@@ -23,5 +23,6 @@ Todo lo publica CI al mergear a `main`: no hay pasos a mano.
 - `HISTORIAL-COMMITS.md` (`scripts/historial.py`) es **solo para el dueño**: se genera a pedido y se le entrega a él. Nunca se publica en releases, en la web ni en el repo.
 - Nada se publica (releases, web, repo) si el dueño no lo pidió explícitamente.
 - Madurez antes que funciones: lee el `ROADMAP.md`. Lo de "ecosistema personal" no se empieza hasta cerrar 1.5.x.
+- Una función visible nueva también va al `README.md` (sección Funciones). La versión del README es un badge que lee el último release: no se escribe a mano.
 - Las pantallas del video salen de `ShowcaseShotsTest`. Si cambia una pantalla o se agrega una función visible, actualiza ese test y las escenas de `player-showcase/src/scenes/`.
 
