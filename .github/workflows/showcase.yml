@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # After a release, render exactly the commit that was released.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -60,20 +60,20 @@ jobs:
           echo "version $VERSION · publish: $PUBLISH ${TARGET:+(and $TARGET)}"
           { echo "VERSION=$VERSION"; echo "TARGET=$TARGET"; echo "PUBLISH=$PUBLISH"; } >> "$GITHUB_ENV"
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         if: env.PUBLISH != 'none'
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
         if: env.PUBLISH != 'none'
 
       - name: Draw the app's screens
         if: env.PUBLISH != 'none'
         run: ./gradlew testDebugUnitTest --tests '*ShowcaseShotsTest*' -PshowcaseShots="$GITHUB_WORKSPACE/player-showcase/public/img" --console=plain
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         if: env.PUBLISH != 'none'
         with:
           node-version: 22
@@ -107,7 +107,7 @@ jobs:
 
       - name: Keep the render as an artifact
         if: env.PUBLISH == 'artifact'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: showcase
           path: |

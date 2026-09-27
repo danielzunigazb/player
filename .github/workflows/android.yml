@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -39,12 +39,12 @@ jobs:
           fi
           exit $FAIL
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
 
       # The release key lives in repo secrets (base64 keystore + passwords) and only a push to
       # main uses it. Branches, PRs and forks build with the debug key: the repo is public, and
@@ -77,7 +77,7 @@ jobs:
       # Release-signed only on main, debug-signed elsewhere. Kept a few days: the real downloads
       # are the releases, this is just for trying a build.
       - name: Upload APK
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: player-apk
           path: app/build/outputs/apk/release/*.apk
@@ -85,7 +85,7 @@ jobs:
 
       - name: Upload reports
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: reports
           path: app/build/reports
