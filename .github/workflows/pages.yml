@@ -1,15 +1,14 @@
 name: Site
 
 # Publishes site/ to GitHub Pages (player.danzuniga.xyz) with the current version, the app
-# screenshots and the showcase video. Rebuilds when the site or the version changes, and after
-# a new release or a re-rendered showcase so the download link and the video stay current.
+# screenshots and the showcase video. Rebuilds when the site changes, and after a new release or
+# a re-rendered showcase so the download link and the video stay current. A version bump or new
+# screenshots reach the site through the Release run, not on their own push.
 on:
   push:
     branches: [main]
     paths:
       - "site/**"
-      - "player-showcase/public/img/**"
-      - "app/build.gradle.kts"
       - ".github/workflows/pages.yml"
   workflow_run:
     workflows: ["Release", "Showcase video"]
