@@ -2,6 +2,7 @@ package com.danielzuniga.player.playback
 
 import androidx.media3.common.C
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import kotlin.random.Random
 
@@ -16,6 +17,13 @@ class QueueShuffleOrderTest {
             assertEquals(4, order.firstIndex)
             assertEquals((0 until 10).toList(), order.order().sorted())
         }
+    }
+
+    @Test
+    fun reallyShuffles() {
+        val order = QueueShuffleOrder.startingWith(first = 0, length = 20, random = Random(11)).order()
+        assertNotEquals((0 until 20).toList(), order)
+        assertNotEquals(order, QueueShuffleOrder.startingWith(first = 0, length = 20, random = Random(12)).order())
     }
 
     @Test
