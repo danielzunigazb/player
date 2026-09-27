@@ -31,15 +31,18 @@ object RemoteCrypto {
     fun isKey(text: String) = KEY.matches(text)
 
     /**
-     * The code the phone shows before pairing a browser, and the monitor under its QR, so the
-     * person can tell it's that browser the phone is about to trust: the first 6 base32
-     * characters of SHA-256 over the temporary [key]'s 32 bytes. Same vector as protocol.js.
+     * A new pairing code: what the phone shows and the person types in the monitor. 6 characters
+     * from an alphabet without look-alikes (no 0/O, 1/I/L): about 30 bits, with 3 tries.
      */
-    fun pairingCode(key: String): String {
-        val hash = MessageDigest.getInstance("SHA-256").digest(decoder.decode(key))
-        val bits = (0 until 4).fold(0) { acc, i -> (acc shl 8) or (hash[i].toInt() and 0xff) }
-        return (0 until 6).map { BASE32[(bits ushr (27 - 5 * it)) and 31] }.joinToString("")
-    }
+    fun newPairingCode(): String =
+        (1..PAIRING_CODE_LENGTH).map { PAIRING_ALPHABET[random.nextInt(PAIRING_ALPHABET.length)] }.joinToString("")
+
+    /** The same code however it was typed: uppercase, without spaces or dashes. */
+    fun normalizeCode(text: String): String = text.uppercase().filterNot { it.isWhitespace() || it == '-' }
+
+    /** Whether [typed] is [code], in time that doesn't depend on where they differ. */
+    fun codeMatches(code: String, typed: String): Boolean =
+        MessageDigest.isEqual(code.toByteArray(), normalizeCode(typed).toByteArray())
 
     fun seal(key: String, plaintext: String, iv: ByteArray = randomBytes(IV_BYTES)): String {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -74,5 +77,6 @@ object RemoteCrypto {
 
     private val ROOM = Regex("[A-Za-z0-9_-]{22}")
     private val KEY = Regex("[A-Za-z0-9_-]{43}")
-    private const val BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    const val PAIRING_CODE_LENGTH = 6
+    const val PAIRING_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 }

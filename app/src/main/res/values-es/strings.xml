@@ -158,12 +158,11 @@
     <string name="web_monitor_summary">Abre player.danzuniga.xyz/monitor en tu computadora y escanea el código con la cámara del teléfono. La conexión va cifrada de punta a punta: el relay de en medio no ve lo que escuchas.</string>
     <string name="web_monitor_unpair">Desvincular todos los navegadores</string>
     <string name="web_monitor_unpaired">Navegadores desvinculados</string>
-    <string name="web_monitor_pairing">Vinculando el navegador…</string>
     <string name="web_monitor_paired">Navegador vinculado</string>
     <string name="web_monitor_pair_failed">No se pudo vincular. Recarga la página y escanea el código nuevo.</string>
-    <string name="web_monitor_pair_title">¿Vincular este navegador?</string>
-    <string name="web_monitor_pair_body">Podrá ver lo que escuchas y controlar Player. Acepta solo si escaneaste tú el código y tu navegador muestra este mismo código debajo.</string>
-    <string name="web_monitor_pair_accept">Aceptar</string>
+    <string name="web_monitor_pair_wrong_code">Demasiados códigos equivocados: no se vinculó. Recarga la página y escanea el código nuevo.</string>
+    <string name="web_monitor_pair_title">Vincular un navegador</string>
+    <string name="web_monitor_pair_body">Escribe este código en el monitor de tu computadora</string>
     <string name="update_checking">Buscando…</string>
     <string name="update_up_to_date">Tienes la última versión</string>
     <string name="update_failed">No se pudo consultar. ¿Hay conexión?</string>

@@ -3,7 +3,8 @@
 
 import { formatTime, nextRepeat, positionNow } from "./format.js";
 import { Link } from "./link.js";
-import { RELAY, newKey, newRoom, pairLink, pairingCode } from "./protocol.js";
+import { CODE_LENGTH, START, isCode, normalizeCode, pairingStep } from "./pairing.js";
+import { RELAY, newKey, newRoom, pairLink } from "./protocol.js";
 
 const STORE = "player-monitor";
 const $ = (id) => document.getElementById(id);
@@ -48,29 +49,66 @@ function startPairing() {
   qr.addData(link);
   qr.make();
   $("qr").innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
-  $("pair-code").textContent = "";
-  pairingCode(key).then((code) => ($("pair-code").textContent = code));
   $("pair-status").textContent = "Escanea el código con la cámara del teléfono.";
+  let pairing = START;
+  renderCodeForm(pairing);
 
   const temporary = new Link(RELAY, room, key, {
     onPeers: ({ phone }) => {
-      if (phone) $("pair-status").textContent = "Teléfono encontrado, vinculando…";
+      if (phone && pairing.view === "scan") $("pair-status").textContent = "Teléfono encontrado…";
     },
     onMessage: async (message) => {
-      if (message.type !== "welcome" || !/^[A-Za-z0-9_-]{22}$/.test(message.room) || !/^[A-Za-z0-9_-]{43}$/.test(message.key)) return;
-      savePairing({ room: message.room, key: message.key, name: String(message.name || "Teléfono") });
-      await temporary.send({ type: "paired" });
-      // Let the confirmation leave before closing.
-      setTimeout(() => {
+      pairing = pairingStep(pairing, message);
+      renderCodeForm(pairing);
+      if (pairing.view === "failed") {
         temporary.stop();
-        startMonitor(loadPairing());
-      }, 300);
+      } else if (pairing.view === "paired") {
+        savePairing(pairing.pairing);
+        await temporary.send({ type: "paired" });
+        // Let the confirmation leave before closing.
+        setTimeout(() => {
+          temporary.stop();
+          startMonitor(loadPairing());
+        }, 300);
+      }
     },
     onStatus: (status) => {
-      if (status === "closed") $("pair-status").textContent = "Sin conexión con el relay, reintentando…";
+      if (status === "closed" && pairing.view !== "failed") {
+        $("pair-status").textContent = "Sin conexión con el relay, reintentando…";
+      }
     },
   });
+  $("code-form").onsubmit = (event) => {
+    event.preventDefault();
+    const code = normalizeCode($("code").value);
+    if (!isCode(code)) {
+      $("code-error").textContent = `El código tiene ${CODE_LENGTH} caracteres.`;
+      return;
+    }
+    $("code-error").textContent = "";
+    temporary.send({ type: "code", code });
+  };
   temporary.start();
+}
+
+/** The code input, once the phone asks for it (pairing.js has the states). */
+function renderCodeForm(pairing) {
+  const asking = pairing.view === "code";
+  const wasHidden = $("code-form").hidden;
+  $("code-form").hidden = !asking;
+  if (pairing.view === "scan") $("code").value = "";
+  if (asking) {
+    $("pair-status").textContent = "";
+    $("code-error").textContent = pairing.attemptsLeft
+      ? `Ese no es. ${pairing.attemptsLeft === 1 ? "Queda 1 intento" : `Quedan ${pairing.attemptsLeft} intentos`}.`
+      : "";
+    if (pairing.attemptsLeft) $("code").select();
+    if (wasHidden) $("code").focus();
+  } else if (pairing.view === "failed") {
+    $("pair-status").textContent = "Demasiados intentos: no se vinculó. Recarga la página para un código QR nuevo.";
+  } else if (pairing.view === "paired") {
+    $("pair-status").textContent = "Vinculado.";
+  }
 }
 
 // ------------------------------------------------------------------ monitor

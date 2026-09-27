@@ -2,6 +2,7 @@ package com.danielzuniga.player
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import androidx.annotation.VisibleForTesting
 import com.danielzuniga.player.data.MusicRepository
 import com.danielzuniga.player.data.SettingsStore
@@ -14,7 +15,10 @@ import com.danielzuniga.player.data.update.UpdateChecker
 import com.danielzuniga.player.data.update.UpdateRepository
 import com.danielzuniga.player.playback.AudioEffects
 import com.danielzuniga.player.playback.PlaybackStateStore
+import com.danielzuniga.player.remote.BrowserPairing
+import com.danielzuniga.player.remote.RemotePairing
 import com.danielzuniga.player.remote.RemoteStore
+import com.danielzuniga.player.ui.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,6 +56,21 @@ class AppContainer(context: Context) {
         @VisibleForTesting internal set
     /** WebSockets to the web monitor's relay; the ping notices a dead connection within a minute. */
     val relayClient: OkHttpClient by lazy { OkHttpClient.Builder().pingInterval(25, TimeUnit.SECONDS).build() }
+    /** The web monitor pairing the phone is showing a code for, if any. */
+    val browserPairing = BrowserPairing(
+        scope = appScope,
+        store = remote,
+        pair = { temporary, code, phone -> RemotePairing.pair(relayClient, relayUrl, temporary, code, phone, Build.MODEL) },
+        onResult = { result ->
+            appContext.toast(
+                when (result) {
+                    RemotePairing.Result.PAIRED -> R.string.web_monitor_paired
+                    RemotePairing.Result.WRONG_CODE -> R.string.web_monitor_pair_wrong_code
+                    RemotePairing.Result.TIMED_OUT -> R.string.web_monitor_pair_failed
+                },
+            )
+        },
+    )
     val lyrics = LyricsRepository(
         context = context,
         onlineEnabled = { settings.onlineLyrics.value },
