@@ -1,9 +1,9 @@
 name: Site
 
-# Publishes site/ to GitHub Pages (player.danzuniga.xyz) with the current version, the app
-# screenshots and the showcase video. Rebuilds when the site changes, and after a new release or
-# a re-rendered showcase so the download link and the video stay current. A version bump or new
-# screenshots reach the site through the Release run, not on their own push.
+# Publishes site/ to GitHub Pages (player.danzuniga.xyz) with the version, test count and app
+# screenshots of the latest stable release, and the showcase video. Rebuilds when the site
+# changes, and after a new release or a re-rendered showcase so the download link and the video
+# stay current. What's on main but not released yet never reaches the site.
 on:
   push:
     branches: [main]
@@ -30,6 +30,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # site/ comes from main, but what describes the app (version, test count, screenshots and
+      # thumbnail) comes from the latest stable release: main may already hold what isn't out yet.
+      - name: Take the app's details from the latest stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName) || TAG=""
+          if [ -z "$TAG" ]; then echo "::error::No stable release to publish the site from"; exit 1; fi
+          echo "latest stable release: $TAG"
+          git fetch --no-tags --depth=1 origin "refs/tags/$TAG:refs/tags/$TAG"
+          # Clear the folders first: files added on main since the release must not count.
+          rm -rf app/src/test player-showcase/public/img
+          git checkout "$TAG" -- app/build.gradle.kts app/src/test player-showcase/public/img docs/showcase-thumb.jpg
 
       - name: Assemble the site
         run: site/build.sh "$GITHUB_WORKSPACE/_site"
