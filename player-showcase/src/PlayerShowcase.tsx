@@ -4,6 +4,7 @@ import { Extras } from "./scenes/Extras";
 import { Intro } from "./scenes/Intro";
 import { Library } from "./scenes/Library";
 import { Lyrics } from "./scenes/Lyrics";
+import { Monitor } from "./scenes/Monitor";
 import { NowPlaying } from "./scenes/NowPlaying";
 import { Outro } from "./scenes/Outro";
 import { Share } from "./scenes/Share";
@@ -41,6 +42,7 @@ export const SCENES: Scene[] = [
   { id: "Lyrics", frames: 180, render: () => <Lyrics /> },
   { id: "Terminal", frames: 280, render: () => <Terminal /> },
   { id: "Share", frames: 170, render: () => <Share /> },
+  { id: "Monitor", frames: 170, render: () => <Monitor /> },
   { id: "Themes", frames: 160, render: () => <Themes /> },
   { id: "Extras", frames: 140, render: (p) => <Extras tests={p.tests} /> },
   { id: "Outro", frames: 150, render: (p) => <Outro version={p.version} /> },

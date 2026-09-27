@@ -95,15 +95,22 @@ export const Hairline: React.FC<{ at: number }> = ({ at }) => {
 };
 
 /** An app screenshot as a hard-edged panel with a 1px hairline, no device frame, no shadow. */
-export const Screen: React.FC<{ src: string; left: number; at?: number; border?: string }> = ({ src, left, at = 0.3, border = C.line }) => {
+export const Screen: React.FC<{ src: string; left: number; at?: number; border?: string; top?: number; height?: number }> = ({
+  src,
+  left,
+  at = 0.3,
+  border = C.line,
+  top = 90,
+  height = 900,
+}) => {
   const p = useEnter(at, 0.8);
   return (
     <div
       style={{
         position: "absolute",
         left,
-        top: 90,
-        height: 900,
+        top,
+        height,
         border: `1px solid ${border}`,
         overflow: "hidden",
         background: C.surface,
