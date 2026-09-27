@@ -8,6 +8,8 @@ name: Showcase video
 # - dev builds don't re-render, and nothing else writes to a release: the video only shows
 #   what has been released.
 # - pushes (main included) and manual runs just render as a check; the MP4 is an artifact.
+# - a manual run with "release" (e.g. v1.6.0) re-renders that stable release from its tag and
+#   publishes it like after a release, replacing the video it already has.
 on:
   workflow_run:
     workflows: ["Release"]
@@ -18,15 +20,21 @@ on:
       - "app/src/test/java/com/danielzuniga/player/ui/ShowcaseShotsTest.kt"
       - ".github/workflows/showcase.yml"
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Stable release to re-render and publish (e.g. v1.6.0); empty just renders a check"
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
-# A newer push replaces an older push render. Runs after a release are never cancelled, and each
-# has its own group: a dev build right after a stable one must not stop the stable video.
+# A newer push replaces an older push render. Runs that publish (after a release, or by hand for
+# a release) are never cancelled, and each has its own group: a dev build right after a stable
+# one must not stop the stable video.
 concurrency:
-  group: showcase-${{ github.event_name }}-${{ github.event.workflow_run.head_sha || github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'workflow_run' }}
+  group: showcase-${{ github.event_name }}-${{ github.event.workflow_run.head_sha || inputs.release || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_run' && !inputs.release }}
 
 jobs:
   render:
@@ -42,10 +50,20 @@ jobs:
       - name: Decide what to publish
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ inputs.release }}
         run: |
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
           TARGET=""; PUBLISH=artifact
-          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+          if [ -n "$RELEASE" ]; then
+            # Asked for by hand: that stable release, even if it already has its video.
+            if ! [[ "$RELEASE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::release must look like v1.6.0, not '$RELEASE'"; exit 1
+            fi
+            if [ "$(gh release view "$RELEASE" --json isPrerelease --jq .isPrerelease 2>/dev/null)" != false ]; then
+              echo "::error::No stable release $RELEASE"; exit 1
+            fi
+            VERSION=${RELEASE#v}; TARGET="$RELEASE"; PUBLISH=showcase
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
             # Only a stable release without its video yet; dev builds leave the video alone.
             ASSETS=$(gh release view "v$VERSION" --json assets --jq '.assets[].name' 2>/dev/null || echo "__none__")
             if [ "$ASSETS" = "__none__" ]; then
@@ -60,7 +78,8 @@ jobs:
           { echo "VERSION=$VERSION"; echo "TARGET=$TARGET"; echo "PUBLISH=$PUBLISH"; } >> "$GITHUB_ENV"
 
       # A dev build of a later commit also lands here while the stable video is missing: render
-      # what the release tag points to, never the commit that happened to trigger this run.
+      # what the release tag points to, never the commit that happened to trigger this run (or,
+      # by hand, the branch it was started from).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: env.TARGET != ''
         with:
