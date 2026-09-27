@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Inbox, Outbox, address, fromBase64Url, importKey, newKey, newRoom, open, seal, toBase64Url } from "./protocol.js";
+import { Inbox, Outbox, address, fromBase64Url, importKey, newKey, newRoom, open, pairingCode, seal, toBase64Url } from "./protocol.js";
 
 // The same vector is checked by the app's RemoteCryptoTest: both sides must agree byte for byte.
 const VECTOR = {
@@ -44,6 +44,11 @@ test("matches the vector the app checks", async () => {
   assert.deepEqual(await open(key, sealed), VECTOR.message);
 });
 
+test("derives the pairing code the app shows for the vector's key", async () => {
+  assert.equal(await pairingCode(VECTOR.key), VECTOR_PAIRING_CODE);
+  assert.match(await pairingCode(newKey()), /^[A-Z2-7]{6}$/);
+});
+
 test("drops replays, old seqs and stale messages, per sender", () => {
   const now = 1_790_000_000_000;
   const web = new Outbox("web-1");
@@ -72,4 +77,6 @@ test("commands go to the phone's current id; other messages aren't addressed", (
   assert.deepEqual(address({ type: "paired" }, "phone-bbbbbbbb"), { type: "paired" });
 });
 
+// SHA-256 of the vector key's bytes starts 63 0d cd 29: base32 "MMG42K…".
+const VECTOR_PAIRING_CODE = "MMG42K";
 const VECTOR_SEALED = "oKGio6SlpqeoqaqrnToIVDWuIIVABuq3JVbisQCOYzL80joYviIE4A3EGCPoVDCazQ9iH3O-d614WLnIazkyO0DqK0l4bjtulEC1gISMtRKaCxcv0Ky-OrHIXDAjrcnA";

@@ -166,6 +166,9 @@
     <string name="web_monitor_pairing">Pairing the browser…</string>
     <string name="web_monitor_paired">Browser paired</string>
     <string name="web_monitor_pair_failed">Couldn\'t pair. Reload the page and scan the new code.</string>
+    <string name="web_monitor_pair_title">Pair this browser?</string>
+    <string name="web_monitor_pair_body">It will be able to see what you play and control Player. Accept only if you scanned the code yourself and your browser shows this same code under it.</string>
+    <string name="web_monitor_pair_accept">Accept</string>
     <string name="update_checking">Checking…</string>
     <string name="update_up_to_date">You have the latest version</string>
     <string name="update_failed">Couldn\'t check. Is the phone online?</string>

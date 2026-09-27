@@ -26,6 +26,8 @@
   @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
   #qr { background: #efe6d6; padding: var(--space-2); border: 1px solid var(--line); aspect-ratio: 1; }
   #qr svg { display: block; width: 100%; height: auto; }
+  .pair-code { margin-top: var(--space-2); color: var(--ink-muted); font-size: var(--text-small-size); }
+  .pair-code b { display: block; color: var(--gold); font-size: 2rem; font-weight: 600; letter-spacing: 0.2em; }
   .pair ol { color: var(--ink-muted); padding-left: var(--space-4); }
   .pair li + li { margin-top: var(--space-2); }
   .status { color: var(--gold); margin-top: var(--space-4); }
@@ -75,13 +77,16 @@
 
   <main>
     <section id="pair-view" class="pair" hidden>
-      <div id="qr" role="img" aria-label="Código para vincular el teléfono"></div>
+      <div>
+        <div id="qr" role="img" aria-label="Código para vincular el teléfono"></div>
+        <p class="pair-code">Comprueba que el teléfono muestre este código <b id="pair-code"></b></p>
+      </div>
       <div>
         <p class="eyebrow">Vincular</p>
         <h1 class="whisper-lg">Tu música, desde aquí.</h1>
         <ol>
           <li>En el teléfono, abre la cámara y apunta a este código.</li>
-          <li>Ábrelo con Player. Queda vinculado y este navegador se acuerda.</li>
+          <li>Ábrelo con Player y acepta si muestra el mismo código. Queda vinculado y este navegador se acuerda.</li>
           <li>Mientras Player esté abierto o sonando, lo manejas desde aquí.</li>
         </ol>
         <p class="status" id="pair-status"></p>

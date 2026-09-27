@@ -97,5 +97,21 @@ export function address(message, phone) {
   return message.type === "cmd" && phone ? { ...message, to: phone } : message;
 }
 
+const BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+/**
+ * The code the monitor shows under the QR and the phone shows before pairing, so the person can
+ * tell it's this browser the phone is about to trust: the first 6 base32 characters of SHA-256
+ * over the temporary key's 32 bytes. RemoteCrypto.pairingCode in the app does the same; both
+ * check the same test vector.
+ */
+export async function pairingCode(key) {
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", fromBase64Url(key)));
+  const bits = ((hash[0] << 24) | (hash[1] << 16) | (hash[2] << 8) | hash[3]) >>> 0;
+  let code = "";
+  for (let i = 0; i < 6; i++) code += BASE32[(bits >>> (27 - 5 * i)) & 31];
+  return code;
+}
+
 /** The link a pairing QR carries; the room and key ride in the fragment, which no server sees. */
 export const pairLink = (room, key) => `https://player.danzuniga.xyz/pair#r=${room}&k=${key}`;

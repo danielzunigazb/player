@@ -11,7 +11,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.danielzuniga.player.remote.Pairing
+import com.danielzuniga.player.remote.RemoteCrypto
 import com.danielzuniga.player.remote.RemotePairing
+import com.danielzuniga.player.ui.PairBrowserDialog
 import com.danielzuniga.player.ui.PlayerApp
 import com.danielzuniga.player.ui.toast
 import com.danielzuniga.player.ui.theme.PlayerTheme
@@ -25,10 +27,13 @@ class MainActivity : AppCompatActivity() {
     /** Pending "play X" request from voice assistants or Android Auto. */
     private val searchRequest = MutableStateFlow<String?>(null)
 
+    /** A web monitor's pairing link, waiting for the person to accept or cancel it. */
+    private val pairRequest = MutableStateFlow<Pairing?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) handleIntent(intent)
+        if (savedInstanceState == null) handleIntent(intent) else restorePairRequest(savedInstanceState)
         val settings = appContainer.settings
         // At most once a day, and only if the automatic check is on.
         appContainer.updates.checkIfDue()
@@ -40,8 +45,19 @@ class MainActivity : AppCompatActivity() {
             val themeMode by settings.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
             val search by searchRequest.collectAsStateWithLifecycle()
+            val pairing by pairRequest.collectAsStateWithLifecycle()
             PlayerTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
                 PlayerApp(searchRequest = search, onSearchHandled = { searchRequest.value = null })
+                pairing?.let { temporary ->
+                    PairBrowserDialog(
+                        code = RemoteCrypto.pairingCode(temporary.key),
+                        onAccept = {
+                            pairRequest.value = null
+                            pairBrowser(temporary)
+                        },
+                        onDismiss = { pairRequest.value = null },
+                    )
+                }
             }
         }
     }
@@ -51,16 +67,34 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pairRequest.value?.let {
+            outState.putString(STATE_PAIR_ROOM, it.room)
+            outState.putString(STATE_PAIR_KEY, it.key)
+        }
+    }
+
+    /** A rotation keeps the pairing question open. */
+    private fun restorePairRequest(state: Bundle) {
+        val room = state.getString(STATE_PAIR_ROOM) ?: return
+        val key = state.getString(STATE_PAIR_KEY) ?: return
+        if (RemoteCrypto.isRoom(room) && RemoteCrypto.isKey(key)) pairRequest.value = Pairing(room, key)
+    }
+
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
             searchRequest.value = intent.getStringExtra(SearchManager.QUERY).orEmpty()
         }
         if (intent?.action == Intent.ACTION_VIEW) {
-            RemotePairing.parse(intent.data, intent.getStringExtra("r"), intent.getStringExtra("k"))?.let(::pairBrowser)
+            // Asked first (PairBrowserDialog): any page or message can hand the phone such a
+            // link, and the browser behind it would get this phone's room.
+            RemotePairing.parse(intent.data, intent.getStringExtra("r"), intent.getStringExtra("k"))
+                ?.let { pairRequest.value = it }
         }
     }
 
-    /** The camera opened a web monitor's pairing QR: hand that browser this phone's room. */
+    /** The person accepted a web monitor's pairing link: hand that browser this phone's room. */
     private fun pairBrowser(temporary: Pairing) {
         val container = appContainer
         val app = applicationContext
@@ -77,5 +111,10 @@ class MainActivity : AppCompatActivity() {
             if (paired) container.remote.setEnabled(true)
             app.toast(if (paired) R.string.web_monitor_paired else R.string.web_monitor_pair_failed)
         }
+    }
+
+    private companion object {
+        const val STATE_PAIR_ROOM = "pair_room"
+        const val STATE_PAIR_KEY = "pair_key"
     }
 }

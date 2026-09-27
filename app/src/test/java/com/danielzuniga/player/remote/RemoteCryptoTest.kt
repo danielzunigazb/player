@@ -26,6 +26,13 @@ class RemoteCryptoTest {
     }
 
     @Test
+    fun derivesThePairingCodeTheMonitorShows() {
+        // Same as VECTOR_PAIRING_CODE in site/monitor/protocol.test.js.
+        assertEquals("MMG42K", RemoteCrypto.pairingCode(key))
+        assertTrue(RemoteCrypto.pairingCode(RemoteCrypto.newKey()).matches(Regex("[A-Z2-7]{6}")))
+    }
+
+    @Test
     fun roundTripsWithARandomIv() {
         val k = RemoteCrypto.newKey()
         val a = RemoteCrypto.seal(k, "hola")

@@ -3,7 +3,7 @@
 
 import { formatTime, nextRepeat, positionNow } from "./format.js";
 import { Link } from "./link.js";
-import { RELAY, newKey, newRoom, pairLink } from "./protocol.js";
+import { RELAY, newKey, newRoom, pairLink, pairingCode } from "./protocol.js";
 
 const STORE = "player-monitor";
 const $ = (id) => document.getElementById(id);
@@ -48,6 +48,8 @@ function startPairing() {
   qr.addData(link);
   qr.make();
   $("qr").innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  $("pair-code").textContent = "";
+  pairingCode(key).then((code) => ($("pair-code").textContent = code));
   $("pair-status").textContent = "Escanea el código con la cámara del teléfono.";
 
   const temporary = new Link(RELAY, room, key, {

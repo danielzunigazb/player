@@ -1,5 +1,6 @@
 package com.danielzuniga.player.remote
 
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.AEADBadTagException
@@ -28,6 +29,17 @@ object RemoteCrypto {
 
     fun isRoom(text: String) = ROOM.matches(text)
     fun isKey(text: String) = KEY.matches(text)
+
+    /**
+     * The code the phone shows before pairing a browser, and the monitor under its QR, so the
+     * person can tell it's that browser the phone is about to trust: the first 6 base32
+     * characters of SHA-256 over the temporary [key]'s 32 bytes. Same vector as protocol.js.
+     */
+    fun pairingCode(key: String): String {
+        val hash = MessageDigest.getInstance("SHA-256").digest(decoder.decode(key))
+        val bits = (0 until 4).fold(0) { acc, i -> (acc shl 8) or (hash[i].toInt() and 0xff) }
+        return (0 until 6).map { BASE32[(bits ushr (27 - 5 * it)) and 31] }.joinToString("")
+    }
 
     fun seal(key: String, plaintext: String, iv: ByteArray = randomBytes(IV_BYTES)): String {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -62,4 +74,5 @@ object RemoteCrypto {
 
     private val ROOM = Regex("[A-Za-z0-9_-]{22}")
     private val KEY = Regex("[A-Za-z0-9_-]{43}")
+    private const val BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 }
