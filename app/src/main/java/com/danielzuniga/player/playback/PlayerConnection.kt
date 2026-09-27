@@ -136,14 +136,7 @@ class PlayerConnection(context: Context) {
     }
 
     fun togglePlayPause() {
-        val player = controller ?: return
-        if (player.isPlaying) {
-            player.pause()
-        } else {
-            if (player.playbackState == Player.STATE_IDLE) player.prepare()
-            if (player.playbackState == Player.STATE_ENDED) player.seekToDefaultPosition(0)
-            player.play()
-        }
+        controller?.playOrPause()
     }
 
     fun next() {
@@ -270,4 +263,16 @@ class PlayerConnection(context: Context) {
         artist = mediaMetadata.artist?.toString().orEmpty(),
         artworkUri = mediaMetadata.artworkUri,
     )
+}
+
+/** Play or pause; a queue that already ended starts over from its first song. */
+internal fun Player.playOrPause() {
+    if (isPlaying) {
+        pause()
+    } else {
+        if (playbackState == Player.STATE_IDLE) prepare()
+        // First in play order: while shuffling, list index 0 can be anywhere in it.
+        if (playbackState == Player.STATE_ENDED) seekToDefaultPosition(currentTimeline.getFirstWindowIndex(shuffleModeEnabled))
+        play()
+    }
 }
