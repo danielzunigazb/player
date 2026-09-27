@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -29,14 +30,14 @@ val requireReleaseKey = System.getenv("PLAYER_REQUIRE_RELEASE_KEY") == "true"
 
 android {
     namespace = "com.danielzuniga.player"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.danielzuniga.player"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.5.1"
+        versionCode = 11
+        versionName = "1.5.2"
         // Dev builds from main are "1.5.0-dev.<run>" (set by the Release workflow).
         System.getenv("PLAYER_VERSION_SUFFIX")?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = it }
         // The web monitor's relay (relay/, a Cloudflare Worker); same address as site/monitor/protocol.js.
@@ -78,10 +79,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
@@ -103,6 +100,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
