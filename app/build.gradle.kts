@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -29,7 +30,7 @@ val requireReleaseKey = System.getenv("PLAYER_REQUIRE_RELEASE_KEY") == "true"
 
 android {
     namespace = "com.danielzuniga.player"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.danielzuniga.player"
@@ -76,10 +77,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
@@ -101,6 +98,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
