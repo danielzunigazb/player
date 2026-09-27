@@ -19,8 +19,14 @@ navegador ──wss──▶ relay (Cloudflare) ◀──wss── Player (solo 
 1. El monitor crea una sala temporal `P` y una clave `kP` y muestra un QR con
    `https://player.danzuniga.xyz/pair#r=P&k=kP`. El fragmento (`#…`) nunca sale del navegador
    ni del teléfono: el relay no lo ve.
-2. La cámara del teléfono abre el enlace en Player (App Link). Player entra a `P` y manda,
-   cifrado con `kP`, la sala `R` y la clave `K` del teléfono y su nombre.
+2. La cámara del teléfono abre el enlace en Player (App Link; o el botón "Abrir en Player" de
+   `/pair`, que pasa `P` y `kP` como extras del intent). Antes de nada, Player pregunta
+   "¿Vincular este navegador?" con un **código de vinculación** que el monitor también muestra
+   bajo el QR: los 6 primeros caracteres base32 (`A–Z2–7`) del SHA-256 de los 32 bytes de `kP`
+   (`RemoteCrypto.pairingCode` y `pairingCode` en `protocol.js`, con el mismo vector de prueba).
+   Solo si la persona acepta, Player entra a `P` y manda, cifrado con `kP`, la sala `R` y la
+   clave `K` del teléfono y su nombre. Cancelar no hace nada: sin la pregunta, cualquier enlace
+   de vinculación que alguien le hiciera abrir le entregaría la sala del teléfono.
 3. El monitor guarda `R` y `K`, deja `P` y se conecta a `R`. Desde entonces conecta solo.
 
 Cada teléfono tiene una sola sala `R` con su clave `K`; todos los navegadores vinculados la
@@ -52,9 +58,18 @@ AES-256-GCM con la clave de la sala. En el cable, cada mensaje es texto base64ur
 { "from": "<id del emisor>", "seq": 41, "ts": 1790000000000, "type": "…", … }
 ```
 
-- `from`: id al azar de cada conexión (el teléfono usa `phone`).
+- `from`: id al azar de cada conexión: `web-<8 caracteres>` en el navegador,
+  `phone-<8 caracteres>` en el teléfono, nuevo cada vez que el teléfono arma su conexión (al
+  reiniciar la app o el servicio). Si el teléfono usara siempre el mismo id, una pestaña abierta
+  que ya vio su `seq` 500 ignoraría al teléfono reiniciado, que vuelve a contar desde 1.
+- `to`: solo en los `cmd`, el id del teléfono al que va (el `from` del último mensaje que el
+  navegador recibió de él). El teléfono ignora los `cmd` con otro `to` o sin él, salvo `hello`,
+  que solo pide el estado y pasa siempre: puede salir antes de que el navegador oiga al
+  teléfono. Así, comandos capturados antes de que el teléfono reiniciara (su `Inbox` nuevo no
+  los recuerda) no le sirven a un relay malicioso para repetirlos.
 - `seq`: sube de a uno por emisor; el receptor descarta lo que no sea mayor al último visto.
-- `ts`: hora del emisor; se descarta lo que tenga más de 2 minutos de diferencia.
+- `ts`: hora del emisor; se descarta lo que tenga más de 2 minutos de diferencia, hacia atrás
+  o hacia adelante.
 - Un mensaje que no se descifra (otra clave, alterado) se ignora sin más.
 
 ## Mensajes
@@ -71,9 +86,12 @@ Del teléfono:
 Del navegador (`cmd`, con `op`):
 
 `play`, `pause`, `next`, `previous`, `seek` (`positionMs`), `shuffle` (`on`),
-`repeat` (`mode`), `volume` (`value`), `skipTo` (`index`), `remove` (`index`),
-`move` (`from`, `to`), `search` (`query`), `playSongs` (`ids`, `index`), `playNext` (`ids`),
-`addToQueue` (`ids`), `hello` (pide un `state` y un `art` ya).
+`repeat` (`mode`), `volume` (`value`), `skipTo` (`index`), `remove` (`index`; nunca la
+canción actual, como en la cola de la app), `move` (`fromIndex`, `toIndex`: `from` y `to` son
+del sobre), `search` (`query`), `playSongs` (`ids`, `index`), `playNext` (`ids`),
+`addToQueue` (`ids`), `hello` (pide un `state` y un `art` ya). Todos llevan `to`, salvo
+quizá `hello`. `play` con la cola terminada vuelve a la primera canción en orden de
+reproducción (la del orden aleatorio, si está activo).
 
 ## Del lado del teléfono
 
