@@ -3,7 +3,7 @@
 
 import { formatTime, nextRepeat, positionNow } from "./format.js";
 import { Link } from "./link.js";
-import { CODE_LENGTH, START, isCode, normalizeCode, pairingStep } from "./pairing.js";
+import { START, codeHint, normalizeCode, pairingStep } from "./pairing.js";
 import { RELAY, newKey, newRoom, pairLink } from "./protocol.js";
 
 const STORE = "player-monitor";
@@ -81,8 +81,10 @@ function startPairing() {
   $("code-form").onsubmit = (event) => {
     event.preventDefault();
     const code = normalizeCode($("code").value);
-    if (!isCode(code)) {
-      $("code-error").textContent = `El código tiene ${CODE_LENGTH} caracteres.`;
+    // A code the phone can't have shown gets a hint, not one of the 3 tries.
+    const hint = codeHint(code);
+    if (hint) {
+      $("code-error").textContent = hint;
       return;
     }
     $("code-error").textContent = "";
@@ -99,6 +101,8 @@ function renderCodeForm(pairing) {
   if (pairing.view === "scan") $("code").value = "";
   if (asking) {
     $("pair-status").textContent = "";
+    // This page's own address, to compare with the one the phone names.
+    $("code-host").textContent = (location.host + location.pathname).replace(/\/$/, "");
     $("code-error").textContent = pairing.attemptsLeft
       ? `Ese no es. ${pairing.attemptsLeft === 1 ? "Queda 1 intento" : `Quedan ${pairing.attemptsLeft} intentos`}.`
       : "";

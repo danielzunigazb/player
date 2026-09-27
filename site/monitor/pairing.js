@@ -5,10 +5,25 @@
 
 export const CODE_LENGTH = 6;
 
+/** The characters the phone draws codes from (RemoteCrypto.PAIRING_ALPHABET): no 0/O/1/I/L. */
+export const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
 /** The code however it was typed: uppercase, without spaces or dashes. The phone does the same. */
 export const normalizeCode = (text) => String(text).toUpperCase().replace(/[\s-]/g, "");
 
-export const isCode = (code) => new RegExp(`^[A-Z0-9]{${CODE_LENGTH}}$`).test(code);
+export const isCode = (code) => code.length === CODE_LENGTH && [...code].every((c) => CODE_ALPHABET.includes(c));
+
+/**
+ * Why a normalized [code] can't be the phone's, as a hint to show instead of spending one of the
+ * 3 tries; null when it could be.
+ */
+export function codeHint(code) {
+  if (code.length !== CODE_LENGTH) return `El código tiene ${CODE_LENGTH} caracteres.`;
+  const lookAlikes = [...new Set([...code].filter((c) => "0O1IL".includes(c)))];
+  if (lookAlikes.length) return `El teléfono nunca muestra ${lookAlikes.join(", ")}: revisa ${lookAlikes.length === 1 ? "ese carácter" : "esos caracteres"}.`;
+  if (!isCode(code)) return "Solo letras y números, como en el teléfono.";
+  return null;
+}
 
 /** Before the phone has scanned the QR. */
 export const START = { view: "scan" };

@@ -32,6 +32,8 @@
   #code { width: 9ch; background: var(--surface); border: 1px solid var(--line); color: var(--gold); font-family: var(--font-mono); font-size: 2rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; padding: var(--space-2); }
   #code:focus { outline: none; border-color: var(--gold); }
   .code-error { color: var(--gold); margin-top: var(--space-2); min-height: 1.5em; }
+  .code-where { color: var(--ink-muted); font-size: var(--text-small-size); }
+  .code-where b { color: var(--ink); font-weight: 600; }
   .pair ol { color: var(--ink-muted); padding-left: var(--space-4); }
   .pair li + li { margin-top: var(--space-2); }
   .status { color: var(--gold); margin-top: var(--space-4); }
@@ -98,6 +100,7 @@
             <button class="btn btn-primary" type="submit">Vincular</button>
           </div>
           <p class="code-error" id="code-error" role="alert"></p>
+          <p class="code-where">Estás en <b id="code-host"></b>. El teléfono te pide escribirlo solo en player.danzuniga.xyz/monitor: si la dirección no es esa, no lo escribas.</p>
         </form>
         <p class="presence">Cifrado de punta a punta: el relay que los une no puede ver lo que escuchas.</p>
       </div>

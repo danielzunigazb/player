@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { START, isCode, normalizeCode, pairingStep } from "./pairing.js";
+import { CODE_ALPHABET, START, codeHint, isCode, normalizeCode, pairingStep } from "./pairing.js";
 
 const room = "AAAAAAAAAAAAAAAAAAAAAA";
 const key = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8";
@@ -44,4 +44,14 @@ test("reads the code however it was typed", () => {
   assert.equal(isCode("AB3K9"), false);
   assert.equal(isCode("AB3K9Z7"), false);
   assert.equal(isCode("AB3K9!"), false);
+});
+
+test("only codes the phone could show pass; look-alikes get a hint, not a try", () => {
+  assert.equal(CODE_ALPHABET, "ABCDEFGHJKMNPQRSTUVWXYZ23456789");
+  for (const c of "0O1IL") assert.equal(isCode(`AB3K9${c}`), false, c);
+  assert.equal(codeHint("AB3K9Z"), null);
+  assert.match(codeHint("AB3K9O"), /nunca muestra O/);
+  assert.match(codeHint("0B3K1Z"), /nunca muestra 0, 1/);
+  assert.match(codeHint("AB3K9"), /6 caracteres/);
+  assert.match(codeHint("AB3K9Ñ"), /letras y números/);
 });
