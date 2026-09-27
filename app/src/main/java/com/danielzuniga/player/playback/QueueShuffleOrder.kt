@@ -18,12 +18,17 @@ import kotlin.random.Random
 class QueueShuffleOrder private constructor(
     private val order: IntArray,
     private val random: Random,
+    /**
+     * Shuffled for a whole new list rather than kept from the previous one; the service then
+     * reshuffles it from the song that plays. Removing or inserting items keeps the order.
+     */
+    val fresh: Boolean = false,
 ) : ShuffleOrder {
 
     /** Where each list index sits in the play order. */
     private val position = IntArray(order.size).also { pos -> order.forEachIndexed { i, index -> pos[index] = i } }
 
-    constructor(length: Int, random: Random = Random.Default) : this(shuffled(length, random), random)
+    constructor(length: Int, random: Random = Random.Default) : this(shuffled(length, random), random, fresh = true)
 
     override fun getLength(): Int = order.size
 
@@ -56,13 +61,23 @@ class QueueShuffleOrder private constructor(
         return QueueShuffleOrder(kept.toIntArray(), random)
     }
 
+    // Moving items in the list keeps each one where it was in the play order.
+    override fun cloneAndMove(indexFrom: Int, indexToExclusive: Int, newIndexFrom: Int): ShuffleOrder {
+        val list = (0 until order.size).toMutableList()
+        val moved = list.subList(indexFrom, indexToExclusive).toList()
+        list.removeAll(moved)
+        list.addAll(newIndexFrom, moved)
+        val newIndex = IntArray(order.size).also { new -> list.forEachIndexed { i, old -> new[old] = i } }
+        return QueueShuffleOrder(order.map { newIndex[it] }.toIntArray(), random)
+    }
+
     override fun cloneAndClear(): ShuffleOrder = QueueShuffleOrder(IntArray(0), random)
 
     /** Play order as list indices, first to last. */
     internal fun toList(): List<Int> = order.toList()
 
     companion object {
-        /** A fresh shuffle of [length] items that plays [first] before all the others. */
+        /** A new shuffle of [length] items that plays [first] before all the others. */
         fun startingWith(first: Int, length: Int, random: Random = Random.Default): QueueShuffleOrder {
             val rest = (0 until length).filter { it != first }.shuffled(random)
             val order = if (first in 0 until length) listOf(first) + rest else rest

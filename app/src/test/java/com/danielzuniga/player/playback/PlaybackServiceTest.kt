@@ -4,10 +4,16 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Looper
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.SilenceMediaSource
+import androidx.media3.session.MediaController
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionToken
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.data.Song
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -20,6 +26,7 @@ import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 /** Drives the real service through PlayerConnection, as the UI does. */
@@ -35,6 +42,12 @@ class PlaybackServiceTest {
     @Before
     fun setUp() {
         val app = ApplicationProvider.getApplicationContext<Application>()
+        // The service resolves every queue against the library before the player gets it, and the
+        // first scan in a JVM opens Room's SQLite: seconds on a cold Robolectric JVM. The controller
+        // shows its own guess of the queue meanwhile, so a wait on the service's play order raced
+        // that scan. Scanning first leaves the tests waiting only on the player.
+        app.appContainer.musicRepository.load()
+        awaitUntil(timeoutMs = 30_000) { app.appContainer.musicRepository.hasScanned.value }
         service = Robolectric.buildService(PlaybackService::class.java).create()
         shadowOf(app).setComponentNameAndServiceForBindService(
             ComponentName(app, PlaybackService::class.java),
@@ -102,6 +115,54 @@ class PlaybackServiceTest {
     }
 
     @Test
+    fun removingTheCurrentSongWhileShufflingKeepsTheOrder() {
+        val many = (1L..20L).map { Song(it, "Song $it", "Artist", "Album", 1, 180_000) }
+        connection.play(many, startIndex = 7, shuffle = true)
+        // Only the service's shuffle puts song 8 first; the controller's own guess keeps list order.
+        awaitUntil { connection.queue.value.items.size == 20 && connection.queue.value.items.first().songId == 8L }
+        val order = connection.queue.value.items.map { it.songId }
+        repeat(3) { connection.next() }
+        awaitUntil { connection.state.value.nowPlaying?.songId == order[3] }
+
+        // Android Auto or the web monitor can remove the song that's playing; the app's queue can't.
+        connection.removeQueueItem(connection.queue.value.currentIndex)
+        awaitUntil { connection.queue.value.items.size == 19 }
+
+        // Same order without it: the songs already played don't come back after the current one.
+        assertEquals(order - order[3], connection.queue.value.items.map { it.songId })
+        assertEquals(order[4], connection.state.value.nowPlaying?.songId)
+    }
+
+    @Test
+    fun playAfterAShuffledQueueEndedStartsFromItsFirstSong() {
+        // Short silences instead of songs: Robolectric can play these to their end.
+        val session = service.get().sessions.single()
+        val exo = session.player.let { (it as? ForwardingPlayer)?.wrappedPlayer ?: it } as ExoPlayer
+        exo.shuffleModeEnabled = true
+        exo.setMediaSources(List(4) { SilenceMediaSource(50_000) }, 2, 0)
+        exo.prepare()
+        exo.play()
+        // The player's clock only moves when the looper's time does.
+        awaitUntil { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(20)); exo.playbackState == Player.STATE_ENDED }
+        val first = exo.currentTimeline.getFirstWindowIndex(true)
+        assertEquals(2, first)
+        assertTrue(exo.currentMediaItemIndex != first)
+
+        // Play from the notification, lock screen, Bluetooth or Android Auto, not the app's button.
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val future = MediaController.Builder(app, SessionToken(app, ComponentName(app, PlaybackService::class.java))).buildAsync()
+        awaitUntil { future.isDone }
+        val controller = future.get()
+        try {
+            controller.play()
+            awaitUntil { exo.playbackState != Player.STATE_ENDED }
+            assertEquals(first, exo.currentMediaItemIndex)
+        } finally {
+            controller.release()
+        }
+    }
+
+    @Test
     fun sleepTimerRoundTripsThroughSessionExtras() {
         connection.play(songs, startIndex = 0)
         awaitUntil { connection.queue.value.items.isNotEmpty() }
@@ -136,8 +197,10 @@ class PlaybackServiceTest {
         awaitUntil { connection.state.value.repeatMode == Player.REPEAT_MODE_ONE }
     }
 
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(200) {
+    /** Turns the main looper until [condition] holds; the budget is only a ceiling. */
+    private fun awaitUntil(timeoutMs: Long = 10_000, condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             if (condition()) return
             Thread.sleep(10)
