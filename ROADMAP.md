@@ -109,6 +109,16 @@ Diseño en `docs/monitor.md`.
 - [x] Escena del video y notas de la versión
 - [ ] Más adelante: reordenar la cola arrastrando desde el navegador (el protocolo ya lo tiene)
 
+## v1.6.1: revisión independiente
+
+Agentes revisores (seguridad, Android, tests, publicación) y un verificador de hallazgos; cada arreglo, revisado de nuevo por otro agente.
+- [x] Vincular con el código que muestra el teléfono; tres intentos; aviso si se vincula un navegador
+- [x] Mensajes dirigidos al teléfono de la sesión; el relay descarta avisos falsos
+- [x] Cola aleatoria estable al quitar o mover; play al terminarla empieza desde el principio
+- [x] CI: firma solo desde main, permisos mínimos, acciones fijadas, la web solo con lo publicado
+- [ ] Mover los secrets de firma a un Environment de GitHub restringido a main y tags v*
+- [ ] Cloudflare: comando de despliegue `npm run deploy` (corre los tests del relay antes)
+
 ## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
 
 Ideas para cuando 1.5.x esté cerrada; no son compromisos:
