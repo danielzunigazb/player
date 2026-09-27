@@ -16,16 +16,20 @@ import kotlin.coroutines.resume
  */
 object RemotePairing {
 
-    /** The temporary room and key in a pairing link, or null when it isn't one. */
-    fun parse(uri: Uri?): Pairing? {
+    /**
+     * The temporary room and key a pairing link carries, or null when it isn't one. The camera
+     * opens the QR's link with them in the fragment; the site's "Abrir en Player" button sends
+     * the same link with them as the extras [room] and [key].
+     */
+    fun parse(uri: Uri?, room: String? = null, key: String? = null): Pairing? {
         if (uri == null || uri.scheme != "https" || uri.host != HOST || uri.path?.trimEnd('/') != "/pair") return null
         val params = uri.fragment.orEmpty().split('&').mapNotNull {
             val (name, value) = it.split('=', limit = 2).takeIf { parts -> parts.size == 2 } ?: return@mapNotNull null
             name to value
         }.toMap()
-        val room = params["r"] ?: return null
-        val key = params["k"] ?: return null
-        return Pairing(room, key).takeIf { RemoteCrypto.isRoom(room) && RemoteCrypto.isKey(key) }
+        val r = params["r"] ?: room ?: return null
+        val k = params["k"] ?: key ?: return null
+        return Pairing(r, k).takeIf { RemoteCrypto.isRoom(r) && RemoteCrypto.isKey(k) }
     }
 
     /** True once the browser confirms it has this phone's room. */

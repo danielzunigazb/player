@@ -127,4 +127,12 @@ class RemotePairingTest {
         assertNull(RemotePairing.parse(Uri.parse("https://player.danzuniga.xyz/pair")))
         assertNull(RemotePairing.parse(null))
     }
+
+    @Test
+    fun readsTheRoomAndKeyFromExtrasWhenTheSiteHandsTheLinkOver() {
+        val link = Uri.parse("https://player.danzuniga.xyz/pair")
+        assertEquals(temporary, RemotePairing.parse(link, temporary.room, temporary.key))
+        assertNull(RemotePairing.parse(link, "short", temporary.key))
+        assertNull(RemotePairing.parse(Uri.parse("https://evil.example/pair"), temporary.room, temporary.key))
+    }
 }

@@ -55,7 +55,9 @@ class MainActivity : AppCompatActivity() {
         if (intent?.action == MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
             searchRequest.value = intent.getStringExtra(SearchManager.QUERY).orEmpty()
         }
-        if (intent?.action == Intent.ACTION_VIEW) RemotePairing.parse(intent.data)?.let(::pairBrowser)
+        if (intent?.action == Intent.ACTION_VIEW) {
+            RemotePairing.parse(intent.data, intent.getStringExtra("r"), intent.getStringExtra("k"))?.let(::pairBrowser)
+        }
     }
 
     /** The camera opened a web monitor's pairing QR: hand that browser this phone's room. */
