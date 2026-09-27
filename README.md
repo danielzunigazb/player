@@ -4,6 +4,10 @@ Reproductor de música personal, nativo para Android. El plan completo y su avan
 
 [![Última versión estable](https://img.shields.io/github/v/release/danielzunigazb/player?label=estable&color=d6a23e)](https://github.com/danielzunigazb/player/releases/latest)
 
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.danielzuniga.player%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fdanielzunigazb%2Fplayer%22%2C%22author%22%3A%22danielzunigazb%22%2C%22name%22%3A%22Player%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5EPlayer-%5C%5C%5C%5Cd.%2A%5C%5C%5C%5C.apk%24%5C%22%7D%22%7D"><img src="site/badges/obtainium.png" alt="Obtenlo con Obtainium" height="54"></a>
+
+Con [Obtainium](https://obtainium.imranr.dev) se instala desde los releases de GitHub y avisa de cada versión estable nueva.
+
 Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releases/latest) (Android 8.0 o superior); lo último de `main`, sin ser versión todavía, está en el [build dev](https://github.com/danielzunigazb/player/releases/tag/dev). Web del proyecto: **[player.danzuniga.xyz](https://player.danzuniga.xyz)**.
 
 [![Video de presentación](docs/showcase-thumb.jpg)](https://github.com/danielzunigazb/player/releases/download/showcase-v1/PlayerShowcase.mp4)
