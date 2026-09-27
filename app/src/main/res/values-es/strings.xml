@@ -153,6 +153,14 @@
     <string name="check_updates">Buscar actualizaciones</string>
     <string name="auto_updates">Buscar actualizaciones automáticamente</string>
     <string name="auto_updates_summary">Una vez al día pregunta a GitHub por la última versión de Player. No envía nada sobre ti ni tu música.</string>
+    <string name="web_monitor">Monitor web</string>
+    <string name="web_monitor_toggle">Controlar desde el navegador</string>
+    <string name="web_monitor_summary">Abre player.danzuniga.xyz/monitor en tu computadora y escanea el código con la cámara del teléfono. La conexión va cifrada de punta a punta: el relay de en medio no ve lo que escuchas.</string>
+    <string name="web_monitor_unpair">Desvincular todos los navegadores</string>
+    <string name="web_monitor_unpaired">Navegadores desvinculados</string>
+    <string name="web_monitor_pairing">Vinculando el navegador…</string>
+    <string name="web_monitor_paired">Navegador vinculado</string>
+    <string name="web_monitor_pair_failed">No se pudo vincular. Recarga la página y escanea el código nuevo.</string>
     <string name="update_checking">Buscando…</string>
     <string name="update_up_to_date">Tienes la última versión</string>
     <string name="update_failed">No se pudo consultar. ¿Hay conexión?</string>

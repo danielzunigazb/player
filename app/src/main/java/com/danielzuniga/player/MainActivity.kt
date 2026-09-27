@@ -2,6 +2,7 @@ package com.danielzuniga.player
 
 import android.app.SearchManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.compose.setContent
@@ -9,9 +10,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.danielzuniga.player.remote.Pairing
+import com.danielzuniga.player.remote.RemotePairing
 import com.danielzuniga.player.ui.PlayerApp
+import com.danielzuniga.player.ui.toast
 import com.danielzuniga.player.ui.theme.PlayerTheme
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 // AppCompatActivity (not plain ComponentActivity) so the in-app language applies on Android 12
 // and older too; see AppLanguage.
@@ -49,6 +54,26 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
             searchRequest.value = intent.getStringExtra(SearchManager.QUERY).orEmpty()
+        }
+        if (intent?.action == Intent.ACTION_VIEW) RemotePairing.parse(intent.data)?.let(::pairBrowser)
+    }
+
+    /** The camera opened a web monitor's pairing QR: hand that browser this phone's room. */
+    private fun pairBrowser(temporary: Pairing) {
+        val container = appContainer
+        val app = applicationContext
+        app.toast(R.string.web_monitor_pairing)
+        // App scope: pairing takes a few seconds and must finish even if the screen rotates.
+        container.appScope.launch {
+            val paired = RemotePairing.pair(
+                client = container.relayClient,
+                relayUrl = container.relayUrl,
+                temporary = temporary,
+                phone = container.remote.pairingOrCreate(),
+                name = Build.MODEL,
+            )
+            if (paired) container.remote.setEnabled(true)
+            app.toast(if (paired) R.string.web_monitor_paired else R.string.web_monitor_pair_failed)
         }
     }
 }

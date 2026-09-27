@@ -13,9 +13,12 @@ import com.danielzuniga.player.data.update.UpdateChecker
 import com.danielzuniga.player.data.update.UpdateRepository
 import com.danielzuniga.player.playback.AudioEffects
 import com.danielzuniga.player.playback.PlaybackStateStore
+import com.danielzuniga.player.remote.RemoteStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 
 /** App-wide singletons shared by the UI and the playback service (same process). */
 class AppContainer(context: Context) {
@@ -42,6 +45,10 @@ class AppContainer(context: Context) {
         autoCheck = { settings.autoUpdates.value },
         scope = appScope,
     )
+    val remote = RemoteStore(context)
+    val relayUrl = BuildConfig.RELAY_URL
+    /** WebSockets to the web monitor's relay; the ping notices a dead connection within a minute. */
+    val relayClient: OkHttpClient by lazy { OkHttpClient.Builder().pingInterval(25, TimeUnit.SECONDS).build() }
     val lyrics = LyricsRepository(
         context = context,
         onlineEnabled = { settings.onlineLyrics.value },

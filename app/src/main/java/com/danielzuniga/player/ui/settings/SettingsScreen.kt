@@ -53,6 +53,10 @@ fun SettingsScreen(
     updateState: UpdateState,
     onCheckUpdates: () -> Unit,
     onRescan: () -> Unit,
+    remoteEnabled: Boolean,
+    onRemoteEnabled: (Boolean) -> Unit,
+    remotePaired: Boolean,
+    onUnpairAll: () -> Unit,
     bottomPadding: PaddingValues,
 ) {
     Scaffold(
@@ -142,6 +146,28 @@ fun SettingsScreen(
                     checked = state.onlineLyrics,
                     onChange = onOnlineLyrics,
                 )
+            }
+
+            item { Section(stringResource(R.string.web_monitor)) }
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.web_monitor_toggle),
+                    summary = stringResource(R.string.web_monitor_summary),
+                    checked = remoteEnabled,
+                    onChange = onRemoteEnabled,
+                )
+            }
+            if (remotePaired) {
+                item {
+                    Text(
+                        stringResource(R.string.web_monitor_unpair),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onUnpairAll)
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                    )
+                }
             }
 
             item { Section(stringResource(R.string.about)) }

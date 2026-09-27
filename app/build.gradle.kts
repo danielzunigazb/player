@@ -39,6 +39,8 @@ android {
         versionName = "1.5.1"
         // Dev builds from main are "1.5.0-dev.<run>" (set by the Release workflow).
         System.getenv("PLAYER_VERSION_SUFFIX")?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = it }
+        // The web monitor's relay (relay/, a Cloudflare Worker); same address as site/monitor/protocol.js.
+        buildConfigField("String", "RELAY_URL", "\"wss://player-relay.danzuniga.workers.dev\"")
     }
 
     signingConfigs {
@@ -130,6 +132,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.reorderable)
+    implementation(libs.okhttp)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -140,6 +143,7 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

@@ -251,7 +251,8 @@ class ShowcaseShotsTest {
                 onBack = {}, onThemeMode = {}, language = AppLanguage.SYSTEM, onLanguage = {},
                 onDynamicColor = {}, onOnlineLyrics = {}, onMinDuration = {}, onOnlineTags = {},
                 autoUpdates = true, onAutoUpdates = {}, updateState = UpdateState.UpToDate, onCheckUpdates = {},
-                onRescan = {}, bottomPadding = PaddingValues(),
+                onRescan = {}, remoteEnabled = true, onRemoteEnabled = {}, remotePaired = true, onUnpairAll = {},
+                bottomPadding = PaddingValues(),
             )
         }
         shot("settings")

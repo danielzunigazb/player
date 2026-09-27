@@ -466,6 +466,8 @@ private fun AppNavHost(
             val container = LocalContext.current.appContainer
             val autoUpdates by container.settings.autoUpdates.collectAsStateWithLifecycle()
             val updateState by container.updates.state.collectAsStateWithLifecycle()
+            val remoteEnabled by container.remote.enabled.collectAsStateWithLifecycle()
+            val remotePairing by container.remote.pairing.collectAsStateWithLifecycle()
             val vm: SettingsViewModel = viewModel(factory = AppViewModels.Factory)
             val state by vm.state.collectAsStateWithLifecycle()
             SettingsScreen(
@@ -484,6 +486,13 @@ private fun AppNavHost(
                 updateState = updateState,
                 onCheckUpdates = container.updates::checkNow,
                 onRescan = vm::rescan,
+                remoteEnabled = remoteEnabled,
+                onRemoteEnabled = container.remote::setEnabled,
+                remotePaired = remotePairing != null,
+                onUnpairAll = {
+                    container.remote.unpairAll()
+                    container.appContext.toast(R.string.web_monitor_unpaired)
+                },
                 bottomPadding = bottomPadding,
             )
         }

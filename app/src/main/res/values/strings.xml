@@ -158,6 +158,14 @@
     <string name="check_updates">Check for updates</string>
     <string name="auto_updates">Check for updates automatically</string>
     <string name="auto_updates_summary">Once a day, asks GitHub for the latest version of Player. Nothing about you or your music is sent.</string>
+    <string name="web_monitor">Web monitor</string>
+    <string name="web_monitor_toggle">Control from the browser</string>
+    <string name="web_monitor_summary">Open player.danzuniga.xyz/monitor on your computer and scan the code with your phone\'s camera. The connection is end-to-end encrypted: the relay in between can\'t see what you play.</string>
+    <string name="web_monitor_unpair">Unpair all browsers</string>
+    <string name="web_monitor_unpaired">Browsers unpaired</string>
+    <string name="web_monitor_pairing">Pairing the browser…</string>
+    <string name="web_monitor_paired">Browser paired</string>
+    <string name="web_monitor_pair_failed">Couldn\'t pair. Reload the page and scan the new code.</string>
     <string name="update_checking">Checking…</string>
     <string name="update_up_to_date">You have the latest version</string>
     <string name="update_failed">Couldn\'t check. Is the phone online?</string>
