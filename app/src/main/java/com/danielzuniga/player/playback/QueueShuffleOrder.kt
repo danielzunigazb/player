@@ -61,6 +61,16 @@ class QueueShuffleOrder private constructor(
         return QueueShuffleOrder(kept.toIntArray(), random)
     }
 
+    // Moving items in the list keeps each one where it was in the play order.
+    override fun cloneAndMove(indexFrom: Int, indexToExclusive: Int, newIndexFrom: Int): ShuffleOrder {
+        val list = (0 until order.size).toMutableList()
+        val moved = list.subList(indexFrom, indexToExclusive).toList()
+        list.removeAll(moved)
+        list.addAll(newIndexFrom, moved)
+        val newIndex = IntArray(order.size).also { new -> list.forEachIndexed { i, old -> new[old] = i } }
+        return QueueShuffleOrder(order.map { newIndex[it] }.toIntArray(), random)
+    }
+
     override fun cloneAndClear(): ShuffleOrder = QueueShuffleOrder(IntArray(0), random)
 
     /** Play order as list indices, first to last. */

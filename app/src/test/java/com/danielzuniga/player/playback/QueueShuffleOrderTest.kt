@@ -78,5 +78,16 @@ class QueueShuffleOrderTest {
         assertFalse((start.cloneAndRemove(2, 3) as QueueShuffleOrder).fresh)
         assertFalse((start.cloneAndInsert(3, 1) as QueueShuffleOrder).fresh)
         assertFalse((start.cloneAndInsert(6, 1) as QueueShuffleOrder).fresh)
+        assertFalse((start.cloneAndMove(0, 2, 3) as QueueShuffleOrder).fresh)
+    }
+
+    @Test
+    fun movingItemsKeepsThePlayOrder() {
+        val songs = listOf("a", "b", "c", "d", "e", "f")
+        val start = QueueShuffleOrder.startingWith(first = 2, length = 6, random = Random(17))
+        // Songs 1 and 2 ("b", "c") move so the first lands at index 3: a d e b c f.
+        val moved = start.cloneAndMove(1, 3, 3) as QueueShuffleOrder
+        val movedSongs = listOf("a", "d", "e", "b", "c", "f")
+        assertEquals(start.order().map { songs[it] }, moved.order().map { movedSongs[it] })
     }
 }
