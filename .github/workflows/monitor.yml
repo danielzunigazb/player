@@ -1,12 +1,13 @@
 name: Monitor
 
 # The web monitor's relay (relay/) and page (site/monitor/): their tests, including the
-# encryption vector the app checks too (RemoteCryptoTest).
+# encryption vector the app checks too (RemoteCryptoTest), and that the app, the page and the
+# pairing links agree on the relay address and the signing certificate.
 on:
   push:
-    paths: ["relay/**", "site/**", ".github/workflows/monitor.yml"]
+    paths: ["relay/**", "site/**", "app/build.gradle.kts", ".github/workflows/release.yml", ".github/workflows/monitor.yml"]
   pull_request:
-    paths: ["relay/**", "site/**", ".github/workflows/monitor.yml"]
+    paths: ["relay/**", "site/**", "app/build.gradle.kts", ".github/workflows/release.yml", ".github/workflows/monitor.yml"]
   workflow_dispatch:
 
 permissions:
@@ -29,3 +30,27 @@ jobs:
         run: node --test
       - name: Site builds with the monitor
         run: site/build.sh "$RUNNER_TEMP/_site" && test -f "$RUNNER_TEMP/_site/monitor/index.html" && test -f "$RUNNER_TEMP/_site/.well-known/assetlinks.json"
+      # Android only opens the pairing links for this package signed with this certificate: the
+      # one Release checks every APK against.
+      - name: Pairing links match the app
+        run: |
+          EXPECTED=$(sed -n 's/^ *EXPECTED_CERT_SHA256: *//p' .github/workflows/release.yml)
+          python3 - "$EXPECTED" <<'PY'
+          import json, sys
+          target = json.load(open("site/.well-known/assetlinks.json"))[0]["target"]
+          package = target["package_name"]
+          cert = target["sha256_cert_fingerprints"][0].replace(":", "").lower()
+          print(f"package: {package} · certificate: {cert}")
+          ok = package == "com.danielzuniga.player" and cert == sys.argv[1]
+          if not ok:
+              print(f"::error file=site/.well-known/assetlinks.json::expected com.danielzuniga.player and {sys.argv[1]}")
+          sys.exit(0 if ok else 1)
+          PY
+      - name: App and page use the same relay
+        run: |
+          APP=$(sed -n 's/.*"RELAY_URL", "\\"\([^\\]*\)\\"".*/\1/p' app/build.gradle.kts)
+          PAGE=$(sed -n 's/.*localRelay() ?? "\([^"]*\)".*/\1/p' site/monitor/protocol.js)
+          echo "app: $APP · page: $PAGE"
+          if [ -z "$APP" ] || [ "$APP" != "$PAGE" ]; then
+            echo "::error::RELAY_URL in app/build.gradle.kts and site/monitor/protocol.js differ"; exit 1
+          fi
