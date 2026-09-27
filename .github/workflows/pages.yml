@@ -35,6 +35,9 @@ jobs:
       - name: Assemble the site
         run: site/build.sh "$GITHUB_WORKSPACE/_site"
 
+      - name: Pairing links are verifiable
+        run: test -f _site/.well-known/assetlinks.json
+
       - name: Add the showcase video
         env:
           GH_TOKEN: ${{ github.token }}
@@ -44,6 +47,8 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+          # .well-known/assetlinks.json lets Player open the monitor's pairing links.
+          include-hidden-files: true
 
   deploy:
     needs: build
