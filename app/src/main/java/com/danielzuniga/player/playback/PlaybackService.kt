@@ -11,6 +11,7 @@ import androidx.annotation.OptIn
 import androidx.core.os.bundleOf
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -105,7 +106,7 @@ class PlaybackService : MediaLibraryService() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        mediaSession = MediaLibrarySession.Builder(this, player, SessionCallback())
+        mediaSession = MediaLibrarySession.Builder(this, SessionPlayer(player), SessionCallback())
             .setSessionActivity(openAppIntent)
             .build()
 
@@ -441,5 +442,23 @@ class PlaybackService : MediaLibraryService() {
             val from = (page.toLong() * pageSize).coerceAtMost(size.toLong()).toInt()
             return ImmutableList.copyOf(subList(from, minOf(from + pageSize, size)))
         }
+    }
+}
+
+/**
+ * The player as controllers see it. Media3 answers play on an ended queue (notification, lock
+ * screen, Bluetooth, Android Auto) by going back to the start of the last song; like the app's
+ * own button, this starts over from the first song in play order instead.
+ */
+@OptIn(UnstableApi::class)
+private class SessionPlayer(player: Player) : ForwardingPlayer(player) {
+    // What Media3 calls before play() when the queue ended.
+    override fun seekToDefaultPosition() {
+        if (playbackState == Player.STATE_ENDED && !currentTimeline.isEmpty) restartFromFirst() else super.seekToDefaultPosition()
+    }
+
+    override fun play() {
+        if (playbackState == Player.STATE_ENDED) restartFromFirst()
+        super.play()
     }
 }
