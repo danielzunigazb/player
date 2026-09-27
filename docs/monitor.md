@@ -28,18 +28,38 @@ navegador ──wss──▶ relay (Cloudflare) ◀──wss── Player (solo 
 3. Player compara el código en tiempo constante. Si es el suyo, manda, cifrado con `kP`, la sala
    `R` y la clave `K` del teléfono y su nombre (`welcome`), y espera que el monitor confirme
    (`paired`). Si no, contesta `wrongCode` con los intentos que quedan; al tercero equivocado
-   manda `pairFailed` y deja `P`. Nada de `R` ni `K` sale antes del código correcto.
+   manda `pairFailed` y deja `P`. Nada de `R` ni `K` sale antes del código correcto. Los
+   intentos cuentan para toda la vinculación: reconectar no da más. Si el navegador reconecta
+   antes del código se le vuelve a pedir; después, recibe `welcome` otra vez. Un `code` que llega
+   después del correcto se ignora.
 4. El monitor guarda `R` y `K`, deja `P` y se conecta a `R`. Desde entonces conecta solo.
 
 Por qué el teléfono muestra el código y la persona lo escribe en la computadora (y no al revés):
-quien fabrique un enlace de vinculación y se lo haga abrir a alguien tiene `P` y `kP`, pero nunca
-ve la pantalla del teléfono. Con 31⁶ códigos posibles y 3 intentos, adivinar no sirve.
+quien fabrique un enlace de vinculación y se lo haga abrir a alguien tiene `P` y `kP`, pero no
+ve la pantalla del teléfono. Con 31⁶ códigos posibles y 3 intentos, adivinar no sirve. El
+monitor valida contra ese alfabeto antes de mandar: un `0` por una `O` recibe una pista, no gasta
+un intento.
 
-Del lado del teléfono (`BrowserPairing`, a nivel de app): el diálogo sigue abierto mientras
-espera, y sobrevive a una rotación con el mismo código. Se cierra al vincular (aviso "Navegador
-vinculado"), con Cancelar (deja `P` sin decir nada más), a los 2 minutos o tras 3 códigos
-equivocados (con un aviso). Otro enlace de vinculación que llegue mientras hay uno pendiente se
-ignora: no cambia el navegador detrás del código en pantalla.
+Del lado del teléfono (`BrowserPairing`, a nivel de app): el diálogo pide escribir el código
+solo en `player.danzuniga.xyz/monitor`, en la computadora, y no decírselo a nadie. Sigue abierto
+mientras espera, y sobrevive a una rotación con el mismo código. Se cierra al vincular, con
+Cancelar (deja `P` sin decir nada más), a los 2 minutos o tras 3 códigos equivocados (con un
+aviso). Otro enlace de vinculación que llegue mientras hay uno pendiente se ignora: no cambia el
+navegador detrás del código en pantalla.
+
+En cuanto sale `welcome` la vinculación está hecha, confirme o no el navegador: `paired` no
+agrega seguridad, y una página que recibió la sala y nunca confirma la tiene igual. Por eso,
+desde ahí, ni el plazo ni Cancelar la deshacen: el monitor se activa y el teléfono avisa
+"Navegador vinculado. Si no fuiste tú, usa Desvincular todos los navegadores en Ajustes."
+
+### Riesgo que queda
+
+El código es secreto frente a quien tiene la sala temporal del QR, no frente a la persona. Una
+página parecida que muestre su propio QR, o alguien que pida el código ("dime los 6 caracteres
+que te salen"), puede lograr una vinculación si la persona lo escribe ahí o lo dice. Lo que lo
+mitiga: el aviso del diálogo (dónde escribirlo, no decírselo a nadie), el monitor muestra su
+propia dirección junto al campo para compararla, el aviso al vincular hace notar una
+vinculación inesperada, y "Desvincular todos los navegadores" la corta (sala y clave nuevas).
 
 Cada teléfono tiene una sola sala `R` con su clave `K`; todos los navegadores vinculados la
 comparten. "Desvincular todo" en Player genera `R` y `K` nuevas: los navegadores viejos se
