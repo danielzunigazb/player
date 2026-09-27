@@ -8,6 +8,7 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaSessionService
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.data.Song
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -35,6 +36,12 @@ class PlaybackServiceTest {
     @Before
     fun setUp() {
         val app = ApplicationProvider.getApplicationContext<Application>()
+        // The service resolves every queue against the library before the player gets it, and the
+        // first scan in a JVM opens Room's SQLite: seconds on a cold Robolectric JVM. The controller
+        // shows its own guess of the queue meanwhile, so a wait on the service's play order raced
+        // that scan. Scanning first leaves the tests waiting only on the player.
+        app.appContainer.musicRepository.load()
+        awaitUntil(timeoutMs = 30_000) { app.appContainer.musicRepository.hasScanned.value }
         service = Robolectric.buildService(PlaybackService::class.java).create()
         shadowOf(app).setComponentNameAndServiceForBindService(
             ComponentName(app, PlaybackService::class.java),
@@ -136,8 +143,9 @@ class PlaybackServiceTest {
         awaitUntil { connection.state.value.repeatMode == Player.REPEAT_MODE_ONE }
     }
 
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(200) {
+    private fun awaitUntil(timeoutMs: Long = 2_000, condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             if (condition()) return
             Thread.sleep(10)
