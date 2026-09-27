@@ -5,8 +5,11 @@ name: Showcase video
 #   (docs/releases/v<version>.md), fresh screens drawn from the app itself (ShowcaseShotsTest)
 #   and the current test count, then attached to that release and to showcase-v1, which the
 #   README and the website link. The Site workflow redeploys when this one finishes.
-# - dev builds don't re-render; editing player-showcase/ on main does, to showcase-v1 only.
-# - on other branches, player-showcase/ changes just render as a check (the MP4 is an artifact).
+# - dev builds don't re-render, and nothing else writes to a release: the video only shows
+#   what has been released.
+# - pushes (main included) and manual runs just render as a check; the MP4 is an artifact.
+# - a manual run with "release" (e.g. v1.6.0) re-renders that stable release from its tag and
+#   publishes it like after a release, replacing the video it already has.
 on:
   workflow_run:
     workflows: ["Release"]
@@ -17,15 +20,21 @@ on:
       - "app/src/test/java/com/danielzuniga/player/ui/ShowcaseShotsTest.kt"
       - ".github/workflows/showcase.yml"
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Stable release to re-render and publish (e.g. v1.6.0); empty just renders a check"
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
-# One queue per trigger: a newer push replaces an older push render, but the run after a release
-# (often a no-op) must never cancel a push that has real work, or the other way round.
+# A newer push replaces an older push render. Runs that publish (after a release, or by hand for
+# a release) are never cancelled, and each has its own group: a dev build right after a stable
+# one must not stop the stable video.
 concurrency:
-  group: showcase-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: showcase-${{ github.event_name }}-${{ github.event.workflow_run.head_sha || inputs.release || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_run' && !inputs.release }}
 
 jobs:
   render:
@@ -33,18 +42,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # After a release, render exactly the commit that was released.
+          # After a release, the commit Release ran on: only to read its version.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Decide what to publish
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ inputs.release }}
         run: |
           VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
-          TARGET=""; PUBLISH=showcase
-          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+          TARGET=""; PUBLISH=artifact
+          if [ -n "$RELEASE" ]; then
+            # Asked for by hand: that stable release, even if it already has its video.
+            if ! [[ "$RELEASE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::release must look like v1.6.0, not '$RELEASE'"; exit 1
+            fi
+            if [ "$(gh release view "$RELEASE" --json isPrerelease --jq .isPrerelease 2>/dev/null)" != false ]; then
+              echo "::error::No stable release $RELEASE"; exit 1
+            fi
+            VERSION=${RELEASE#v}; TARGET="$RELEASE"; PUBLISH=showcase
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
             # Only a stable release without its video yet; dev builds leave the video alone.
             ASSETS=$(gh release view "v$VERSION" --json assets --jq '.assets[].name' 2>/dev/null || echo "__none__")
             if [ "$ASSETS" = "__none__" ]; then
@@ -52,28 +71,34 @@ jobs:
             elif echo "$ASSETS" | grep -qx "PlayerShowcase.mp4"; then
               echo "v$VERSION already has its video."; PUBLISH=none
             else
-              TARGET="v$VERSION"
+              TARGET="v$VERSION"; PUBLISH=showcase
             fi
-          elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
-            PUBLISH=artifact
           fi
           echo "version $VERSION · publish: $PUBLISH ${TARGET:+(and $TARGET)}"
           { echo "VERSION=$VERSION"; echo "TARGET=$TARGET"; echo "PUBLISH=$PUBLISH"; } >> "$GITHUB_ENV"
 
-      - uses: actions/setup-java@v6
+      # A dev build of a later commit also lands here while the stable video is missing: render
+      # what the release tag points to, never the commit that happened to trigger this run (or,
+      # by hand, the branch it was started from).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: env.TARGET != ''
+        with:
+          ref: refs/tags/${{ env.TARGET }}
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         if: env.PUBLISH != 'none'
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
         if: env.PUBLISH != 'none'
 
       - name: Draw the app's screens
         if: env.PUBLISH != 'none'
         run: ./gradlew testDebugUnitTest --tests '*ShowcaseShotsTest*' -PshowcaseShots="$GITHUB_WORKSPACE/player-showcase/public/img" --console=plain
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         if: env.PUBLISH != 'none'
         with:
           node-version: 22
@@ -98,7 +123,7 @@ jobs:
             gh release upload showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg --clobber
           else
             gh release create showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg \
-              --target "$GITHUB_SHA" --title "Video de presentación" \
+              --target "$(git rev-parse HEAD)" --title "Video de presentación" \
               --notes "Renderizado automáticamente desde player-showcase/ con Remotion."
           fi
           if [ -n "$TARGET" ]; then
@@ -107,7 +132,7 @@ jobs:
 
       - name: Keep the render as an artifact
         if: env.PUBLISH == 'artifact'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: showcase
           path: |

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Writes HISTORIAL-COMMITS.md: every commit with date, author, message, files and lines, grouped by
 the app version in each commit and by published release. For the owner only: run it by hand and
-keep the result private; it is never attached to releases, the website or the repo.
+keep the result private; it is never attached to releases, the website or the repo. By default it
+goes to dist/HISTORIAL-COMMITS.md (dist/ is gitignored, and so is HISTORIAL-COMMITS.md anywhere).
 
     python3 scripts/historial.py [salida.md]
 """
-import subprocess, datetime, sys
+import subprocess, datetime, sys, os
 def git(*a): return subprocess.run(['git',*a],capture_output=True,text=True,check=True).stdout
 SEP='\x1e'; FS='\x1f'
 fmt=FS.join(['%H','%h','%an','%ae','%ad','%cn','%cd','%P','%s','%b'])+SEP
@@ -113,6 +114,7 @@ f'Repositorio `danielzunigazb/player`, del commit más reciente al más antiguo.
 f'- **Líneas:** +{tot_add} / −{tot_del} (suma de los commits sin merge; `main` guarda la misma obra en commits squash, así que hay trabajo contado dos veces)','',
 'Fechas y horas en hora de Colombia (UTC−5).','',
 *releases_md(),*versions_md(),'## Índice','','| # | Fecha | Commit | Versión | Autor | Título | Archivos | Líneas |','|---:|---|---|---|---|---|---:|---|',*rows,'','## Detalle','',*details]
-out=sys.argv[1] if len(sys.argv)>1 else 'HISTORIAL-COMMITS.md'
+out=sys.argv[1] if len(sys.argv)>1 else 'dist/HISTORIAL-COMMITS.md'
+os.makedirs(os.path.dirname(out) or '.',exist_ok=True)
 open(out,'w').write('\n'.join(md)+'\n')
 print(f'{out}: {n} commits, {merges} merges')

@@ -32,17 +32,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # The full history: every stable release carries the commit log.
+          # The full history: the changelog dates each version by the commit that added its notes.
           fetch-depth: 0
+          # Nothing here pushes: releases go through the API (gh, with GH_TOKEN).
+          persist-credentials: false
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
 
       - name: Decide stable or dev
         env:
@@ -52,6 +54,10 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
               echo "::error::Tag $GITHUB_REF_NAME does not match versionName $VERSION"; exit 1
+            fi
+            # A tag publishes what main has, never a commit that wasn't merged.
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::Tag $GITHUB_REF_NAME points to a commit that isn't on main"; exit 1
             fi
             CHANNEL=stable
           elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
@@ -65,6 +71,10 @@ jobs:
             SUFFIX="-dev.$GITHUB_RUN_NUMBER"
           else
             SUFFIX=""
+            # The notes are the release page, the video's news and the changelog: no notes, no
+            # release, and better to know before building.
+            NOTES="docs/releases/v$VERSION.md"
+            if [ ! -s "$NOTES" ]; then echo "::error::Missing release notes $NOTES"; exit 1; fi
           fi
           echo "channel: $CHANNEL · version: $VERSION$SUFFIX"
           {
@@ -105,19 +115,6 @@ jobs:
           sha256sum "$NAME" > "$NAME.sha256"
           echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
 
-      # The commit log was attached to releases by mistake: take it off wherever it is and put
-      # back the 1.5.1 notes without it. Idempotent, safe to remove once it has run.
-      - name: Remove the commit log from published releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for tag in $(gh release list --limit 100 --json tagName --jq '.[].tagName'); do
-            if gh release view "$tag" --json assets --jq '.assets[].name' | grep -qx "HISTORIAL-COMMITS.md"; then
-              gh release delete-asset "$tag" HISTORIAL-COMMITS.md --yes && echo "removed from $tag"
-            fi
-          done
-          gh release edit v1.5.1 --notes-file docs/releases/v1.5.1.md
-
       - name: Publish stable release
         if: env.CHANNEL == 'stable'
         env:
@@ -125,11 +122,10 @@ jobs:
         run: |
           TAG="v$VERSION"
           NOTES="docs/releases/$TAG.md"
-          if [ -f "$NOTES" ]; then NOTES_ARGS=(--notes-file "$NOTES"); else NOTES_ARGS=(--generate-notes); fi
-          # The changelog (all release notes) and the commit log travel with each version.
+          # The changelog (all release notes) travels with each version.
           python3 scripts/changelog.py CHANGELOG.md
           gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" CHANGELOG.md \
-            --target "$GITHUB_SHA" --title "Player $VERSION" --latest "${NOTES_ARGS[@]}"
+            --target "$GITHUB_SHA" --title "Player $VERSION" --latest --notes-file "$NOTES"
           # A dev build older than this stable one would only confuse; the next push to main
           # starts a new one.
           gh release delete "$DEV_TAG" --cleanup-tag --yes 2>/dev/null || true

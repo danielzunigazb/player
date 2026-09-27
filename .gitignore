@@ -17,3 +17,5 @@ keystore.properties
 *.lineage
 dist/
 _site/
+# The commit log (scripts/historial.py) is for the owner only: never in the repo.
+HISTORIAL-COMMITS.md

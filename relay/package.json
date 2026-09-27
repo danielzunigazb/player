@@ -7,6 +7,6 @@
   "scripts": {
     "test": "node --test",
     "dev": "npx -y wrangler@4 dev",
-    "deploy": "npx -y wrangler@4 deploy"
+    "deploy": "node --test && npx -y wrangler@4 deploy"
   }
 }
