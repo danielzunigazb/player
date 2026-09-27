@@ -26,7 +26,8 @@ navegador ──wss──▶ relay (Cloudflare) ◀──wss── Player (solo 
    (`RemoteCrypto.pairingCode` y `pairingCode` en `protocol.js`, con el mismo vector de prueba).
    Solo si la persona acepta, Player entra a `P` y manda, cifrado con `kP`, la sala `R` y la
    clave `K` del teléfono y su nombre. Cancelar no hace nada: sin la pregunta, cualquier enlace
-   de vinculación que alguien le hiciera abrir le entregaría la sala del teléfono.
+   de vinculación que alguien le hiciera abrir le entregaría la sala del teléfono. Otro enlace
+   que llegue mientras la pregunta está abierta se ignora: no cambia el código a medio mirar.
 3. El monitor guarda `R` y `K`, deja `P` y se conecta a `R`. Desde entonces conecta solo.
 
 Cada teléfono tiene una sola sala `R` con su clave `K`; todos los navegadores vinculados la
@@ -66,7 +67,8 @@ AES-256-GCM con la clave de la sala. En el cable, cada mensaje es texto base64ur
   navegador recibió de él). El teléfono ignora los `cmd` con otro `to` o sin él, salvo `hello`,
   que solo pide el estado y pasa siempre: puede salir antes de que el navegador oiga al
   teléfono. Así, comandos capturados antes de que el teléfono reiniciara (su `Inbox` nuevo no
-  los recuerda) no le sirven a un relay malicioso para repetirlos.
+  los recuerda) no le sirven a un relay malicioso para repetirlos. El navegador olvida ese id
+  cuando el relay dice que el teléfono se fue, y deja los controles apagados hasta volver a oírlo.
 - `seq`: sube de a uno por emisor; el receptor descarta lo que no sea mayor al último visto.
 - `ts`: hora del emisor; se descarta lo que tenga más de 2 minutos de diferencia, hacia atrás
   o hacia adelante.
