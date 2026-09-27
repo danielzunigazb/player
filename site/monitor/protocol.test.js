@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Inbox, Outbox, address, fromBase64Url, importKey, newKey, newRoom, open, pairingCode, seal, toBase64Url } from "./protocol.js";
+import { Inbox, MAX_SKEW_MS, Outbox, address, fromBase64Url, importKey, newKey, newRoom, open, pairingCode, seal, toBase64Url } from "./protocol.js";
 
 // The same vector is checked by the app's RemoteCryptoTest: both sides must agree byte for byte.
 const VECTOR = {
@@ -61,6 +61,13 @@ test("drops replays, old seqs and stale messages, per sender", () => {
   assert.equal(inbox.accept(new Outbox("web-2").stamp({}, now), now), true);
   assert.equal(inbox.accept(new Outbox("web-3").stamp({}, now - 3 * 60 * 1000), now), false);
   assert.equal(inbox.accept({ type: "cmd" }, now), false);
+});
+
+test("drops messages from more than 2 minutes in the future", () => {
+  const now = 1_790_000_000_000;
+  const inbox = new Inbox();
+  assert.equal(inbox.accept(new Outbox("phone-a").stamp({}, now + MAX_SKEW_MS + 1), now), false);
+  assert.equal(inbox.accept(new Outbox("phone-b").stamp({}, now + MAX_SKEW_MS), now), true);
 });
 
 test("a phone that restarted under a new id is heard again from seq 1", () => {
