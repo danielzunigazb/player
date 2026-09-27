@@ -156,7 +156,8 @@ function renderQueue() {
   list.replaceChildren();
   for (const [offset, item] of (state?.queue ?? []).entries()) {
     const row = document.createElement("li");
-    row.dataset.current = String(state.queueStart + offset === state.index);
+    const current = state.queueStart + offset === state.index;
+    row.dataset.current = String(current);
     const play = document.createElement("button");
     play.className = "queue-song";
     play.innerHTML = `<span class="t"></span><span class="a"></span>`;
@@ -168,6 +169,8 @@ function renderQueue() {
     remove.textContent = "×";
     remove.setAttribute("aria-label", `Quitar ${item.title} de la cola`);
     remove.onclick = () => send("remove", { index: item.i });
+    // The song that's playing stays, like in the app's queue (the phone ignores it anyway).
+    remove.hidden = current;
     row.append(play, remove);
     list.append(row);
   }
