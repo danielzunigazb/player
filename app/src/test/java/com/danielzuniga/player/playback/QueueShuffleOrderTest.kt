@@ -2,7 +2,9 @@ package com.danielzuniga.player.playback
 
 import androidx.media3.common.C
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.random.Random
 
@@ -66,5 +68,15 @@ class QueueShuffleOrderTest {
     fun aNewQueueIsShuffledFromEmpty() {
         val order = QueueShuffleOrder(0, Random(9)).cloneAndInsert(0, 8) as QueueShuffleOrder
         assertEquals((0 until 8).toList(), order.order().sorted())
+        assertTrue(order.fresh)
+    }
+
+    @Test
+    fun onlyANewListIsFresh() {
+        val start = QueueShuffleOrder.startingWith(first = 2, length = 6, random = Random(13))
+        assertFalse(start.fresh)
+        assertFalse((start.cloneAndRemove(2, 3) as QueueShuffleOrder).fresh)
+        assertFalse((start.cloneAndInsert(3, 1) as QueueShuffleOrder).fresh)
+        assertFalse((start.cloneAndInsert(6, 1) as QueueShuffleOrder).fresh)
     }
 }

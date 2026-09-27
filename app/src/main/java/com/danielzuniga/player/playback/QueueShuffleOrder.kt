@@ -18,12 +18,17 @@ import kotlin.random.Random
 class QueueShuffleOrder private constructor(
     private val order: IntArray,
     private val random: Random,
+    /**
+     * Shuffled for a whole new list rather than kept from the previous one; the service then
+     * reshuffles it from the song that plays. Removing or inserting items keeps the order.
+     */
+    val fresh: Boolean = false,
 ) : ShuffleOrder {
 
     /** Where each list index sits in the play order. */
     private val position = IntArray(order.size).also { pos -> order.forEachIndexed { i, index -> pos[index] = i } }
 
-    constructor(length: Int, random: Random = Random.Default) : this(shuffled(length, random), random)
+    constructor(length: Int, random: Random = Random.Default) : this(shuffled(length, random), random, fresh = true)
 
     override fun getLength(): Int = order.size
 
@@ -62,7 +67,7 @@ class QueueShuffleOrder private constructor(
     internal fun toList(): List<Int> = order.toList()
 
     companion object {
-        /** A fresh shuffle of [length] items that plays [first] before all the others. */
+        /** A new shuffle of [length] items that plays [first] before all the others. */
         fun startingWith(first: Int, length: Int, random: Random = Random.Default): QueueShuffleOrder {
             val rest = (0 until length).filter { it != first }.shuffled(random)
             val order = if (first in 0 until length) listOf(first) + rest else rest

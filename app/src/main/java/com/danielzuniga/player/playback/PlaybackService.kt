@@ -281,8 +281,13 @@ class PlaybackService : MediaLibraryService() {
             if (shuffleModeEnabled) shuffleFromCurrent()
         }
 
+        // Only for a new list: removing the song that plays also moves to another one, and a
+        // reshuffle then would bring back the songs already played.
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED && player.shuffleModeEnabled) {
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
+                player.shuffleModeEnabled &&
+                (player.shuffleOrder as? QueueShuffleOrder)?.fresh == true
+            ) {
                 shuffleFromCurrent()
             }
         }

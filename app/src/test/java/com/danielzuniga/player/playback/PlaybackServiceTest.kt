@@ -109,6 +109,24 @@ class PlaybackServiceTest {
     }
 
     @Test
+    fun removingTheCurrentSongWhileShufflingKeepsTheOrder() {
+        val many = (1L..20L).map { Song(it, "Song $it", "Artist", "Album", 1, 180_000) }
+        connection.play(many, startIndex = 0, shuffle = true)
+        awaitUntil { connection.queue.value.items.size == 20 && connection.queue.value.items.first().songId == 1L }
+        val order = connection.queue.value.items.map { it.songId }
+        repeat(3) { connection.next() }
+        awaitUntil { connection.state.value.nowPlaying?.songId == order[3] }
+
+        // Android Auto or the web monitor can remove the song that's playing; the app's queue can't.
+        connection.removeQueueItem(connection.queue.value.currentIndex)
+        awaitUntil { connection.queue.value.items.size == 19 }
+
+        // Same order without it: the songs already played don't come back after the current one.
+        assertEquals(order - order[3], connection.queue.value.items.map { it.songId })
+        assertEquals(order[4], connection.state.value.nowPlaying?.songId)
+    }
+
+    @Test
     fun sleepTimerRoundTripsThroughSessionExtras() {
         connection.play(songs, startIndex = 0)
         awaitUntil { connection.queue.value.items.isNotEmpty() }
