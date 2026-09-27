@@ -55,6 +55,10 @@ jobs:
             if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
               echo "::error::Tag $GITHUB_REF_NAME does not match versionName $VERSION"; exit 1
             fi
+            # A tag publishes what main has, never a commit that wasn't merged.
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::Tag $GITHUB_REF_NAME points to a commit that isn't on main"; exit 1
+            fi
             CHANNEL=stable
           elif [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "::error::Releases only come from main"; exit 1
@@ -127,11 +131,12 @@ jobs:
         run: |
           TAG="v$VERSION"
           NOTES="docs/releases/$TAG.md"
-          if [ -f "$NOTES" ]; then NOTES_ARGS=(--notes-file "$NOTES"); else NOTES_ARGS=(--generate-notes); fi
-          # The changelog (all release notes) and the commit log travel with each version.
+          # The notes are the release page, the video's news and the changelog: no notes, no release.
+          if [ ! -s "$NOTES" ]; then echo "::error::Missing release notes $NOTES"; exit 1; fi
+          # The changelog (all release notes) travels with each version.
           python3 scripts/changelog.py CHANGELOG.md
           gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" CHANGELOG.md \
-            --target "$GITHUB_SHA" --title "Player $VERSION" --latest "${NOTES_ARGS[@]}"
+            --target "$GITHUB_SHA" --title "Player $VERSION" --latest --notes-file "$NOTES"
           # A dev build older than this stable one would only confuse; the next push to main
           # starts a new one.
           gh release delete "$DEV_TAG" --cleanup-tag --yes 2>/dev/null || true
