@@ -216,6 +216,8 @@ class RemotePairingTest {
 
         assertEquals(RemotePairing.Result.WRONG_CODE, await(start()))
 
+        // The result comes as the phone sends pairFailed, maybe before the relay has it.
+        turnUntil { "pairFailed" in types() }
         assertEquals(listOf("askCode", "wrongCode", "wrongCode", "askCode", "pairFailed"), types())
         assertFalse(phoneAsked)
     }
