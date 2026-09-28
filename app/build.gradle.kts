@@ -36,8 +36,8 @@ android {
         applicationId = "com.danielzuniga.player"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "1.6.0"
+        versionCode = 13
+        versionName = "1.6.1"
         // Dev builds from main are "1.5.0-dev.<run>" (set by the Release workflow).
         System.getenv("PLAYER_VERSION_SUFFIX")?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = it }
         // The web monitor's relay (relay/, a Cloudflare Worker); same address as site/monitor/protocol.js.

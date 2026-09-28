@@ -1,7 +1,7 @@
 // The browser's connection to a room on the relay: seals what it sends, opens and checks what
 // arrives, and reconnects by itself (1 s, 2 s, 4 s… up to 30 s) until stop().
 
-import { Inbox, Outbox, importKey, newRoom, open, seal } from "./protocol.js";
+import { Inbox, Outbox, PhoneTarget, address, importKey, newRoom, open, seal } from "./protocol.js";
 
 export class Link {
   /**
@@ -16,6 +16,7 @@ export class Link {
     this.events = events;
     this.outbox = new Outbox(`web-${newRoom().slice(0, 8)}`);
     this.inbox = new Inbox();
+    this.target = new PhoneTarget();
     this.attempt = 0;
     this.stopped = false;
     this.socket = null;
@@ -40,7 +41,7 @@ export class Link {
       if (this.socket !== socket) return;
       this.socket = null;
       this.events.onStatus?.("closed");
-      this.events.onPeers?.({ phone: false, webs: 0 });
+      this.peers({ phone: false, webs: 0 });
       if (this.stopped) return;
       const delay = Math.min(1000 * 2 ** Math.min(this.attempt, 5), 30_000);
       this.attempt++;
@@ -54,22 +55,35 @@ export class Link {
       // The relay's own presence note, in the clear.
       try {
         const note = JSON.parse(data);
-        if (note.relay === "peers") this.events.onPeers?.(note);
+        if (note.relay === "peers") this.peers(note);
       } catch {
         // Not a note after all.
       }
       return;
     }
     const message = await open(this.key, data);
-    if (message && this.inbox.accept(message)) this.events.onMessage?.(message);
+    if (!message || !this.inbox.accept(message)) return;
+    // Only the phone's messages reach a web: its sender id is the one commands go to.
+    this.target.heard(message);
+    this.events.onMessage?.(message);
+  }
+
+  /** The phone's current sender id, or null until it's heard (commands would be dropped). */
+  get phone() {
+    return this.target.id;
   }
 
   /** Sends [message] sealed; false when not connected. */
   async send(message) {
     const socket = this.socket;
     if (!socket || socket.readyState !== WebSocket.OPEN) return false;
-    socket.send(await seal(this.key, this.outbox.stamp(message)));
+    socket.send(await seal(this.key, this.outbox.stamp(address(message, this.phone))));
     return true;
+  }
+
+  peers(note) {
+    this.target.peers(note);
+    this.events.onPeers?.(note);
   }
 
   stop() {

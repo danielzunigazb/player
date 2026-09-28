@@ -3,6 +3,7 @@
 
 import { formatTime, nextRepeat, positionNow } from "./format.js";
 import { Link } from "./link.js";
+import { START, codeHint, normalizeCode, pairingStep } from "./pairing.js";
 import { RELAY, newKey, newRoom, pairLink } from "./protocol.js";
 
 const STORE = "player-monitor";
@@ -49,26 +50,69 @@ function startPairing() {
   qr.make();
   $("qr").innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   $("pair-status").textContent = "Escanea el código con la cámara del teléfono.";
+  let pairing = START;
+  renderCodeForm(pairing);
 
   const temporary = new Link(RELAY, room, key, {
     onPeers: ({ phone }) => {
-      if (phone) $("pair-status").textContent = "Teléfono encontrado, vinculando…";
+      if (phone && pairing.view === "scan") $("pair-status").textContent = "Teléfono encontrado…";
     },
     onMessage: async (message) => {
-      if (message.type !== "welcome" || !/^[A-Za-z0-9_-]{22}$/.test(message.room) || !/^[A-Za-z0-9_-]{43}$/.test(message.key)) return;
-      savePairing({ room: message.room, key: message.key, name: String(message.name || "Teléfono") });
-      await temporary.send({ type: "paired" });
-      // Let the confirmation leave before closing.
-      setTimeout(() => {
+      pairing = pairingStep(pairing, message);
+      renderCodeForm(pairing);
+      if (pairing.view === "failed") {
         temporary.stop();
-        startMonitor(loadPairing());
-      }, 300);
+      } else if (pairing.view === "paired") {
+        savePairing(pairing.pairing);
+        await temporary.send({ type: "paired" });
+        // Let the confirmation leave before closing.
+        setTimeout(() => {
+          temporary.stop();
+          startMonitor(loadPairing());
+        }, 300);
+      }
     },
     onStatus: (status) => {
-      if (status === "closed") $("pair-status").textContent = "Sin conexión con el relay, reintentando…";
+      if (status === "closed" && pairing.view !== "failed") {
+        $("pair-status").textContent = "Sin conexión con el relay, reintentando…";
+      }
     },
   });
+  $("code-form").onsubmit = (event) => {
+    event.preventDefault();
+    const code = normalizeCode($("code").value);
+    // A code the phone can't have shown gets a hint, not one of the 3 tries.
+    const hint = codeHint(code);
+    if (hint) {
+      $("code-error").textContent = hint;
+      return;
+    }
+    $("code-error").textContent = "";
+    temporary.send({ type: "code", code });
+  };
   temporary.start();
+}
+
+/** The code input, once the phone asks for it (pairing.js has the states). */
+function renderCodeForm(pairing) {
+  const asking = pairing.view === "code";
+  const wasHidden = $("code-form").hidden;
+  $("code-form").hidden = !asking;
+  if (pairing.view === "scan") $("code").value = "";
+  if (asking) {
+    $("pair-status").textContent = "";
+    // This page's own address, to compare with the one the phone names.
+    $("code-host").textContent = (location.host + location.pathname).replace(/\/$/, "");
+    $("code-error").textContent = pairing.attemptsLeft
+      ? `Ese no es. ${pairing.attemptsLeft === 1 ? "Queda 1 intento" : `Quedan ${pairing.attemptsLeft} intentos`}.`
+      : "";
+    if (pairing.attemptsLeft) $("code").select();
+    if (wasHidden) $("code").focus();
+  } else if (pairing.view === "failed") {
+    $("pair-status").textContent = "Demasiados intentos: no se vinculó. Recarga la página para un código QR nuevo.";
+  } else if (pairing.view === "paired") {
+    $("pair-status").textContent = "Vinculado.";
+  }
 }
 
 // ------------------------------------------------------------------ monitor
@@ -95,6 +139,8 @@ function startMonitor(pairing) {
       if (arrived) send("hello");
     },
     onMessage: (message) => {
+      // The first message tells where commands go: the controls turn on.
+      renderPresence();
       if (message.type === "state") {
         state = message;
         receivedAt = Date.now();
@@ -115,9 +161,12 @@ function startMonitor(pairing) {
 }
 
 function renderPresence() {
-  $("presence").textContent = phoneHere ? "conectado" : "desconectado · abre Player en el teléfono";
-  $("presence").dataset.on = String(phoneHere);
-  $("controls").toggleAttribute("inert", !phoneHere);
+  // Commands need the phone's id (link.phone), known once it has said something; until then the
+  // phone would drop them, so the controls stay off.
+  const ready = phoneHere && !!link?.phone;
+  $("presence").textContent = ready ? "conectado" : phoneHere ? "conectando…" : "desconectado · abre Player en el teléfono";
+  $("presence").dataset.on = String(ready);
+  $("controls").toggleAttribute("inert", !ready);
 }
 
 function render() {
@@ -154,7 +203,8 @@ function renderQueue() {
   list.replaceChildren();
   for (const [offset, item] of (state?.queue ?? []).entries()) {
     const row = document.createElement("li");
-    row.dataset.current = String(state.queueStart + offset === state.index);
+    const current = state.queueStart + offset === state.index;
+    row.dataset.current = String(current);
     const play = document.createElement("button");
     play.className = "queue-song";
     play.innerHTML = `<span class="t"></span><span class="a"></span>`;
@@ -166,6 +216,8 @@ function renderQueue() {
     remove.textContent = "×";
     remove.setAttribute("aria-label", `Quitar ${item.title} de la cola`);
     remove.onclick = () => send("remove", { index: item.i });
+    // The song that's playing stays, like in the app's queue (the phone ignores it anyway).
+    remove.hidden = current;
     row.append(play, remove);
     list.append(row);
   }
@@ -249,6 +301,7 @@ $("unpair").onclick = () => {
 
 document.addEventListener("keydown", (event) => {
   if (event.target.closest("input") || event.metaKey || event.ctrlKey) return;
+  if ($("controls").hasAttribute("inert")) return;
   if (event.code === "Space") {
     event.preventDefault();
     $("play").click();

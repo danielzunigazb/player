@@ -39,4 +39,21 @@ class EnvelopeTest {
         assertFalse(inbox.accept(Outbox("web-3").stamp(JSONObject(), now - 3 * 60_000), now))
         assertFalse(inbox.accept(JSONObject().put("type", "cmd"), now))
     }
+
+    @Test
+    fun dropsMessagesFromMoreThanTwoMinutesInTheFuture() {
+        val inbox = Inbox()
+        assertFalse(inbox.accept(Outbox("web-1").stamp(JSONObject(), now + Inbox.MAX_SKEW_MS + 1), now))
+        assertTrue(inbox.accept(Outbox("web-2").stamp(JSONObject(), now + Inbox.MAX_SKEW_MS), now))
+    }
+
+    @Test
+    fun commandsMustNameThePhonesCurrentIdExceptHello() {
+        val cmd = { op: String -> JSONObject().put("type", "cmd").put("op", op) }
+        assertTrue(isAddressedTo(cmd("next").put("to", "phone-new"), "phone-new"))
+        assertFalse(isAddressedTo(cmd("next").put("to", "phone-old"), "phone-new"))
+        assertFalse(isAddressedTo(cmd("next"), "phone-new"))
+        assertTrue(isAddressedTo(cmd("hello"), "phone-new"))
+        assertTrue(isAddressedTo(JSONObject().put("type", "paired"), "phone-new"))
+    }
 }

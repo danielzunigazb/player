@@ -16,6 +16,29 @@ export function parseRequest(url) {
 }
 
 /**
+ * Whether a connection with [role] may join a room that has [sockets] (each `{ role }`), and
+ * which of them it replaces: a phone always gets in and replaces the phone that was there; a web
+ * gets in while there are fewer than MAX_WEBS.
+ */
+export function admit(role, sockets) {
+  if (role === "phone") return { ok: true, replace: sockets.filter((s) => s.role === "phone") };
+  const webs = sockets.filter((s) => s.role === "web").length;
+  return { ok: webs < MAX_WEBS, replace: [] };
+}
+
+/**
+ * Whether a client's [message] may be passed on, counting it against its connection's
+ * one-second [window]. Returns the updated window and the decision. Too big: dropped. Text that
+ * starts with `{`: dropped too, because only the relay speaks in clear JSON (real messages are
+ * base64url) and a client mustn't pass for it.
+ */
+export function forward(message, window, now) {
+  if (sizeOf(message) > MAX_MESSAGE_BYTES) return { window, ok: false };
+  if (typeof message === "string" && message.startsWith("{")) return { window, ok: false };
+  return allow(window, now);
+}
+
+/**
  * Counts a message against its connection's one-second window. Returns the updated window and
  * whether the message may pass.
  */

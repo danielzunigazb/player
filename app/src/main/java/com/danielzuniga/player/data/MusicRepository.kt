@@ -96,7 +96,8 @@ class MusicRepository(
 
     /** Returns the library, scanning first if that never happened (used by the playback service). */
     suspend fun awaitLibrary(): LibraryIndex {
-        scan(onlyIfNeeded = true)
+        // Once scanned, a rescan in progress doesn't hold up playback: the current library will do.
+        if (!_hasScanned.value) scan(onlyIfNeeded = true)
         return _library.value
     }
 

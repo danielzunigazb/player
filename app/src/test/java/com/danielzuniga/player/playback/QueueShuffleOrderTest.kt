@@ -2,6 +2,9 @@ package com.danielzuniga.player.playback
 
 import androidx.media3.common.C
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.random.Random
 
@@ -16,6 +19,13 @@ class QueueShuffleOrderTest {
             assertEquals(4, order.firstIndex)
             assertEquals((0 until 10).toList(), order.order().sorted())
         }
+    }
+
+    @Test
+    fun reallyShuffles() {
+        val order = QueueShuffleOrder.startingWith(first = 0, length = 20, random = Random(11)).order()
+        assertNotEquals((0 until 20).toList(), order)
+        assertNotEquals(order, QueueShuffleOrder.startingWith(first = 0, length = 20, random = Random(12)).order())
     }
 
     @Test
@@ -58,5 +68,26 @@ class QueueShuffleOrderTest {
     fun aNewQueueIsShuffledFromEmpty() {
         val order = QueueShuffleOrder(0, Random(9)).cloneAndInsert(0, 8) as QueueShuffleOrder
         assertEquals((0 until 8).toList(), order.order().sorted())
+        assertTrue(order.fresh)
+    }
+
+    @Test
+    fun onlyANewListIsFresh() {
+        val start = QueueShuffleOrder.startingWith(first = 2, length = 6, random = Random(13))
+        assertFalse(start.fresh)
+        assertFalse((start.cloneAndRemove(2, 3) as QueueShuffleOrder).fresh)
+        assertFalse((start.cloneAndInsert(3, 1) as QueueShuffleOrder).fresh)
+        assertFalse((start.cloneAndInsert(6, 1) as QueueShuffleOrder).fresh)
+        assertFalse((start.cloneAndMove(0, 2, 3) as QueueShuffleOrder).fresh)
+    }
+
+    @Test
+    fun movingItemsKeepsThePlayOrder() {
+        val songs = listOf("a", "b", "c", "d", "e", "f")
+        val start = QueueShuffleOrder.startingWith(first = 2, length = 6, random = Random(17))
+        // Songs 1 and 2 ("b", "c") move so the first lands at index 3: a d e b c f.
+        val moved = start.cloneAndMove(1, 3, 3) as QueueShuffleOrder
+        val movedSongs = listOf("a", "d", "e", "b", "c", "f")
+        assertEquals(start.order().map { songs[it] }, moved.order().map { movedSongs[it] })
     }
 }

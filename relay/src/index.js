@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { MAX_MESSAGE_BYTES, MAX_WEBS, allow, parseRequest, peers, recipients, sizeOf } from "./room.js";
+import { admit, forward, parseRequest, peers, recipients } from "./room.js";
 
 /**
  * Relay for Player's web monitor: joins a phone and the browsers paired with it in a room and
@@ -23,12 +23,10 @@ export default {
 export class Room extends DurableObject {
   async fetch(request) {
     const { role } = parseRequest(new URL(request.url));
-    if (role === "phone") {
-      // A phone that reconnects replaces its old connection.
-      for (const old of this.ctx.getWebSockets("phone")) old.close(4000, "replaced");
-    } else if (this.ctx.getWebSockets("web").length >= MAX_WEBS) {
-      return new Response("room full\n", { status: 429 });
-    }
+    const { ok, replace } = admit(role, this.sockets());
+    if (!ok) return new Response("room full\n", { status: 429 });
+    // A phone that reconnects replaces its old connection.
+    for (const { socket } of replace) socket.close(4000, "replaced");
     const [client, server] = Object.values(new WebSocketPair());
     // Hibernatable: an idle room costs nothing while its sockets stay open.
     this.ctx.acceptWebSocket(server, [role]);
@@ -38,9 +36,8 @@ export class Room extends DurableObject {
   }
 
   webSocketMessage(ws, message) {
-    if (sizeOf(message) > MAX_MESSAGE_BYTES) return;
     const state = ws.deserializeAttachment();
-    const { window, ok } = allow(state.window, Date.now());
+    const { window, ok } = forward(message, state.window, Date.now());
     ws.serializeAttachment({ ...state, window });
     if (!ok) return;
     for (const { socket } of recipients(state.role, this.sockets())) {

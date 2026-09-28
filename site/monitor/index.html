@@ -26,6 +26,14 @@
   @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
   #qr { background: #efe6d6; padding: var(--space-2); border: 1px solid var(--line); aspect-ratio: 1; }
   #qr svg { display: block; width: 100%; height: auto; }
+  .code-form { margin-top: var(--space-4); }
+  .code-form label { display: block; color: var(--ink); margin-bottom: var(--space-2); }
+  .code-row { display: flex; gap: var(--space-2); align-items: stretch; flex-wrap: wrap; }
+  #code { width: 9ch; background: var(--surface); border: 1px solid var(--line); color: var(--gold); font-family: var(--font-mono); font-size: 2rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; padding: var(--space-2); }
+  #code:focus { outline: none; border-color: var(--gold); }
+  .code-error { color: var(--gold); margin-top: var(--space-2); min-height: 1.5em; }
+  .code-where { color: var(--ink-muted); font-size: var(--text-small-size); }
+  .code-where b { color: var(--ink); font-weight: 600; }
   .pair ol { color: var(--ink-muted); padding-left: var(--space-4); }
   .pair li + li { margin-top: var(--space-2); }
   .status { color: var(--gold); margin-top: var(--space-4); }
@@ -81,10 +89,19 @@
         <h1 class="whisper-lg">Tu música, desde aquí.</h1>
         <ol>
           <li>En el teléfono, abre la cámara y apunta a este código.</li>
-          <li>Ábrelo con Player. Queda vinculado y este navegador se acuerda.</li>
+          <li>Ábrelo con Player y escribe aquí el código que te muestra. Queda vinculado y este navegador se acuerda.</li>
           <li>Mientras Player esté abierto o sonando, lo manejas desde aquí.</li>
         </ol>
         <p class="status" id="pair-status"></p>
+        <form id="code-form" class="code-form" hidden>
+          <label for="code">Escribe el código que muestra el teléfono</label>
+          <div class="code-row">
+            <input id="code" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-error">
+            <button class="btn btn-primary" type="submit">Vincular</button>
+          </div>
+          <p class="code-error" id="code-error" role="alert"></p>
+          <p class="code-where">Estás en <b id="code-host"></b>. El teléfono te pide escribirlo solo en player.danzuniga.xyz/monitor: si la dirección no es esa, no lo escribas.</p>
+        </form>
         <p class="presence">Cifrado de punta a punta: el relay que los une no puede ver lo que escuchas.</p>
       </div>
     </section>

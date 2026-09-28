@@ -88,5 +88,35 @@ export class Inbox {
   }
 }
 
+/**
+ * [message] as sent to the phone: a command names the phone's current sender id ([phone], the
+ * last one heard) in `to`, so a phone that restarted ignores commands captured before. Until the
+ * phone has been heard there's no id: commands go without, and the phone only takes `hello`.
+ */
+export function address(message, phone) {
+  return message.type === "cmd" && phone ? { ...message, to: phone } : message;
+}
+
+/**
+ * The phone a web's commands go to: the sender of the last message heard from it, forgotten when
+ * the relay says the phone left (it comes back under a new id). While [id] is null, commands
+ * would go without `to` and the phone would drop them: the monitor keeps its controls off.
+ */
+export class PhoneTarget {
+  constructor() {
+    this.id = null;
+  }
+
+  /** A message from the phone was accepted. */
+  heard(message) {
+    this.id = message.from;
+  }
+
+  /** The relay's presence note, or `{ phone: false }` when the connection drops. */
+  peers(note) {
+    if (!note.phone) this.id = null;
+  }
+}
+
 /** The link a pairing QR carries; the room and key ride in the fragment, which no server sees. */
 export const pairLink = (room, key) => `https://player.danzuniga.xyz/pair#r=${room}&k=${key}`;

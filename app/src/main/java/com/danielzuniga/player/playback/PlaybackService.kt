@@ -11,6 +11,7 @@ import androidx.annotation.OptIn
 import androidx.core.os.bundleOf
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -26,6 +27,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.danielzuniga.player.remote.RemoteSession
 import com.danielzuniga.player.MainActivity
+import com.danielzuniga.player.R
 import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.widget.NowPlayingWidget
 import com.danielzuniga.player.widget.WidgetState
@@ -105,7 +107,7 @@ class PlaybackService : MediaLibraryService() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        mediaSession = MediaLibrarySession.Builder(this, player, SessionCallback())
+        mediaSession = MediaLibrarySession.Builder(this, SessionPlayer(player), SessionCallback())
             .setSessionActivity(openAppIntent)
             .build()
 
@@ -281,8 +283,13 @@ class PlaybackService : MediaLibraryService() {
             if (shuffleModeEnabled) shuffleFromCurrent()
         }
 
+        // Only for a new list: removing the song that plays also moves to another one, and a
+        // reshuffle then would bring back the songs already played.
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED && player.shuffleModeEnabled) {
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
+                player.shuffleModeEnabled &&
+                (player.shuffleOrder as? QueueShuffleOrder)?.fresh == true
+            ) {
                 shuffleFromCurrent()
             }
         }
@@ -331,8 +338,12 @@ class PlaybackService : MediaLibraryService() {
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
-        ): ListenableFuture<MutableList<MediaItem>> =
-            Futures.immediateFuture(mediaItems.mapTo(mutableListOf()) { browser.resolveItem(it) })
+        ): ListenableFuture<MutableList<MediaItem>> = try {
+            Futures.immediateFuture(browser.playable(mediaItems.map { browser.resolveItem(it) }).toMutableList())
+        } catch (e: NothingToPlayException) {
+            sendNothingToPlay(mediaSession, controller)
+            Futures.immediateFailedFuture(e)
+        }
 
         // A song picked in Android Auto queues the rest of its album or playlist too.
         override fun onSetMediaItems(
@@ -342,9 +353,17 @@ class PlaybackService : MediaLibraryService() {
             startIndex: Int,
             startPositionMs: Long,
         ): ListenableFuture<MediaItemsWithStartPosition> = future {
-            val (items, index) = browser.resolveQueue(mediaItems, startIndex)
-            val position = if (index == startIndex) startPositionMs else C.TIME_UNSET
-            MediaItemsWithStartPosition(items, index, position)
+            try {
+                browser.resolveQueue(mediaItems, startIndex, startPositionMs)
+            } catch (e: NothingToPlayException) {
+                sendNothingToPlay(mediaSession, controller)
+                throw e
+            }
+        }
+
+        // A failed request alone leaves Android Auto or the Assistant silent; this they can show.
+        private fun sendNothingToPlay(session: MediaSession, controller: MediaSession.ControllerInfo) {
+            session.sendError(controller, SessionError(SessionError.ERROR_BAD_VALUE, getString(R.string.nothing_to_play)))
         }
 
         override fun onGetLibraryRoot(
@@ -436,5 +455,23 @@ class PlaybackService : MediaLibraryService() {
             val from = (page.toLong() * pageSize).coerceAtMost(size.toLong()).toInt()
             return ImmutableList.copyOf(subList(from, minOf(from + pageSize, size)))
         }
+    }
+}
+
+/**
+ * The player as controllers see it. Media3 answers play on an ended queue (notification, lock
+ * screen, Bluetooth, Android Auto) by going back to the start of the last song; like the app's
+ * own button, this starts over from the first song in play order instead.
+ */
+@OptIn(UnstableApi::class)
+private class SessionPlayer(player: Player) : ForwardingPlayer(player) {
+    // What Media3 calls before play() when the queue ended.
+    override fun seekToDefaultPosition() {
+        if (playbackState == Player.STATE_ENDED && !currentTimeline.isEmpty) restartFromFirst() else super.seekToDefaultPosition()
+    }
+
+    override fun play() {
+        if (playbackState == Player.STATE_ENDED) restartFromFirst()
+        super.play()
     }
 }

@@ -7,6 +7,7 @@ import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.MediaStore
 import org.robolectric.Robolectric
+import java.util.concurrent.CountDownLatch
 
 data class FakeSong(
     val id: Long,
@@ -29,6 +30,7 @@ class FakeMediaProvider : ContentProvider() {
         selectionArgs: Array<out String>?,
         sortOrder: String?,
     ): Cursor {
+        gate?.await()
         val cursor = MatrixCursor(
             arrayOf(
                 MediaStore.Audio.Media._ID,
@@ -56,10 +58,15 @@ class FakeMediaProvider : ContentProvider() {
 
     companion object {
         private var songs: List<FakeSong> = emptyList()
+        @Volatile private var gate: CountDownLatch? = null
 
         fun install(songs: List<FakeSong>) {
             this.songs = songs
+            gate = null
             Robolectric.buildContentProvider(FakeMediaProvider::class.java).create(MediaStore.AUTHORITY)
         }
+
+        /** Holds every query (a slow scan) until the returned latch counts down. */
+        fun holdQueries(): CountDownLatch = CountDownLatch(1).also { gate = it }
     }
 }
