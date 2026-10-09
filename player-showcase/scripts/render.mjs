@@ -2,7 +2,7 @@
 // the version from app/build.gradle.kts, the number of @Test methods in app/src/test and the
 // version's news from docs/releases/v<version>.md.
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const app = new URL("../../app/", import.meta.url).pathname;
@@ -71,3 +71,14 @@ execFileSync(
   ["remotion", "still", "PlayerShowcase", "out/showcase-thumb.jpg", "--frame=100", "--image-format=jpeg", "--jpeg-quality=90", `--props=${props}`, ...extra],
   { stdio: "inherit" },
 );
+
+// The site's "Player en N segundos" caption reads this instead of a number written by hand, so
+// it can't drift from the scenes like it once did.
+const compositions = execFileSync("npx", ["remotion", "compositions", "src/index.ts", `--props=${props}`], {
+  encoding: "utf8",
+});
+const duration = compositions.match(/^PlayerShowcase\s+\d+\s+\S+\s+\d+\s*\(([\d.]+)\s*sec\)/m)?.[1];
+if (!duration) throw new Error("could not read PlayerShowcase's duration from `remotion compositions`");
+const durationSeconds = Math.round(Number(duration));
+writeFileSync("out/duration-seconds.txt", `${durationSeconds}\n`);
+console.log(`duration: ${durationSeconds}s`);

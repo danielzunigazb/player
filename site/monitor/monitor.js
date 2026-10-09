@@ -5,6 +5,7 @@ import { formatTime, nextRepeat, positionNow } from "./format.js";
 import { Link } from "./link.js";
 import { START, codeHint, normalizeCode, pairingStep } from "./pairing.js";
 import { RELAY, newKey, newRoom, pairLink } from "./protocol.js";
+import { applyMove, canReorder, moveCommand, stillApplies } from "./queue.js";
 
 const STORE = "player-monitor";
 const $ = (id) => document.getElementById(id);
@@ -160,10 +161,12 @@ function startMonitor(pairing) {
   link.start();
 }
 
+/** Commands need the phone's id (link.phone), known once it has said something. */
+const phoneReady = () => phoneHere && !!link?.phone;
+
 function renderPresence() {
-  // Commands need the phone's id (link.phone), known once it has said something; until then the
-  // phone would drop them, so the controls stay off.
-  const ready = phoneHere && !!link?.phone;
+  // Until the phone's id is known it would drop commands, so the controls stay off.
+  const ready = phoneReady();
   $("presence").textContent = ready ? "conectado" : phoneHere ? "conectando…" : "desconectado · abre Player en el teléfono";
   $("presence").dataset.on = String(ready);
   $("controls").toggleAttribute("inert", !ready);
@@ -199,19 +202,30 @@ function tick() {
 }
 
 function renderQueue() {
+  // A song being dragged keeps its place in the list until it's dropped; the drop renders.
+  if (drag) return;
   const list = $("queue");
+  const reorder = canReorder(state);
+  // Each state redraws the list: a focused button keeps the focus, on the same song.
+  const focused = list.contains(document.activeElement)
+    ? { i: document.activeElement.closest("li")?.dataset.i, kind: document.activeElement.dataset.kind }
+    : null;
   list.replaceChildren();
   for (const [offset, item] of (state?.queue ?? []).entries()) {
     const row = document.createElement("li");
     const current = state.queueStart + offset === state.index;
     row.dataset.current = String(current);
+    row.dataset.i = String(item.i);
+    if (reorder) row.append(dragHandle(item, offset));
     const play = document.createElement("button");
+    play.dataset.kind = "play";
     play.className = "queue-song";
     play.innerHTML = `<span class="t"></span><span class="a"></span>`;
     play.querySelector(".t").textContent = item.title;
     play.querySelector(".a").textContent = item.artist;
     play.onclick = () => send("skipTo", { index: item.i });
     const remove = document.createElement("button");
+    remove.dataset.kind = "remove";
     remove.className = "btn btn-ghost";
     remove.textContent = "×";
     remove.setAttribute("aria-label", `Quitar ${item.title} de la cola`);
@@ -221,7 +235,104 @@ function renderQueue() {
     row.append(play, remove);
     list.append(row);
   }
+  if (focused) focusInQueue(focused.i, focused.kind);
+  $("queue-hint").hidden = !(state?.shuffle && (state.queue?.length ?? 0) > 1);
   $("queue-count").textContent = state?.queueTotal ? `${state.queueTotal}` : "";
+}
+
+const focusInQueue = (i, kind) => $("queue").querySelector(`li[data-i="${i}"] [data-kind="${kind}"]`)?.focus();
+
+// ------------------------------------------------------------------ reordering the queue
+
+/** The song being dragged: its row, where it started and the state it was dragged in. */
+let drag = null;
+
+function dragHandle(item, offset) {
+  const handle = document.createElement("button");
+  handle.className = "btn btn-ghost queue-drag";
+  handle.textContent = "⠿";
+  handle.title = "Arrastra, o usa ↑ ↓";
+  handle.setAttribute("aria-label", `Mover ${item.title} en la cola`);
+  handle.dataset.kind = "drag";
+  handle.onpointerdown = (event) => startDrag(event, offset);
+  handle.onkeydown = (event) => {
+    const to = offset + ({ ArrowUp: -1, ArrowDown: 1 }[event.key] ?? 0);
+    if (to === offset || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    if (to < 0 || to >= state.queue.length || !phoneReady()) return;
+    // The song takes the place of the one at [to]: the focus goes with it.
+    const landing = state.queue[to].i;
+    moveInQueue(state, offset, to);
+    focusInQueue(landing, "drag");
+  };
+  return handle;
+}
+
+function startDrag(event, offset) {
+  if (event.button !== 0 || drag || !canReorder(state) || !phoneReady()) return;
+  // No text selection, and on touch screens the page doesn't scroll instead.
+  event.preventDefault();
+  const list = $("queue");
+  // On the list, which stays put while its rows move around.
+  list.setPointerCapture(event.pointerId);
+  drag = { pointerId: event.pointerId, from: offset, row: event.currentTarget.closest("li"), seen: state };
+  drag.row.dataset.dragging = "true";
+  list.dataset.dragging = "true";
+}
+
+$("queue").onpointermove = (event) => {
+  if (event.pointerId !== drag?.pointerId) return;
+  const list = event.currentTarget;
+  // Near an edge, the list scrolls to the songs out of view.
+  const box = list.getBoundingClientRect();
+  if (event.clientY < box.top + 32) list.scrollTop -= 12;
+  else if (event.clientY > box.bottom - 32) list.scrollTop += 12;
+  // The row goes before the first other row whose middle is below the pointer.
+  const before =
+    [...list.children].find((row) => {
+      if (row === drag.row) return false;
+      const rect = row.getBoundingClientRect();
+      return event.clientY < rect.top + rect.height / 2;
+    }) ?? null;
+  if (drag.row.nextElementSibling !== before) list.insertBefore(drag.row, before);
+};
+
+function endDrag(drop) {
+  if (!drag) return;
+  const list = $("queue");
+  const { pointerId, from, row, seen } = drag;
+  const to = [...list.children].indexOf(row);
+  drag = null;
+  delete list.dataset.dragging;
+  if (list.hasPointerCapture(pointerId)) list.releasePointerCapture(pointerId);
+  if (drop && to !== from) moveInQueue(seen, from, to);
+  else renderQueue();
+}
+
+$("queue").onpointerup = (event) => event.pointerId === drag?.pointerId && endDrag(true);
+// The browser took the pointer, or the window went to the background mid-drag: no drop then.
+$("queue").onpointercancel = (event) => event.pointerId === drag?.pointerId && endDrag(false);
+$("queue").onlostpointercapture = (event) => event.pointerId === drag?.pointerId && endDrag(false);
+window.addEventListener("blur", () => endDrag(false));
+
+/**
+ * Moves the song shown at [from] to [to] in the queue of [seen], the state the person looked at.
+ * The list shows the move right away; the phone's next state confirms it.
+ */
+async function moveInQueue(seen, from, to) {
+  const command = moveCommand(seen, from, to);
+  if (!command) return renderQueue();
+  const before = state;
+  // Unless the list changed there meanwhile: then the phone's next state shows where it went.
+  if (stillApplies(state, seen, command)) state = applyMove(state, command);
+  renderQueue();
+  const shown = state;
+  const { op, ...extra } = command;
+  if (!(await link?.send({ type: "cmd", op, ...extra })) && state === shown) {
+    // Not connected: the phone never got it.
+    state = before;
+    renderQueue();
+  }
 }
 
 function renderResults(message) {
@@ -291,6 +402,7 @@ $("search").oninput = () => {
 };
 
 $("unpair").onclick = () => {
+  endDrag(false);
   link?.stop();
   link = null;
   state = null;
@@ -300,6 +412,7 @@ $("unpair").onclick = () => {
 };
 
 document.addEventListener("keydown", (event) => {
+  if (drag && event.key === "Escape") return endDrag(false);
   if (event.target.closest("input") || event.metaKey || event.ctrlKey) return;
   if ($("controls").hasAttribute("inert")) return;
   if (event.code === "Space") {

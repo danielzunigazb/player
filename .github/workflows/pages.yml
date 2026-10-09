@@ -56,6 +56,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release download showcase-v1 -p PlayerShowcase.mp4 -p showcase-thumb.jpg -D _site/media --clobber
 
+      - name: Caption its real duration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Only present once a video has been rendered with this: an older showcase-v1 release
+          # (from before this file existed) keeps whatever duration is hardcoded in site/index.html.
+          if gh release download showcase-v1 -p duration-seconds.txt -D /tmp --clobber 2>/dev/null; then
+            sed -i "s/Player en [0-9]\+ segundos/Player en $(cat /tmp/duration-seconds.txt) segundos/" _site/index.html
+          fi
+
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:

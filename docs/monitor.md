@@ -132,6 +132,13 @@ del sobre), `search` (`query`), `playSongs` (`ids`, `index`), `playNext` (`ids`)
 quizá `hello`. `play` con la cola terminada vuelve a la primera canción en orden de
 reproducción (la del orden aleatorio, si está activo).
 
+La cola del `state` va en orden de reproducción y cada canción lleva `i`, su índice en la lista;
+`move` es `Player.moveMediaItem` sobre esos índices. Con aleatorio, mover en la lista no cambia
+el orden de reproducción (`QueueShuffleOrder.cloneAndMove`), así que el monitor, como la cola de
+la app, solo reordena con el aleatorio desactivado. Muestra el movimiento antes de que el
+teléfono conteste y su siguiente `state` lo confirma (`site/monitor/queue.js`, con una prueba
+que compara las dos cosas en miles de colas al azar).
+
 ## Del lado del teléfono
 
 - Solo se conecta mientras el servicio de reproducción vive (sonando o pausado con la

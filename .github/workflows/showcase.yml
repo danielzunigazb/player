@@ -120,14 +120,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view showcase-v1 >/dev/null 2>&1; then
-            gh release upload showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg --clobber
+            gh release upload showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg out/duration-seconds.txt --clobber
           else
-            gh release create showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg \
+            gh release create showcase-v1 out/PlayerShowcase.mp4 out/showcase-thumb.jpg out/duration-seconds.txt \
               --target "$(git rev-parse HEAD)" --title "Video de presentación" \
               --notes "Renderizado automáticamente desde player-showcase/ con Remotion."
           fi
           if [ -n "$TARGET" ]; then
-            gh release upload "$TARGET" out/PlayerShowcase.mp4 out/showcase-thumb.jpg --clobber
+            gh release upload "$TARGET" out/PlayerShowcase.mp4 out/showcase-thumb.jpg out/duration-seconds.txt --clobber
           fi
 
       - name: Keep the render as an artifact
@@ -138,3 +138,4 @@ jobs:
           path: |
             player-showcase/out/PlayerShowcase.mp4
             player-showcase/out/showcase-thumb.jpg
+            player-showcase/out/duration-seconds.txt
