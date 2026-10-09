@@ -42,6 +42,7 @@ Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releas
 **Monitor web**
 - Maneja Player desde el navegador de la PC con el teléfono lejos: abre [player.danzuniga.xyz/monitor](https://player.danzuniga.xyz/monitor/), escanea el QR con la cámara y escribe en la página el código que te muestra el teléfono; solo entonces queda vinculado
 - Qué suena con su portada, controles, volumen del teléfono, la cola y búsqueda en tu biblioteca
+- Reordena la cola arrastrando (mouse o dedo) o con ↑ ↓ desde el teclado; como en la app, con el aleatorio desactivado
 - Cifrado de punta a punta: el relay (un Worker de Cloudflare en `relay/`) une las dos conexiones y no puede leer nada ni guarda nada. Apagado hasta que vinculas; se desvincula todo en *Ajustes → Monitor web*. Detalles en [docs/monitor.md](docs/monitor.md)
 
 **Widget**

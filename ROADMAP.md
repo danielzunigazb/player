@@ -107,7 +107,7 @@ Diseño en `docs/monitor.md`.
 - [x] `/pair` con botón "Abrir en Player" cuando el QR cae en el navegador
 - [x] Probado en el teléfono: vincular, controlar desde la PC
 - [x] Escena del video y notas de la versión
-- [ ] Más adelante: reordenar la cola arrastrando desde el navegador (el protocolo ya lo tiene)
+- [x] Reordenar la cola arrastrando desde el navegador (mouse, touch o ↑ ↓), solo sin aleatorio como en la app
 
 ## v1.6.1: revisión independiente
 

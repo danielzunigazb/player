@@ -14,6 +14,7 @@ export const Monitor: React.FC = () => (
       items={[
         { text: "escanea un qr y listo", color: C.ink },
         { text: "controles, cola y búsqueda", color: C.muted },
+        { text: "arrastra para ordenar la cola", color: C.muted },
         { text: "cifrado de punta a punta", color: C.verdigris },
       ]}
     />

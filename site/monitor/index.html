@@ -70,6 +70,14 @@
   .queue-song:hover .t { color: var(--gold); }
   .queue-song .t, .queue-song .a { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .queue-song .a { color: var(--ink-muted); font-size: var(--text-small-size); }
+  /* Reordering the queue: a handle to drag (mouse, touch or ↑ ↓), the row lifted while it moves. */
+  .queue-drag { cursor: grab; touch-action: none; user-select: none; font-size: 1rem; }
+  @media (pointer: coarse) { .queue-drag { min-width: 44px; justify-content: center; } }
+  .queue-drag:focus-visible { color: var(--gold); outline: 1px solid var(--gold); }
+  .list li[data-dragging="true"] { background: var(--surface); outline: 1px solid var(--gold); position: relative; z-index: 1; }
+  .list li[data-dragging="true"] .queue-drag { cursor: grabbing; color: var(--gold); }
+  .list[data-dragging="true"] { user-select: none; }
+  .queue-hint { color: var(--ink-muted); font-size: var(--text-small-size); margin: 0 0 var(--space-2); }
   #search { width: 100%; background: var(--surface); border: 1px solid var(--line); color: var(--ink); font: inherit; padding: var(--space-2); }
   #search:focus { outline: none; border-color: var(--gold); }
   footer { margin-top: var(--space-16); color: var(--ink-muted); font-size: var(--text-small-size); border-top: 1px solid var(--line); padding: var(--space-4) 0; }
@@ -138,11 +146,12 @@
         </div>
         <div>
           <h2 class="eyebrow"><span>Cola</span><span id="queue-count"></span></h2>
+          <p class="queue-hint" id="queue-hint" hidden>Desactiva el aleatorio para reordenar la cola</p>
           <ul class="list" id="queue"></ul>
         </div>
       </div>
       <footer>
-        <span>espacio: pausa · shift + ← →: anterior / siguiente</span>
+        <span>espacio: pausa · shift + ← →: anterior / siguiente · ⠿ arrastra o ↑ ↓: mover en la cola</span>
         · <button class="btn btn-ghost" id="unpair">desvincular este navegador</button>
       </footer>
     </section>
