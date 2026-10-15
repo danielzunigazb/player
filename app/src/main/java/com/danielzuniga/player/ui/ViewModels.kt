@@ -1,5 +1,6 @@
 package com.danielzuniga.player.ui
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -18,6 +19,9 @@ import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.data.SongSort
 import com.danielzuniga.player.data.ThemeMode
 import com.danielzuniga.player.data.Folder
+import com.danielzuniga.player.data.backup.BackupException
+import com.danielzuniga.player.data.backup.BackupFiles
+import com.danielzuniga.player.data.backup.BackupRepository
 import com.danielzuniga.player.data.db.PlaylistSummary
 import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.data.lyrics.LyricsSource
@@ -27,6 +31,7 @@ import com.danielzuniga.player.playback.LibraryBrowser
 import com.danielzuniga.player.playback.PlayerConnection
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.playback.QueueState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -34,6 +39,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -43,6 +49,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 private fun <T> Flow<T>.stateIn(vm: ViewModel, initial: T): StateFlow<T> =
     stateIn(vm.viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
@@ -312,8 +319,21 @@ data class SettingsUiState(
     val onlineTags: Boolean = true,
 )
 
+/** What Settings has to say about a backup: it's working, or the outcome, shown until dismissed. */
+sealed interface BackupUi {
+    data object Working : BackupUi
+    data class Exported(val written: BackupFiles.Written) : BackupUi
+    data class Imported(val result: BackupRepository.ImportResult) : BackupUi
+    data class Failed(val reason: Reason) : BackupUi
+
+    enum class Reason { LIBRARY_EMPTY, NOT_A_BACKUP, TOO_NEW, BROKEN, UNREADABLE, UNWRITABLE, UNKNOWN }
+}
+
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     private val settings = container.settings
+
+    private val _backup = MutableStateFlow<BackupUi?>(null)
+    val backup: StateFlow<BackupUi?> = _backup.asStateFlow()
 
     val state: StateFlow<SettingsUiState> = combine(
         settings.themeMode,
@@ -339,7 +359,51 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun setMinDuration(seconds: Int) = settings.setMinDurationSec(seconds)
     fun setOnlineTags(enabled: Boolean) = settings.setOnlineTags(enabled)
     fun rescan() = container.musicRepository.load(force = true)
+
+    fun exportBackup(uri: Uri) = runBackup(BackupUi.Reason.UNWRITABLE) { BackupUi.Exported(container.backup.export(uri)) }
+
+    fun importBackup(uri: Uri) = runBackup(BackupUi.Reason.UNREADABLE) { BackupUi.Imported(container.backup.import(uri)) }
+
+    fun dismissBackup() {
+        if (_backup.value != BackupUi.Working) _backup.value = null
+    }
+
+    /**
+     * One backup at a time. Leaving Settings mid-way cancels it, and an import is all or nothing,
+     * so it leaves nothing half done. A library that hasn't loaded would match, and export,
+     * nothing: that's said, not done.
+     */
+    private fun runBackup(ioFailure: BackupUi.Reason, work: suspend () -> BackupUi) {
+        if (_backup.value == BackupUi.Working) return
+        if (container.musicRepository.library.value.songs.isEmpty()) {
+            _backup.value = BackupUi.Failed(BackupUi.Reason.LIBRARY_EMPTY)
+            return
+        }
+        _backup.value = BackupUi.Working
+        viewModelScope.launch {
+            _backup.value = try {
+                work()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                backupFailure(e, ioFailure)
+            }
+        }
+    }
 }
+
+/** Why a backup didn't finish, as Settings tells it; [ioFailure] is what an unreadable or unwritable file means here. */
+internal fun backupFailure(e: Exception, ioFailure: BackupUi.Reason): BackupUi.Failed = BackupUi.Failed(
+    when (e) {
+        is BackupException -> when (e.reason) {
+            BackupException.Reason.NOT_A_BACKUP -> BackupUi.Reason.NOT_A_BACKUP
+            BackupException.Reason.TOO_NEW -> BackupUi.Reason.TOO_NEW
+            BackupException.Reason.BROKEN -> BackupUi.Reason.BROKEN
+        }
+        is IOException -> ioFailure
+        else -> BackupUi.Reason.UNKNOWN
+    }
+)
 
 // ---------------------------------------------------------------- Factory
 

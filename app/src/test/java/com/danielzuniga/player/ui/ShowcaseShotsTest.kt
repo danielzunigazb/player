@@ -252,6 +252,7 @@ class ShowcaseShotsTest {
                 onDynamicColor = {}, onOnlineLyrics = {}, onMinDuration = {}, onOnlineTags = {},
                 autoUpdates = true, onAutoUpdates = {}, updateState = UpdateState.UpToDate, onCheckUpdates = {},
                 onRescan = {}, remoteEnabled = true, onRemoteEnabled = {}, remotePaired = true, onUnpairAll = {},
+                backup = null, onExportBackup = {}, onImportBackup = {}, onDismissBackup = {},
                 bottomPadding = PaddingValues(),
             )
         }

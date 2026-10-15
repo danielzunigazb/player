@@ -165,6 +165,61 @@
     <string name="web_monitor_pair_wrong_code">Demasiados códigos equivocados: no se vinculó. Recarga la página y escanea el código nuevo.</string>
     <string name="web_monitor_pair_title">Vincular un navegador</string>
     <string name="web_monitor_pair_body">Escríbelo solo en player.danzuniga.xyz/monitor, en tu computadora. No se lo digas a nadie.</string>
+    <string name="ok">Aceptar</string>
+    <string name="backup_section">Copia de seguridad</string>
+    <string name="backup_export">Exportar favoritas, playlists y estadísticas</string>
+    <string name="backup_export_summary">Guarda un archivo que puedes llevar a otro teléfono.</string>
+    <string name="backup_import">Importar desde un archivo</string>
+    <string name="backup_import_summary">Suma lo que trae el archivo a lo que ya tienes. No borra ni reemplaza nada.</string>
+    <string name="backup_working">Trabajando…</string>
+    <string name="backup_exported_title">Copia guardada</string>
+    <string name="backup_imported_title">Importación terminada</string>
+    <string name="backup_exported_playlists">%1$s (%2$s)</string>
+    <string name="backup_nothing_new">Nada nuevo: todo lo del archivo ya estaba aquí.</string>
+    <string name="backup_failed_title">No se pudo terminar</string>
+    <string name="backup_error_library_empty">La biblioteca aún no carga. Inténtalo en un momento.</string>
+    <string name="backup_error_not_a_backup">Ese archivo no es una copia de Player.</string>
+    <string name="backup_error_too_new">Esa copia la hizo una versión más nueva de Player. Actualiza la app para importarla.</string>
+    <string name="backup_error_broken">Esa copia está dañada: le falta algo.</string>
+    <string name="backup_error_unreadable">No se pudo leer el archivo.</string>
+    <string name="backup_error_unwritable">No se pudo escribir el archivo.</string>
+    <string name="backup_error_unknown">Algo salió mal.</string>
+    <plurals name="backup_favorites">
+        <item quantity="one">%1$d favorita</item>
+        <item quantity="other">%1$d favoritas</item>
+    </plurals>
+    <plurals name="backup_playlists">
+        <item quantity="one">%1$d playlist</item>
+        <item quantity="other">%1$d playlists</item>
+    </plurals>
+    <plurals name="backup_skipped">
+        <item quantity="one">%1$d canción no estaba en la biblioteca en este momento y quedó fuera.</item>
+        <item quantity="other">%1$d canciones no estaban en la biblioteca en este momento y quedaron fuera.</item>
+    </plurals>
+    <plurals name="backup_favorites_added">
+        <item quantity="one">%1$d favorita nueva</item>
+        <item quantity="other">%1$d favoritas nuevas</item>
+    </plurals>
+    <plurals name="backup_playlists_created">
+        <item quantity="one">%1$d playlist nueva</item>
+        <item quantity="other">%1$d playlists nuevas</item>
+    </plurals>
+    <plurals name="backup_playlists_updated">
+        <item quantity="one">%1$d playlist con canciones agregadas</item>
+        <item quantity="other">%1$d playlists con canciones agregadas</item>
+    </plurals>
+    <plurals name="backup_songs_added">
+        <item quantity="one">%1$d canción agregada a playlists</item>
+        <item quantity="other">%1$d canciones agregadas a playlists</item>
+    </plurals>
+    <plurals name="backup_stats_updated">
+        <item quantity="one">%1$d conteo de reproducciones actualizado</item>
+        <item quantity="other">%1$d conteos de reproducciones actualizados</item>
+    </plurals>
+    <plurals name="backup_missing">
+        <item quantity="one">%1$d canción del archivo no está en este teléfono.</item>
+        <item quantity="other">%1$d canciones del archivo no están en este teléfono.</item>
+    </plurals>
     <string name="update_checking">Buscando…</string>
     <string name="update_up_to_date">Tienes la última versión</string>
     <string name="update_failed">No se pudo consultar. ¿Hay conexión?</string>

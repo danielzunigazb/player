@@ -12,6 +12,7 @@ export const Extras: React.FC<{ tests: number }> = ({ tests }) => {
     ["temporizador"],
     ["cola reordenable"],
     ["playlists inteligentes"],
+    ["copia de seguridad"],
     ["retoma donde quedaste"],
     ["búsqueda por voz"],
     [`${tests} tests · ci verde`, C.verdigris],

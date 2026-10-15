@@ -20,6 +20,9 @@ interface FavoriteDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE songId = :songId)")
     suspend fun isFavorite(songId: Long): Boolean
+
+    @Query("SELECT * FROM favorites ORDER BY addedAt, songId")
+    suspend fun all(): List<FavoriteEntity>
 }
 
 @Dao
@@ -41,6 +44,16 @@ interface PlaylistDao {
 
     @Query("SELECT songId FROM playlist_songs WHERE playlistId = :playlistId ORDER BY position")
     suspend fun songIds(playlistId: Long): List<Long>
+
+    @Query("SELECT * FROM playlists ORDER BY id")
+    suspend fun all(): List<PlaylistEntity>
+
+    @Query("SELECT * FROM playlist_songs ORDER BY playlistId, position")
+    suspend fun allSongs(): List<PlaylistSongEntity>
+
+    /** The playlist called [name] (same name in any case), if there is one. */
+    @Query("SELECT id FROM playlists WHERE name = :name COLLATE NOCASE ORDER BY id LIMIT 1")
+    suspend fun idByName(name: String): Long?
 
     @Insert
     suspend fun insertPlaylist(playlist: PlaylistEntity): Long
@@ -93,6 +106,15 @@ interface PlayStatDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(stat: PlayStatEntity)
+
+    @Query("SELECT * FROM play_stats ORDER BY songId")
+    suspend fun all(): List<PlayStatEntity>
+
+    @Query("SELECT * FROM play_stats WHERE songId = :songId")
+    suspend fun get(songId: Long): PlayStatEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(stat: PlayStatEntity)
 
     // Upsert by hand: SQLite's ON CONFLICT DO UPDATE needs API 30+.
     @Transaction

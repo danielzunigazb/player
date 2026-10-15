@@ -100,6 +100,7 @@ import com.danielzuniga.player.ui.settings.AppLanguage
 import com.danielzuniga.player.ui.settings.SettingsScreen
 import com.danielzuniga.player.ui.theme.DzIcons
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 private val AUDIO_PERMISSION =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -470,6 +471,13 @@ private fun AppNavHost(
             val remotePairing by container.remote.pairing.collectAsStateWithLifecycle()
             val vm: SettingsViewModel = viewModel(factory = AppViewModels.Factory)
             val state by vm.state.collectAsStateWithLifecycle()
+            val backup by vm.backup.collectAsStateWithLifecycle()
+            val exportBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                uri?.let(vm::exportBackup)
+            }
+            val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                uri?.let(vm::importBackup)
+            }
             SettingsScreen(
                 state = state,
                 onBack = navController::popBackStack,
@@ -493,6 +501,11 @@ private fun AppNavHost(
                     container.remote.unpairAll()
                     container.appContext.toast(R.string.web_monitor_unpaired)
                 },
+                backup = backup,
+                // Any file type: some file managers call a .json "octet-stream" or "text/plain".
+                onExportBackup = { exportBackup.launch(backupFileName()) },
+                onImportBackup = { importBackup.launch(arrayOf("*/*")) },
+                onDismissBackup = vm::dismissBackup,
                 bottomPadding = bottomPadding,
             )
         }
@@ -535,6 +548,9 @@ private fun Context.openAppSettings() {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
     )
 }
+
+/** The name the file picker suggests for a backup: the day it's made, so several don't collide. */
+internal fun backupFileName(today: LocalDate = LocalDate.now()): String = "player-backup-$today.json"
 
 internal fun Context.toast(message: Int) = toast(getString(message))
 

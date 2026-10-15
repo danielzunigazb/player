@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -22,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.danielzuniga.player.BuildConfig
@@ -30,6 +32,7 @@ import com.danielzuniga.player.ui.components.Eyebrow
 import com.danielzuniga.player.ui.components.Hairline
 import com.danielzuniga.player.data.ThemeMode
 import com.danielzuniga.player.data.update.UpdateState
+import com.danielzuniga.player.ui.BackupUi
 import com.danielzuniga.player.ui.SettingsUiState
 import com.danielzuniga.player.ui.components.BackTopBar
 import com.danielzuniga.player.ui.theme.DzIcons
@@ -57,8 +60,13 @@ fun SettingsScreen(
     onRemoteEnabled: (Boolean) -> Unit,
     remotePaired: Boolean,
     onUnpairAll: () -> Unit,
+    backup: BackupUi?,
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
+    onDismissBackup: () -> Unit,
     bottomPadding: PaddingValues,
 ) {
+    backup?.let { BackupDialog(it, onDismissBackup) }
     Scaffold(
         topBar = { BackTopBar(stringResource(R.string.settings), onBack) },
         contentWindowInsets = WindowInsets(0),
@@ -170,6 +178,27 @@ fun SettingsScreen(
                 }
             }
 
+            item { Section(stringResource(R.string.backup_section)) }
+            if (backup == BackupUi.Working) {
+                item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) }
+            }
+            item {
+                ActionRow(
+                    title = stringResource(R.string.backup_export),
+                    summary = stringResource(R.string.backup_export_summary),
+                    enabled = backup != BackupUi.Working,
+                    onClick = onExportBackup,
+                )
+            }
+            item {
+                ActionRow(
+                    title = stringResource(R.string.backup_import),
+                    summary = stringResource(R.string.backup_import_summary),
+                    enabled = backup != BackupUi.Working,
+                    onClick = onImportBackup,
+                )
+            }
+
             item { Section(stringResource(R.string.about)) }
             item {
                 Column(
@@ -239,6 +268,24 @@ private fun RadioRow(label: String, selected: Boolean, onSelect: () -> Unit) {
     ) {
         RadioButton(selected = selected, onClick = onSelect)
         Text(label, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun ActionRow(title: String, summary: String, enabled: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .alpha(if (enabled) 1f else 0.5f),
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            summary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

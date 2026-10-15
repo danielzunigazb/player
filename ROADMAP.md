@@ -119,10 +119,11 @@ Agentes revisores (seguridad, Android, tests, publicación) y un verificador de 
 - [ ] Mover los secrets de firma a un Environment de GitHub restringido a main y tags v*
 - [ ] Cloudflare: comando de despliegue `npm run deploy` (corre los tests del relay antes)
 
-## Más adelante: ecosistema personal (no empezar antes de cerrar 1.5.x)
+## v1.7: ecosistema personal
 
-Ideas para cuando 1.5.x esté cerrada; no son compromisos:
-- Exportar e importar playlists, favoritas y estadísticas (JSON y M3U)
-- Sincronizar esos datos entre dispositivos sin servidor propio
-- Editor de metadatos y vista de estadísticas de escucha
-
+La 1.5.x está cerrada y de la 1.6.x solo quedan los dos pasos manuales de arriba (no bloquean esto), así que empieza lo de tus datos, de menos a más riesgo.
+- [x] Exportar e importar favoritas, playlists y estadísticas (JSON) en *Ajustes → Copia de seguridad*: reconoce las canciones por nombre y no por id, solo agrega, repetirlo no cambia nada y todo o nada. Formato en `docs/backup.md`
+- [ ] Playlists en M3U: exportar e importar, para llevarlas a otros reproductores
+- [ ] Vista de estadísticas de escucha (los datos ya están en Room)
+- [ ] Editor de metadatos
+- [ ] Sincronizar entre dispositivos sin servidor propio (el relay, el cifrado de punta a punta y la vinculación con código del monitor podrían servir; revisar antes los límites del plan gratis)

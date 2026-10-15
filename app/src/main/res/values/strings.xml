@@ -170,6 +170,61 @@
     <string name="web_monitor_pair_wrong_code">Too many wrong codes, so it wasn\'t paired. Reload the page and scan the new code.</string>
     <string name="web_monitor_pair_title">Pair a browser</string>
     <string name="web_monitor_pair_body">Type it only at player.danzuniga.xyz/monitor on your computer. Don\'t tell it to anyone.</string>
+    <string name="ok">OK</string>
+    <string name="backup_section">Backup</string>
+    <string name="backup_export">Export favorites, playlists and listening history</string>
+    <string name="backup_export_summary">Saves a file you can take to another phone.</string>
+    <string name="backup_import">Import from a file</string>
+    <string name="backup_import_summary">Adds what\'s in the file to what you have. It never deletes or replaces anything.</string>
+    <string name="backup_working">Working…</string>
+    <string name="backup_exported_title">Backup saved</string>
+    <string name="backup_imported_title">Import finished</string>
+    <string name="backup_exported_playlists">%1$s (%2$s)</string>
+    <string name="backup_nothing_new">Nothing new: everything in the file was already here.</string>
+    <string name="backup_failed_title">Couldn\'t finish</string>
+    <string name="backup_error_library_empty">The library hasn\'t loaded yet. Try again in a moment.</string>
+    <string name="backup_error_not_a_backup">That file isn\'t a Player backup.</string>
+    <string name="backup_error_too_new">That backup was made by a newer Player. Update the app to import it.</string>
+    <string name="backup_error_broken">That backup is damaged: something in it is missing.</string>
+    <string name="backup_error_unreadable">Couldn\'t read the file.</string>
+    <string name="backup_error_unwritable">Couldn\'t write the file.</string>
+    <string name="backup_error_unknown">Something went wrong.</string>
+    <plurals name="backup_favorites">
+        <item quantity="one">%1$d favorite</item>
+        <item quantity="other">%1$d favorites</item>
+    </plurals>
+    <plurals name="backup_playlists">
+        <item quantity="one">%1$d playlist</item>
+        <item quantity="other">%1$d playlists</item>
+    </plurals>
+    <plurals name="backup_skipped">
+        <item quantity="one">%1$d song wasn\'t in the library just now and was left out.</item>
+        <item quantity="other">%1$d songs weren\'t in the library just now and were left out.</item>
+    </plurals>
+    <plurals name="backup_favorites_added">
+        <item quantity="one">%1$d new favorite</item>
+        <item quantity="other">%1$d new favorites</item>
+    </plurals>
+    <plurals name="backup_playlists_created">
+        <item quantity="one">%1$d new playlist</item>
+        <item quantity="other">%1$d new playlists</item>
+    </plurals>
+    <plurals name="backup_playlists_updated">
+        <item quantity="one">%1$d playlist got songs added</item>
+        <item quantity="other">%1$d playlists got songs added</item>
+    </plurals>
+    <plurals name="backup_songs_added">
+        <item quantity="one">%1$d song added to playlists</item>
+        <item quantity="other">%1$d songs added to playlists</item>
+    </plurals>
+    <plurals name="backup_stats_updated">
+        <item quantity="one">%1$d play count updated</item>
+        <item quantity="other">%1$d play counts updated</item>
+    </plurals>
+    <plurals name="backup_missing">
+        <item quantity="one">%1$d song in the file isn\'t on this phone.</item>
+        <item quantity="other">%1$d songs in the file aren\'t on this phone.</item>
+    </plurals>
     <string name="update_checking">Checking…</string>
     <string name="update_up_to_date">You have the latest version</string>
     <string name="update_failed">Couldn\'t check. Is the phone online?</string>
