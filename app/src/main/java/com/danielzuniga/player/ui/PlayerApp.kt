@@ -100,6 +100,7 @@ import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
 import com.danielzuniga.player.ui.settings.AppLanguage
 import com.danielzuniga.player.ui.settings.BackupDialog
 import com.danielzuniga.player.ui.settings.SettingsScreen
+import com.danielzuniga.player.ui.stats.StatsScreen
 import com.danielzuniga.player.ui.theme.DzIcons
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -414,6 +415,7 @@ private fun AppNavHost(
                 onCreatePlaylist = onCreatePlaylist,
                 onOpenSettings = { navigate(Routes.SETTINGS) },
                 onImportPlaylist = { importM3u.launch(arrayOf("*/*")) },
+                onOpenStats = { navigate(Routes.STATS) },
                 contentPadding = bottomPadding,
                 onOpenTerminal = onOpenTerminal,
             )
@@ -463,6 +465,17 @@ private fun AppNavHost(
                 onReorder = vm::saveOrder,
                 bottomPadding = bottomPadding,
                 onExportM3u = { exportM3u.launch(PlaylistM3u.fileNameFor(state.title.orEmpty())) },
+            )
+        }
+        composable(Routes.STATS) {
+            val vm: StatsViewModel = viewModel(factory = AppViewModels.Factory)
+            val stats by vm.stats.collectAsStateWithLifecycle()
+            StatsScreen(
+                stats = stats,
+                onBack = navController::popBackStack,
+                onOpenArtist = { navigate(Routes.artist(it)) },
+                onOpenAlbum = { navigate(Routes.album(it)) },
+                bottomPadding = bottomPadding,
             )
         }
         composable(Routes.EQUALIZER) {

@@ -3,6 +3,7 @@ package com.danielzuniga.player.data
 import com.danielzuniga.player.data.db.AppDatabase
 import com.danielzuniga.player.data.db.FavoriteEntity
 import com.danielzuniga.player.data.db.PlaylistEntity
+import com.danielzuniga.player.data.db.PlayStatEntity
 import com.danielzuniga.player.data.db.PlaylistSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -18,6 +19,9 @@ class UserDataRepository(private val db: AppDatabase) {
     val favoriteIdSet: Flow<Set<Long>> = favoriteIds.map { it.toSet() }
 
     val playlistSummaries: Flow<List<PlaylistSummary>> = playlists.observeSummaries()
+
+    /** Every song's play count and last play, for the stats screen. */
+    val playStats: Flow<List<PlayStatEntity>> = stats.observeAll()
 
     fun mostPlayedIds(limit: Int = SMART_LIMIT): Flow<List<Long>> = stats.observeMostPlayed(limit)
 

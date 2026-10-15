@@ -110,6 +110,9 @@ interface PlayStatDao {
     @Query("SELECT * FROM play_stats ORDER BY songId")
     suspend fun all(): List<PlayStatEntity>
 
+    @Query("SELECT * FROM play_stats")
+    fun observeAll(): Flow<List<PlayStatEntity>>
+
     @Query("SELECT * FROM play_stats WHERE songId = :songId")
     suspend fun get(songId: Long): PlayStatEntity?
 

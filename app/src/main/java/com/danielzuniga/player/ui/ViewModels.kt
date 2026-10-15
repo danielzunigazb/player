@@ -19,6 +19,7 @@ import com.danielzuniga.player.data.Song
 import com.danielzuniga.player.data.SongSort
 import com.danielzuniga.player.data.ThemeMode
 import com.danielzuniga.player.data.Folder
+import com.danielzuniga.player.data.ListeningStats
 import com.danielzuniga.player.data.backup.BackupException
 import com.danielzuniga.player.data.backup.BackupFiles
 import com.danielzuniga.player.data.backup.BackupRepository
@@ -241,6 +242,16 @@ class PlaylistsViewModel(private val container: AppContainer) : ViewModel() {
     fun dismissOutcome() = job.dismiss()
 }
 
+class StatsViewModel(container: AppContainer) : ViewModel() {
+    /** Counted off the main thread: grouping a whole library's plays is real work, and it reruns on every play. */
+    val stats: StateFlow<ListeningStats> =
+        combine(container.userData.playStats, container.musicRepository.library) { stats, library ->
+            ListeningStats.compute(stats, library)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(this, ListeningStats.EMPTY)
+}
+
 /** Song ids of a smart playlist, restricted to songs still present on the device. */
 private fun smartSongIds(container: AppContainer, smart: SmartPlaylist): Flow<List<Long>> {
     val library = container.musicRepository.library
@@ -440,6 +451,7 @@ object AppViewModels {
         initializer { PlaylistDetailViewModel(container(), createSavedStateHandle()) }
         initializer { EqualizerViewModel(container()) }
         initializer { SettingsViewModel(container()) }
+        initializer { StatsViewModel(container()) }
     }
 
     private fun CreationExtras.container(): AppContainer =

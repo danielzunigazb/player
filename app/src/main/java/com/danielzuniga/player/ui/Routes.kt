@@ -15,6 +15,7 @@ object Routes {
     const val FOLDER = "folder/{$ARG_PATH}"
     const val EQUALIZER = "equalizer"
     const val SETTINGS = "settings"
+    const val STATS = "stats"
 
     private const val USER_PLAYLIST = "USER"
 

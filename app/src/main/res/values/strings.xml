@@ -186,6 +186,20 @@
     <string name="m3u_export">Export as M3U</string>
     <string name="m3u_exported_title">Playlist exported</string>
     <string name="m3u_error_not_a_playlist">That file has no playlist in it.</string>
+    <string name="stats_entry">Listening stats</string>
+    <string name="stats_title">Stats</string>
+    <string name="stats_empty">Nothing played yet. As you listen, what plays most shows up here.</string>
+    <string name="stats_plays_label">plays</string>
+    <string name="stats_songs_label">different songs</string>
+    <string name="stats_top_songs">Most played songs</string>
+    <string name="stats_top_artists">Most played artists</string>
+    <string name="stats_top_albums">Most played albums</string>
+    <string name="stats_row_detail">%1$s · %2$s</string>
+    <string name="stats_note">A play counts from the moment a song starts, so a song you skip counts too.</string>
+    <plurals name="play_count">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
     <string name="backup_failed_title">Couldn\'t finish</string>
     <string name="backup_error_library_empty">The library hasn\'t loaded yet. Try again in a moment.</string>
     <string name="backup_error_not_a_backup">That file isn\'t a Player backup.</string>

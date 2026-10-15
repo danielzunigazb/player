@@ -26,6 +26,7 @@ object DzIcons {
     val Moon = icon("moon", "M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z")
     val Search = icon("search", "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5L21 21")
     val Download = icon("download", "M12 3v12M6 10l6 6 6-6M4 20h16")
+    val Stats = icon("stats", "M5 20v-9M12 20V4M19 20v-6")
 
     // ---- Player set, same rules
     val Play = icon("play", "M7 4.5v15l12-7.5z")
