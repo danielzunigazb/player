@@ -78,3 +78,29 @@ fuera y también se cuenta en el aviso.
 
 Ajustes, letras guardadas, etiquetas completadas por internet ni la cola actual. Las letras y
 las etiquetas se vuelven a buscar solas; la cola no es algo que se lleve a otro teléfono.
+
+## Playlists en M3U
+
+Una playlist sola, en el formato que casi todos los reproductores leen y escriben. Se exporta
+desde el menú de la playlist (*Exportar como M3U*) y se importa desde la pestaña Playlists
+(*Importar playlist (M3U)*), con las mismas reglas de arriba: solo agrega, una playlist con el
+mismo nombre recibe lo que le falta, importar dos veces no cambia nada y lo que este teléfono no
+tiene se cuenta y se avisa. Si no hay ninguna canción en el teléfono, no se crea la playlist.
+
+```
+#EXTM3U
+#PLAYLIST:Rock
+#EXTINF:210,Soda Stereo - De Música Ligera
+/storage/emulated/0/Music/De Música Ligera.mp3
+```
+
+- Se escribe en UTF-8 (`.m3u8`). Al leer, se acepta también Latin-1 (los `.m3u` viejos), saltos de
+  línea de Windows, una marca de orden de bytes, `#EXTINF` con atributos (`tvg-id="…"`) y entradas
+  sin `#EXTINF`. Un archivo con bytes nulos (una canción elegida por error) o sin ninguna
+  entrada se rechaza; uno de más de 8 MB también.
+- La ruta no se usa para buscar: en otro teléfono no existe. Se busca por lo que el archivo dice que
+  es la canción: el texto del `#EXTINF` ("Artista - Título", y también entero como título, porque un
+  título puede llevar " - ") y, si con eso no aparece, el nombre del archivo, sin carpetas,
+  extensión ni número de pista ("03 - ", "07. "). Los nombres de `file://` se decodifican.
+- El nombre de la playlist es el de `#PLAYLIST:`; si no hay, el del archivo sin la extensión.
+

@@ -123,7 +123,7 @@ Agentes revisores (seguridad, Android, tests, publicación) y un verificador de 
 
 La 1.5.x está cerrada y de la 1.6.x solo quedan los dos pasos manuales de arriba (no bloquean esto), así que empieza lo de tus datos, de menos a más riesgo.
 - [x] Exportar e importar favoritas, playlists y estadísticas (JSON) en *Ajustes → Copia de seguridad*: reconoce las canciones por nombre y no por id, solo agrega, repetirlo no cambia nada y todo o nada. Formato en `docs/backup.md`
-- [ ] Playlists en M3U: exportar e importar, para llevarlas a otros reproductores
+- [x] Playlists en M3U: exportar desde el menú de cada playlist e importar desde la pestaña Playlists, también archivos de otros reproductores (`#EXTINF`, solo nombres de archivo, UTF-8 o Latin-1). Mismas reglas que la copia de seguridad
 - [ ] Vista de estadísticas de escucha (los datos ya están en Room)
 - [ ] Editor de metadatos
 - [ ] Sincronizar entre dispositivos sin servidor propio (el relay, el cifrado de punta a punta y la vinculación con código del monitor podrían servir; revisar antes los límites del plan gratis)

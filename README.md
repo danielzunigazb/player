@@ -25,6 +25,7 @@ Descarga el APK desde [Releases](https://github.com/danielzunigazb/player/releas
 - Favoritas, playlists propias (crear, renombrar, borrar, reordenar arrastrando)
 - Listas automáticas: Más escuchadas, Escuchadas recientemente, Añadidas recientemente
 - Copia de seguridad en *Ajustes → Copia de seguridad*: exporta favoritas, playlists y estadísticas a un archivo y súmalo en otro teléfono o tras reinstalar. Las canciones se reconocen por nombre, artista y duración (los ids cambian de un teléfono a otro), importar solo agrega y repetirlo no cambia nada. Formato en [docs/backup.md](docs/backup.md)
+- Playlists en M3U: exporta una desde su menú e importa `.m3u` / `.m3u8` (de Player o de otros reproductores) desde la pestaña Playlists. Las canciones se buscan por el nombre que trae el archivo y no por la ruta, que no sirve de un teléfono a otro
 
 **Reproducción**
 - Música en segundo plano con controles en la notificación, la pantalla de bloqueo y los auriculares/Bluetooth

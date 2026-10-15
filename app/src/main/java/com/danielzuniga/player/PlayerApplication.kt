@@ -9,6 +9,7 @@ import com.danielzuniga.player.data.SettingsStore
 import com.danielzuniga.player.data.UserDataRepository
 import com.danielzuniga.player.data.backup.BackupFiles
 import com.danielzuniga.player.data.backup.BackupRepository
+import com.danielzuniga.player.data.backup.PlaylistFiles
 import com.danielzuniga.player.data.db.AppDatabase
 import com.danielzuniga.player.data.lyrics.LrcLibClient
 import com.danielzuniga.player.data.lyrics.LyricsRepository
@@ -43,10 +44,9 @@ class AppContainer(context: Context) {
     )
     val musicRepository = MusicRepository(context, settings, tagFixes, appScope)
     val userData = UserDataRepository(database)
-    val backup = BackupFiles(
-        context.contentResolver,
-        BackupRepository(database, { musicRepository.library.value }, BuildConfig.VERSION_NAME),
-    )
+    private val backupRepository = BackupRepository(database, { musicRepository.library.value }, BuildConfig.VERSION_NAME)
+    val backup = BackupFiles(context.contentResolver, backupRepository)
+    val playlistFiles = PlaylistFiles(context.contentResolver, backupRepository, { musicRepository.library.value.songs })
     val playbackState = PlaybackStateStore(context)
     val audioEffects = AudioEffects(context)
     val updates = UpdateRepository(

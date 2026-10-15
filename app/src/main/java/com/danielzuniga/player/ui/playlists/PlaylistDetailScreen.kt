@@ -49,6 +49,7 @@ fun PlaylistDetailScreen(
     onRemoveSong: (Song) -> Unit,
     onReorder: (List<Song>) -> Unit,
     bottomPadding: PaddingValues,
+    onExportM3u: () -> Unit = {},
 ) {
     val actions = LocalSongActions.current
     val isUserPlaylist = state.playlistId != null
@@ -85,6 +86,9 @@ fun PlaylistDetailScreen(
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         MenuItem(R.string.rename, DzIcons.Edit) { menuOpen = false; renaming = true }
+                        if (songs.isNotEmpty()) {
+                            MenuItem(R.string.m3u_export, DzIcons.Share) { menuOpen = false; onExportM3u() }
+                        }
                         MenuItem(R.string.delete, DzIcons.Delete) { menuOpen = false; deleting = true }
                     }
                 }

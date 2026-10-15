@@ -53,6 +53,7 @@ fun PlaylistsTab(
     onOpenSmartPlaylist: (SmartPlaylist) -> Unit,
     onCreatePlaylist: () -> Unit,
     contentPadding: PaddingValues,
+    onImportPlaylist: () -> Unit = {},
 ) {
     LazyColumn(contentPadding = contentPadding, modifier = Modifier.fillMaxSize()) {
         item { SectionHeader(stringResource(R.string.smart_playlists)) }
@@ -72,6 +73,14 @@ fun PlaylistsTab(
                 songCount = null,
                 onClick = onCreatePlaylist,
                 highlighted = true,
+            )
+        }
+        item {
+            PlaylistRow(
+                icon = DzIcons.Download,
+                title = stringResource(R.string.m3u_import),
+                songCount = null,
+                onClick = onImportPlaylist,
             )
         }
         items(state.playlists, key = { it.id }) { playlist ->

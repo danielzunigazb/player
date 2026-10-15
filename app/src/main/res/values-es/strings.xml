@@ -176,6 +176,11 @@
     <string name="backup_imported_title">Importación terminada</string>
     <string name="backup_exported_playlists">%1$s (%2$s)</string>
     <string name="backup_nothing_new">Nada nuevo: todo lo del archivo ya estaba aquí.</string>
+    <string name="backup_nothing_added">No se agregó nada.</string>
+    <string name="m3u_import">Importar playlist (M3U)</string>
+    <string name="m3u_export">Exportar como M3U</string>
+    <string name="m3u_exported_title">Playlist exportada</string>
+    <string name="m3u_error_not_a_playlist">Ese archivo no tiene una playlist.</string>
     <string name="backup_failed_title">No se pudo terminar</string>
     <string name="backup_error_library_empty">La biblioteca aún no carga. Inténtalo en un momento.</string>
     <string name="backup_error_not_a_backup">Ese archivo no es una copia de Player.</string>

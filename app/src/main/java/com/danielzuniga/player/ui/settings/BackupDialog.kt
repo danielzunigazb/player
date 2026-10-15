@@ -21,6 +21,8 @@ fun BackupDialog(outcome: BackupUi, onDismiss: () -> Unit) {
     val (title, lines) = when (outcome) {
         is BackupUi.Exported -> R.string.backup_exported_title to exportedLines(outcome.written)
         is BackupUi.Imported -> R.string.backup_imported_title to importedLines(outcome.result)
+        is BackupUi.PlaylistExported -> R.string.m3u_exported_title to
+            listOf(pluralStringResource(R.plurals.song_count, outcome.songs, outcome.songs))
         is BackupUi.Failed -> R.string.backup_failed_title to listOf(stringResource(outcome.reason.message()))
         BackupUi.Working -> return
     }
@@ -52,7 +54,8 @@ private fun exportedLines(written: BackupFiles.Written): List<String> = buildLis
 @Composable
 private fun importedLines(result: BackupRepository.ImportResult): List<String> = buildList {
     if (!result.changed) {
-        add(stringResource(R.string.backup_nothing_new))
+        // Nothing missing means it was all here already; otherwise there was nothing it could add.
+        add(stringResource(if (result.missing == 0) R.string.backup_nothing_new else R.string.backup_nothing_added))
     } else {
         if (result.favoritesAdded > 0) add(pluralStringResource(R.plurals.backup_favorites_added, result.favoritesAdded, result.favoritesAdded))
         if (result.playlistsCreated > 0) add(pluralStringResource(R.plurals.backup_playlists_created, result.playlistsCreated, result.playlistsCreated))
@@ -66,6 +69,7 @@ private fun importedLines(result: BackupRepository.ImportResult): List<String> =
 private fun BackupUi.Reason.message(): Int = when (this) {
     BackupUi.Reason.LIBRARY_EMPTY -> R.string.backup_error_library_empty
     BackupUi.Reason.NOT_A_BACKUP -> R.string.backup_error_not_a_backup
+    BackupUi.Reason.NOT_A_PLAYLIST -> R.string.m3u_error_not_a_playlist
     BackupUi.Reason.TOO_NEW -> R.string.backup_error_too_new
     BackupUi.Reason.BROKEN -> R.string.backup_error_broken
     BackupUi.Reason.UNREADABLE -> R.string.backup_error_unreadable

@@ -112,6 +112,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     contentPadding: PaddingValues,
     onOpenTerminal: () -> Unit = {},
+    onImportPlaylist: () -> Unit = {},
 ) {
     val pagerState = rememberPagerState { HomeTab.entries.size }
     val scope = rememberCoroutineScope()
@@ -165,6 +166,7 @@ fun HomeScreen(
                         onOpenSmartPlaylist = onOpenSmartPlaylist,
                         onCreatePlaylist = onCreatePlaylist,
                         contentPadding = contentPadding,
+                        onImportPlaylist = onImportPlaylist,
                     )
                 }
             }

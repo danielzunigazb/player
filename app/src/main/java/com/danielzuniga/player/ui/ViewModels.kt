@@ -22,6 +22,7 @@ import com.danielzuniga.player.data.Folder
 import com.danielzuniga.player.data.backup.BackupException
 import com.danielzuniga.player.data.backup.BackupFiles
 import com.danielzuniga.player.data.backup.BackupRepository
+import com.danielzuniga.player.data.backup.NoPlaylistException
 import com.danielzuniga.player.data.db.PlaylistSummary
 import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.data.lyrics.LyricsSource
@@ -32,6 +33,7 @@ import com.danielzuniga.player.playback.PlayerConnection
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.playback.QueueState
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -224,6 +226,19 @@ class PlaylistsViewModel(private val container: AppContainer) : ViewModel() {
     fun addTo(playlistId: Long, songs: List<Song>) {
         viewModelScope.launch { userData.addToPlaylist(playlistId, songs.map { it.id }) }
     }
+
+    private val job = BackupJob(viewModelScope) { container.musicRepository.library.value.songs.isNotEmpty() }
+
+    /** What the last M3U import or export did, shown until closed. */
+    val outcome: StateFlow<BackupUi?> = job.state
+
+    fun importM3u(uri: Uri) =
+        job.run(BackupUi.Reason.UNREADABLE) { BackupUi.Imported(container.playlistFiles.import(uri)) }
+
+    fun exportM3u(uri: Uri, name: String, songs: List<Song>) =
+        job.run(BackupUi.Reason.UNWRITABLE) { BackupUi.PlaylistExported(container.playlistFiles.export(uri, name, songs)) }
+
+    fun dismissOutcome() = job.dismiss()
 }
 
 /** Song ids of a smart playlist, restricted to songs still present on the device. */
@@ -324,16 +339,50 @@ sealed interface BackupUi {
     data object Working : BackupUi
     data class Exported(val written: BackupFiles.Written) : BackupUi
     data class Imported(val result: BackupRepository.ImportResult) : BackupUi
+    data class PlaylistExported(val songs: Int) : BackupUi
     data class Failed(val reason: Reason) : BackupUi
 
-    enum class Reason { LIBRARY_EMPTY, NOT_A_BACKUP, TOO_NEW, BROKEN, UNREADABLE, UNWRITABLE, UNKNOWN }
+    enum class Reason { LIBRARY_EMPTY, NOT_A_BACKUP, NOT_A_PLAYLIST, TOO_NEW, BROKEN, UNREADABLE, UNWRITABLE, UNKNOWN }
+}
+
+/**
+ * One backup-like job at a time (a backup or a playlist file), and what to tell the person when it
+ * ends. Leaving the screen that started it cancels it: imports are all or nothing, so nothing is
+ * left half done. A library that hasn't loaded would match, and export, nothing: that's said, not done.
+ */
+class BackupJob(private val scope: CoroutineScope, private val libraryLoaded: () -> Boolean) {
+    private val _state = MutableStateFlow<BackupUi?>(null)
+    val state: StateFlow<BackupUi?> = _state.asStateFlow()
+
+    fun run(ioFailure: BackupUi.Reason, work: suspend () -> BackupUi) {
+        if (_state.value == BackupUi.Working) return
+        if (!libraryLoaded()) {
+            _state.value = BackupUi.Failed(BackupUi.Reason.LIBRARY_EMPTY)
+            return
+        }
+        _state.value = BackupUi.Working
+        scope.launch {
+            _state.value = try {
+                work()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                backupFailure(e, ioFailure)
+            }
+        }
+    }
+
+    /** Closes the outcome; a job still working can't be closed. */
+    fun dismiss() {
+        if (_state.value != BackupUi.Working) _state.value = null
+    }
 }
 
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     private val settings = container.settings
 
-    private val _backup = MutableStateFlow<BackupUi?>(null)
-    val backup: StateFlow<BackupUi?> = _backup.asStateFlow()
+    private val job = BackupJob(viewModelScope) { container.musicRepository.library.value.songs.isNotEmpty() }
+    val backup: StateFlow<BackupUi?> = job.state
 
     val state: StateFlow<SettingsUiState> = combine(
         settings.themeMode,
@@ -360,36 +409,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun setOnlineTags(enabled: Boolean) = settings.setOnlineTags(enabled)
     fun rescan() = container.musicRepository.load(force = true)
 
-    fun exportBackup(uri: Uri) = runBackup(BackupUi.Reason.UNWRITABLE) { BackupUi.Exported(container.backup.export(uri)) }
+    fun exportBackup(uri: Uri) = job.run(BackupUi.Reason.UNWRITABLE) { BackupUi.Exported(container.backup.export(uri)) }
 
-    fun importBackup(uri: Uri) = runBackup(BackupUi.Reason.UNREADABLE) { BackupUi.Imported(container.backup.import(uri)) }
+    fun importBackup(uri: Uri) = job.run(BackupUi.Reason.UNREADABLE) { BackupUi.Imported(container.backup.import(uri)) }
 
-    fun dismissBackup() {
-        if (_backup.value != BackupUi.Working) _backup.value = null
-    }
-
-    /**
-     * One backup at a time. Leaving Settings mid-way cancels it, and an import is all or nothing,
-     * so it leaves nothing half done. A library that hasn't loaded would match, and export,
-     * nothing: that's said, not done.
-     */
-    private fun runBackup(ioFailure: BackupUi.Reason, work: suspend () -> BackupUi) {
-        if (_backup.value == BackupUi.Working) return
-        if (container.musicRepository.library.value.songs.isEmpty()) {
-            _backup.value = BackupUi.Failed(BackupUi.Reason.LIBRARY_EMPTY)
-            return
-        }
-        _backup.value = BackupUi.Working
-        viewModelScope.launch {
-            _backup.value = try {
-                work()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                backupFailure(e, ioFailure)
-            }
-        }
-    }
+    fun dismissBackup() = job.dismiss()
 }
 
 /** Why a backup didn't finish, as Settings tells it; [ioFailure] is what an unreadable or unwritable file means here. */
@@ -400,6 +424,7 @@ internal fun backupFailure(e: Exception, ioFailure: BackupUi.Reason): BackupUi.F
             BackupException.Reason.TOO_NEW -> BackupUi.Reason.TOO_NEW
             BackupException.Reason.BROKEN -> BackupUi.Reason.BROKEN
         }
+        is NoPlaylistException -> BackupUi.Reason.NOT_A_PLAYLIST
         is IOException -> ioFailure
         else -> BackupUi.Reason.UNKNOWN
     }

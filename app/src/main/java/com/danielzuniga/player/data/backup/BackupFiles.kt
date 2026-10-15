@@ -40,26 +40,25 @@ class BackupFiles(
     suspend fun import(uri: Uri): BackupRepository.ImportResult = repository.import(read(uri))
 
     /** The backup in [uri], or a [BackupException]: never reads more than [Backup.MAX_BYTES]. */
-    suspend fun read(uri: Uri): Backup {
-        val text = withContext(Dispatchers.IO) {
-            val input = resolver.openInputStream(uri) ?: throw IOException("No stream for $uri")
-            input.use { stream ->
-                // Stops as soon as it's over the limit, without holding the rest of a huge file.
-                val bytes = ByteArrayOutputStream()
-                val buffer = ByteArray(BUFFER)
-                while (true) {
-                    val read = stream.read(buffer)
-                    if (read < 0) break
-                    if (bytes.size() + read > Backup.MAX_BYTES) throw BackupException(BackupException.Reason.NOT_A_BACKUP)
-                    bytes.write(buffer, 0, read)
-                }
-                bytes.toString(Charsets.UTF_8.name())
-            }
-        }
-        return Backup.parse(text)
-    }
+    suspend fun read(uri: Uri): Backup =
+        Backup.parse(String(resolver.readLimited(uri, Backup.MAX_BYTES), Charsets.UTF_8))
+}
 
-    private companion object {
-        const val BUFFER = 64 * 1024
+/**
+ * Everything in [uri] up to [max] bytes; a bigger file is refused as soon as it's seen to be, without
+ * holding the rest of it. Reads off the main thread.
+ */
+internal suspend fun ContentResolver.readLimited(uri: Uri, max: Int): ByteArray = withContext(Dispatchers.IO) {
+    val input = openInputStream(uri) ?: throw IOException("No stream for $uri")
+    input.use { stream ->
+        val bytes = ByteArrayOutputStream()
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+            val read = stream.read(buffer)
+            if (read < 0) break
+            if (bytes.size() + read > max) throw BackupException(BackupException.Reason.NOT_A_BACKUP)
+            bytes.write(buffer, 0, read)
+        }
+        bytes.toByteArray()
     }
 }

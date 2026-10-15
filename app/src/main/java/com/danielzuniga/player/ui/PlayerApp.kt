@@ -62,6 +62,7 @@ import androidx.navigation.navArgument
 import com.danielzuniga.player.R
 import com.danielzuniga.player.appContainer
 import com.danielzuniga.player.data.LibraryIndex
+import com.danielzuniga.player.data.backup.PlaylistM3u
 import com.danielzuniga.player.data.lyrics.Lyrics
 import com.danielzuniga.player.playback.PlayerUiState
 import com.danielzuniga.player.ui.share.SongSharer
@@ -97,6 +98,7 @@ import com.danielzuniga.player.ui.playlists.AddToPlaylistDialog
 import com.danielzuniga.player.ui.playlists.PlaylistDetailScreen
 import com.danielzuniga.player.ui.playlists.PlaylistNameDialog
 import com.danielzuniga.player.ui.settings.AppLanguage
+import com.danielzuniga.player.ui.settings.BackupDialog
 import com.danielzuniga.player.ui.settings.SettingsScreen
 import com.danielzuniga.player.ui.theme.DzIcons
 import kotlinx.coroutines.launch
@@ -157,6 +159,8 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
     val libraryState by libraryVm.state.collectAsStateWithLifecycle()
     val libraryIndex by libraryVm.library.collectAsStateWithLifecycle()
     val playlistsState by playlistsVm.state.collectAsStateWithLifecycle()
+    val playlistFileOutcome by playlistsVm.outcome.collectAsStateWithLifecycle()
+    playlistFileOutcome?.let { BackupDialog(it, playlistsVm::dismissOutcome) }
 
     val navController = rememberNavController()
     var showNowPlaying by rememberSaveable { mutableStateOf(false) }
@@ -234,6 +238,7 @@ private fun MainContent(searchRequest: String?, onSearchHandled: () -> Unit) {
                     libraryState = libraryState,
                     playlistsState = playlistsState,
                     libraryVm = libraryVm,
+                    playlistsVm = playlistsVm,
                     onCreatePlaylist = { newPlaylistSongs = emptyList() },
                     onOpenTerminal = { showTerminal = true },
                     navigate = ::navigate,
@@ -382,11 +387,16 @@ private fun AppNavHost(
     libraryState: LibraryUiState,
     playlistsState: PlaylistsUiState,
     libraryVm: LibraryViewModel,
+    playlistsVm: PlaylistsViewModel,
     onCreatePlaylist: () -> Unit,
     onOpenTerminal: () -> Unit,
     navigate: (String) -> Unit,
 ) {
     val libraryIndex by libraryVm.library.collectAsStateWithLifecycle()
+    // Any file type: some file managers call a .m3u "octet-stream" or "text/plain".
+    val importM3u = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(playlistsVm::importM3u)
+    }
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
@@ -403,6 +413,7 @@ private fun AppNavHost(
                 onOpenSmartPlaylist = { navigate(Routes.smartPlaylist(it)) },
                 onCreatePlaylist = onCreatePlaylist,
                 onOpenSettings = { navigate(Routes.SETTINGS) },
+                onImportPlaylist = { importM3u.launch(arrayOf("*/*")) },
                 contentPadding = bottomPadding,
                 onOpenTerminal = onOpenTerminal,
             )
@@ -437,6 +448,9 @@ private fun AppNavHost(
         ) {
             val vm: PlaylistDetailViewModel = viewModel(factory = AppViewModels.Factory)
             val state by vm.state.collectAsStateWithLifecycle()
+            val exportM3u = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("audio/x-mpegurl")) { uri ->
+                uri?.let { playlistsVm.exportM3u(it, state.title.orEmpty(), state.songs) }
+            }
             PlaylistDetailScreen(
                 state = state,
                 onBack = navController::popBackStack,
@@ -448,6 +462,7 @@ private fun AppNavHost(
                 onRemoveSong = vm::remove,
                 onReorder = vm::saveOrder,
                 bottomPadding = bottomPadding,
+                onExportM3u = { exportM3u.launch(PlaylistM3u.fileNameFor(state.title.orEmpty())) },
             )
         }
         composable(Routes.EQUALIZER) {
